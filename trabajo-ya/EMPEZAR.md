@@ -8,8 +8,10 @@ La [compilación 38447381098](https://github.com/ramalhectornano-sys/miapp/actio
 terminó correctamente. Los pasos de instalación y las comprobaciones pendientes
 están en [APK conectada](docs/APK_REAL.md).
 
-Antes de ingresar, falta guardar `{{ .Token }}` en las plantillas **Magic Link**
-y **Confirm signup** de Supabase. Después falta probar en el teléfono el código OTP, el guardado
+Antes de ingresar, falta configurar y guardar SMTP propio en Supabase;
+el proyecto Free nuevo lo requiere para editar las plantillas. Después guardar
+`{{ .Token }}` en **Magic Link** y **Confirm signup** siguiendo
+[acceso sin contraseña](docs/AUTH_SETUP.md). Después falta probar en el teléfono el código OTP, el guardado
 y la recuperación de perfil, foto y CV y una respuesta real de la IA. Esas
 operaciones todavía no se comprobaron. No necesitás crear de nuevo Supabase ni
 Render. Las búsquedas programadas y los correos automáticos requieren configuración
@@ -42,8 +44,9 @@ No elimina datos para intentar instalar. La guía de actualizaciones está en
 [Supabase](supabase/README.md).
 
 En Authentication configurar el correo por código siguiendo
-[AUTH_SETUP](docs/AUTH_SETUP.md). Para las primeras pruebas, revisar los destinatarios
-y límites del correo de desarrollo; para usuarios externos hace falta SMTP propio.
+[AUTH_SETUP](docs/AUTH_SETUP.md). Esta instalación necesita SMTP propio antes de
+editar las plantillas y entregar el código. Revisar también los límites del
+proveedor de correo elegido.
 Guardar la URL del proyecto, la clave pública y la privada en un gestor de claves.
 La clave pública se usa en Android; la privada se usa solo en el servidor.
 

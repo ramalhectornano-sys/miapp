@@ -37,19 +37,27 @@ no ejecutes también el instalador. La guía del esquema está en
    Email y el registro de nuevos usuarios. Mantené la confirmación de correo.
 2. Si aparece **Email OTP expiration**, elegí **600 segundos** y código de
    **6 dígitos**, para coincidir con la app y las plantillas.
-3. En **Authentication → Email Templates**, pegá
+3. Configurá y guardá **SMTP propio** en **Authentication → Emails → SMTP
+   Settings**. En los proyectos Free creados desde el 3 de junio de 2026,
+   Supabase exige este ajuste para editar las plantillas. Si aparece **Set up
+   custom SMTP to edit templates**, todavía falta completarlo; activar el
+   interruptor con los campos vacíos no configura el envío. Para pruebas con
+   Gmail, seguí [Gmail para códigos de acceso](../../docs/AUTH_SETUP.md).
+4. En **Authentication → Email Templates**, elegí **Source** y pegá
    [magic_link.html](../../supabase/templates/magic_link.html) en **Magic Link**
    y [confirmation.html](../../supabase/templates/confirmation.html) en
    **Confirm signup**. Ambos muestran `{{ .Token }}`, el código que el usuario
    escribe en la app.
-4. En **URL Configuration → Redirect URLs**, agregá
+5. En **URL Configuration → Redirect URLs**, agregá
    `autoempleoia://auth/callback`. La app conserva este identificador técnico.
-5. Para tu primera prueba ingresá en la app con **el mismo correo de tu cuenta
+6. Para tu primera prueba ingresá en la app con **el mismo correo de tu cuenta
    Supabase**, que es miembro del equipo del proyecto.
 
-El correo incluido de Supabase sirve para probar con las direcciones de miembros
-del equipo; actualmente limita el envío a **2 mensajes por hora**. Para registrar
-otras personas necesitás configurar SMTP propio en Supabase. No desactives la
+El correo predeterminado de Supabase limita destinatarios a miembros del equipo
+y envíos a **2 mensajes por hora**. Además, en proyectos Free nuevos impide
+personalizar las plantillas; esta app necesita mostrar el OTP numérico. Por eso
+la ruta actual requiere SMTP propio antes del primer ingreso.
+[Regla oficial de plantillas Free](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier). No desactives la
 confirmación para evitar ese límite. Esto es independiente de Gmail para enviar
 postulaciones. Ver [configuración de autenticación](../../docs/AUTH_SETUP.md) y
 [restricciones oficiales de SMTP](https://supabase.com/docs/guides/auth/auth-smtp).

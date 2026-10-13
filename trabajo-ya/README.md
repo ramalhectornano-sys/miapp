@@ -16,8 +16,10 @@ nueva compilación conectada.
 Todavía no se verificaron un ingreso por código OTP, la persistencia de perfil,
 foto o CV desde Android ni una respuesta real del modelo. Render Free sostiene
 la API de pruebas; no se configuró allí un worker ni se activaron correos o
-búsquedas automáticas. Falta guardar `{{ .Token }}` en las plantillas **Magic Link**
-y **Confirm signup** de Supabase y comprobar el código desde la app. La creación
+búsquedas automáticas. Falta configurar SMTP propio en Supabase, guardar
+`{{ .Token }}` en las plantillas **Magic Link** y **Confirm signup** y comprobar
+el código desde la app. Los proyectos Free nuevos exigen SMTP propio para
+editar esas plantillas; ver [acceso sin contraseña](docs/AUTH_SETUP.md). La creación
 de los servicios y la compilación no acreditan esas operaciones.
 
 Para activar el proyecto desde el celular, empezar por [EMPEZAR](EMPEZAR.md).

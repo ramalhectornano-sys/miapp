@@ -126,8 +126,13 @@ adaptación. Falta comprobar el icono en un lanzador Android.
 
 El propietario confirmó que aún no configuró las plantillas de correo OTP de
 Supabase. Se le indicaron las plantillas Magic Link y Confirm signup con
-`{{ .Token }}`. Falta confirmar que guardó esos ajustes y que recibe/verifica
-un código desde Android.
+`{{ .Token }}`. La captura posterior mostró que Supabase bloquea la edición de templates hasta
+configurar SMTP propio, conforme al cambio de los proyectos Free nuevos del
+3 de junio de 2026. Se corrigieron las guías y se preparó la configuración de
+Gmail SMTP para pruebas, con contraseña de aplicación guardada solo en Supabase.
+Todavía no se configuró ni se comprobó ese envío; no se solicitaron códigos
+desde estas herramientas ni se obtuvo una sesión de usuario.
+[Regla oficial](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier).
 
 No se probó en un dispositivo físico ni emulador. Con Supabase y
 el backend creados, verificar en la APK real: ingreso por código, guardado y recuperación
