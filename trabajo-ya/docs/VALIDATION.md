@@ -1,146 +1,105 @@
-# Validación de Trabajo YA: APK demo 0.3.0 y código 0.3.1
+# Validación de Trabajo YA: código 0.3.1 y APK demo 0.3.0
 
-## Preparación de la versión conectada 0.3.1
+## Comprobaciones del código conectado 0.3.1
 
-El usuario creó un proyecto Supabase y compartió su URL y clave pública.
-La configuración Android incorpora esos dos datos; `backend_url` permanece
-vacío porque no hay un servidor desplegado confirmado. La compilación real
-rechaza esa configuración incompleta antes de generar un APK.
+La [ejecución 38439756866 de GitHub Actions](https://github.com/ramalhectornano-sys/miapp/actions/runs/38439756866)
+terminó correctamente sobre el commit `6b6538ed7a4159bdab163023afafe3895dc94817`:
+
+- **148 pruebas Python** del backend, incluida la preparación del APK real y
+  del instalador de base de datos, y compilación de los módulos Python.
+- **Seis migraciones ejecutadas en PostgreSQL embebido (PGlite)** y cuatro
+  baterías SQL: aislamiento de usuarios, consentimiento de envío, presupuesto
+  diario y recordatorios, y persistencia del CV principal.
+- **TypeScript sin errores y 32 pruebas móviles**: 18 de lógica de acceso,
+  demostración, temas y permisos, más 14 del servicio de perfil, foto y CV.
+- **29 pruebas de despliegue** con gcloud sustituido y comprobación `--check`
+  del instalador SQL único actualizado.
+
+Las pruebas SQL ejecutan las transacciones con los esquemas de autenticación y
+Storage del archivo de preparación de pruebas. No sustituyen una verificación
+contra Supabase alojado ni ejecutan la prueba opcional de concurrencia de 24
+sesiones PostgreSQL. Las pruebas de móvil usan dobles del transporte Supabase;
+las de backend y despliegue tampoco prueban Gmail, Groq o recursos cloud reales.
 
 Se corrigió la persistencia del CV principal con la migración 006 y una RPC
-atómica. El guardado de texto conserva la foto existente. La subida de fotos
-comprueba la URL y la asociación; una respuesta perdida no borra un archivo
-que podría estar confirmado en el servidor. Se ejecutaron **148 pruebas de
-backend** (incluidas 13 del preparador Android real), **29 de despliegue** y
-**14 de transporte del servicio de datos** con Supabase sustituido.
-El instalador actualizado contiene seis migraciones y pasó `--check`.
+atómica. Guardar texto conserva la foto y el CV principal existentes. La subida
+de fotos obtiene una URL privada utilizable antes de reemplazar la asociación;
+una respuesta perdida no borra un archivo cuya operación podría haber quedado
+confirmada en el servidor. Las pruebas cubren estas situaciones y la recuperación
+de la confirmación de una subida de CV.
 
-También se preparó Render Free para probar chat y datos persistentes. El
-servidor se suspende por inactividad; no ejecuta el worker ni el programador.
-La guía de activación está en `deploy/render/README.md` y la compilación
-conectada en `docs/APK_REAL.md`. No se publicó todavía un APK real nuevo,
-ni se confirmó inferencia, OTP o guardado contra ese Supabase.
+Dos fixtures SQL separan ahora la ejecución de una función con efectos de la
+lectura del resultado: PostgreSQL puede evaluar una subconsulta de un `IF` antes
+de ejecutar esa función. No se modificaron las migraciones históricas para
+adaptarlas a esos fixtures.
 
-La imagen `images/maqueta-trabajo-ya.png` es una maqueta generada; `preview.html`
-es una representación navegable del diseño. No son capturas de una ejecución
-Android. El logo original proporcionado se conserva sin cambios en
-`mobile/assets/brand/trabajo-ya-logo.jpg`; el PNG del icono es una adaptación.
+## Verificación del proyecto Supabase del propietario
 
-## Comprobaciones ejecutadas
+El propietario creó Supabase y compartió su URL y clave **pública**. Están
+cargadas en `mobile/services.public.json` y `render.yaml`; ninguna clave privada
+se añadió al código. En la misma ejecución de CI se consultaron únicamente:
 
-- **APK demo 0.3.0 compilada, verificada y publicada en GitHub** en la
-  [ejecución 38427300341](https://github.com/ramalhectornano-sys/miapp/actions/runs/38427300341).
-  Aprobaron el compilador TypeScript, las 18 pruebas móviles, Expo prebuild y
-  Gradle `assembleRelease`. `apksigner` verificó la firma debug y `aapt`
-  comprobó `Trabajo YA`, paquete `com.trabajoya.autoempleoia`, versión 0.3.0 y
-  versionCode 3. La APK incluye JavaScript y recursos; no requiere Metro.
-- [APK descargable](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk):
-  51.826.293 bytes, commit `2686a70130060c075bc7eea11122885b74ee30c7`, SHA-256
-  `3839f47c4bba1a0cab47d4c9f112132772e9d687830be8d44a783f1d2bbbead1`.
-  Es una demo sin IA, Supabase ni Gmail reales; no se probó en un dispositivo.
-- **135 pruebas Python del backend aprobadas**, además de compileall.
-- **29 pruebas del despliegue Google Cloud aprobadas**, con gcloud simulado:
-  secretos ocultos, versiones compartidas, fuentes verificadas, activación
-  expresa, pausa al actualizar y exclusión de archivos privados de la subida.
-- Instalador SQL único generado y comprobado con `--check`: cinco migraciones
-  intactas, hashes, orden y guard transaccional para proyecto nuevo. Sus nueve
-  pruebas offline revisan el archivo/generador; no ejecutan PostgreSQL.
-- **18 pruebas de lógica del móvil aprobadas**: 4 de demostración, 5 de acceso
-  por código, 5 de preferencias de tema y 4 de estado de permisos automáticos.
-- Sintaxis TypeScript/JSX de 24 archivos, imports locales, archivos JSON,
-  configuración TOML, plantillas OTP, referencias de iconos y JavaScript de la
-  vista HTML revisados.
-- Sintaxis JavaScript de los dos ejecutores de pruebas SQL revisada.
-- Configuración EAS, guard de compilación real y script Android revisados;
-  una compilación sin variables reales se rechaza en la comprobación previa.
-- applicationId y callback Google contrastados con el código. El helper de
-  huellas se probó con un certificado público temporal de keytool, eliminado
-  después. La APK publicada usa el certificado debug de Expo; sus huellas
-  públicas están en `certificado-prueba.txt` dentro de la versión publicada.
-  No se configuró una firma privada de producción.
-- Docker Compose validado estáticamente con PyYAML y el parser de Compose,
-  usando exclusivamente el archivo de ejemplo; no se ejecutaron contenedores.
-- Archivo ZIP final comprobado íntegro y con logo, icono, migraciones y plantillas.
+- `/auth/v1/health`: **HTTP 200**, el servicio de autenticación respondió.
+- `/rest/v1/profiles?select=user_id&limit=0`: tabla todavía no instalada.
 
-Las pruebas del servidor cubren tareas diarias con usuarios, cuentas de correo y
-CV distintos. Verifican el máximo global de 10 reservas entre búsquedas y envíos
-manuales, la espera de 72 horas, la autorización adicional para recordatorios,
-la actualización de la oferta antes de reiterar y la detención por destinatario.
-También comprueban la prioridad de vacantes nuevas dentro de cada ejecución,
-la conservación del historial y CV anteriores, las reservas inciertas, la pérdida
-de una tarea reservada, los permisos vencidos o revocados y el borrado seguro del
-CV ante referencias concurrentes o una limpieza incompleta.
-El proveedor de correo, las consultas y las RPC de esas pruebas son dobles de
-prueba: validan el comportamiento Python, pero no ejecutan las transacciones SQL.
-No se contactó Gmail ni se enviaron mensajes reales.
+No se leyeron registros personales, no se solicitaron códigos de acceso y no
+se aplicó SQL al proyecto remoto. El siguiente paso del propietario es ejecutar
+`supabase/install-new-project.sql` una sola vez en su base nueva.
 
-Las 14 pruebas adicionales de configuración comprueban que ejemplos, claves
-privadas en variables públicas, dominios/callback incoherentes y configuración
-incompleta se rechacen sin imprimir valores. El preflight no hace solicitudes
-de red y siempre informa `services_verified: false`.
+## Servidor y APK real pendientes de activación
 
-Las pruebas nuevas del worker comprueban el código de salida de `--once` cuando
-una tarea falla o no se confirma, conservando las reservas de envío. Las de
-Supabase comprueban claves modernas `sb_secret_`/`sb_publishable_` en `apikey`
-y JWT de usuario separado para RLS, además de claves JWT antiguas, Storage y
-eliminación de cuenta. Utilizan MockTransport: no prueban un proyecto remoto.
+Se preparó **Render Free** para probar el chat con Groq y los datos privados en
+Supabase. El Blueprint incluye los datos públicos del proyecto y solicita las
+claves privadas solamente en Render. La guía está en
+[deploy/render/README.md](../deploy/render/README.md).
 
-Las 20 pruebas nuevas de IA y su CLI comprueban JSON, datos sintéticos, modo real,
-límite de generación, parámetros Groq GPT-OSS, claves ausentes o rechazadas,
-cuotas, respuestas incompletas y ausencia de datos privados en errores. Usan
-MockTransport, no Groq real. Las pruebas del despliegue verifican que el job de
-IA use la revisión activa, su imagen y versión del secreto, sin heredar variables
-de Gmail/Supabase ni dar por verificada una respuesta fallida.
+Todavía no hay una URL de backend desplegado confirmada. `backend_url` permanece
+vacío y `prepare_android_real.py` rechaza esa configuración antes de compilar.
+El workflow `android-real.yml` fuerza el modo real y no muestra el acceso a la
+demostración. No se compiló ni publicó todavía un APK conectado 0.3.1.
+Una respuesta `/health` con IA `configured_unverified` solo informa configuración;
+no confirma una inferencia. Ver [APK_REAL.md](APK_REAL.md).
 
-El comando `setup` se comprobó con gcloud simulado: una comprobación de acceso
-fallida impide crear recursos, el proceso conserva secretos previos y no activa
-correo ni Scheduler. Las variables Android generadas contienen solo datos públicos
-y no sobrescriben archivos locales del usuario. En este entorno el comando real
-se detiene porque gcloud no está instalado; no se crearon recursos cloud.
+Render Free suspende la API por inactividad. Este Blueprint no ejecuta un worker
+ni un programador, y mantiene el envío de correo deshabilitado. Las búsquedas y
+los envíos automáticos requieren activar una alternativa de servidor programado,
+fuentes de vacantes autorizadas y OAuth Gmail del usuario. `deploy/google-cloud`
+prepara Cloud Run, un worker Job y Scheduler; requiere facturación habilitada y
+puede generar cargos. `deploy/compose.yaml` ofrece la alternativa de VPS.
+Ninguna de esas alternativas se desplegó desde esta sesión.
 
-## Estado de la puesta en marcha
+## APK de demostración publicada anteriormente
 
-El propietario ya creó el cliente OAuth de tipo Aplicación web en Google Cloud
-y desea una opción económica de pruebas manejable desde el celular. No se
-confirmó todavía un proyecto Supabase ni una cuenta de facturación habilitada
-para el despliegue. El entorno no tiene secretos,
-identidades, proyecto remoto ni fuente autorizada de vacantes configurados.
-`deploy/google-cloud` prepara API Cloud Run, worker Job y Scheduler cada 15 minutos,
-con secretos en Secret Manager. Ofrece HTTPS `run.app` sin comprar dominio para
-pruebas; usa cuotas gratuitas, con facturación y posibles cargos. `deploy/compose.yaml`
-conserva la alternativa de VPS con Ollama. Ninguna alternativa está desplegada.
-No se creó ningún usuario real, conexión Gmail ni tarea remota. Faltan los accesos
-del proyecto, la configuración de Supabase, vacantes autorizadas y correo de acceso.
-Las instrucciones móviles están en `deploy/google-cloud/README.md`; Android en
-`docs/ANDROID_BUILD.md`. Para IA real se preparó `activate-ai` con Groq
-`openai/gpt-oss-20b` y `test-ai`. El entorno todavía no tiene clave del proveedor,
-por lo que no se confirmó una inferencia externa. `docs/IA_REAL.md` contiene los
-pasos para crear/cargar esa clave y comprobar una respuesta real.
+La APK **0.3.0 demo** se compiló y publicó en la
+[ejecución 38427300341](https://github.com/ramalhectornano-sys/miapp/actions/runs/38427300341).
+Pasaron TypeScript, 18 pruebas móviles, Expo prebuild y Gradle `assembleRelease`.
+`apksigner` verificó la firma debug y `aapt` comprobó nombre `Trabajo YA`, paquete
+`com.trabajoya.autoempleoia`, versión 0.3.0 y versionCode 3. No necesita Metro.
 
-## Comprobaciones pendientes
+El archivo de aquella versión tiene 51.826.293 bytes y SHA-256
+`3839f47c4bba1a0cab47d4c9f112132772e9d687830be8d44a783f1d2bbbead1`.
+La [versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.3.0-demo)
+contiene sus huellas públicas en `certificado-prueba.txt`. Esa APK usa datos
+de demostración; crear cuentas no cambia su configuración incorporada.
+No se configuró una firma privada de producción.
 
-GitHub Actions completó la instalación npm, TypeScript y la compilación APK
-de demostración. No se ejecutaron EAS, una compilación AAB, un emulador,
-pruebas en dispositivo físico ni las pruebas SQL de PGlite. Las cinco
-migraciones se revisaron, pero no se aplicaron a
-Supabase. La prueba opcional de concurrencia con 24 sesiones PostgreSQL tampoco
-se ejecutó: no hay PostgreSQL disponible. Tampoco se probaron OTP por SMTP,
-OAuth Gmail, Ollama o feeds reales.
+La imagen `images/maqueta-trabajo-ya.png` es una maqueta y `preview.html` representa
+el diseño. No son capturas de una ejecución Android. El logo proporcionado se
+conserva en `mobile/assets/brand/trabajo-ya-logo.jpg`; el PNG del icono es su
+adaptación. Falta comprobar el icono en un lanzador Android.
 
-Para completar esos controles, instalar las dependencias del README y ejecutar
-`bash scripts/check.sh`. El proyecto también incluye
-`.github/workflows/checks.yml` para controles reproducibles. Ese workflow
-general no se ejecutó aquí; el workflow ejecutado fue `android-apk.yml`.
-La exportación de JavaScript Android del workflow general no genera un APK.
+## Verificación funcional pendiente
 
-Luego verificar en Android: registro y acceso OTP, reenvío y vencimiento de
-códigos, tema conservado tras reiniciar, carga PDF/DOCX y foto, correo conectado,
-autorización/revocación de envíos, tarea diaria con el celular apagado, cupo entre
-búsquedas, recordatorios después de 72 horas, detención por empresa e historial.
-La APK publicada incorpora el icono nativo de Trabajo YA; falta comprobar su
-presentación en un lanzador Android. Expo Go conserva su propio icono como
-aplicación anfitriona.
+No se probó en un dispositivo físico ni emulador. Una vez activados Supabase y
+el backend, verificar en la APK real: ingreso por código, guardado y recuperación
+del perfil, foto y CV al reiniciar, tema persistente y una respuesta real del chat.
+El SMTP incluido de Supabase limita las pruebas a correos del equipo y a dos
+mensajes por hora; para otros usuarios hace falta configurar SMTP propio.
 
-Un comprobante de Gmail confirma aceptación de la operación; no confirma entrega
-al destinatario ni una respuesta. La detección automática de respuestas, OCR
-y ranking semántico avanzado siguen pendientes.
+Después de activar Gmail y un programador, comprobar consentimiento, revocación,
+tareas con el celular apagado, máximo de 10 correos diarios por usuario, espera de
+72 horas, detención por empresa e historial con confirmación del proveedor.
+No se enviaron correos reales ni se ejecutaron búsquedas reales en esta sesión.
+La detección automática de respuestas, OCR y ranking semántico avanzado siguen
+pendientes. Una confirmación de Gmail demuestra aceptación de la operación,
+no entrega al destinatario ni una respuesta.

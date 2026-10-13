@@ -73,12 +73,53 @@ un mensaje, GitHub ni en un campo `EXPO_PUBLIC_…`. El nombre de variable
 
 El código se toma de
 [ramalhectornano-sys/miapp, rama trabajo-ya-real](https://github.com/ramalhectornano-sys/miapp/tree/trabajo-ya-real).
-No selecciones la rama de la demostración.
+El archivo `render.yaml` ya está en la raíz de esa rama y contiene tu URL y
+clave pública de Supabase. El camino más corto es **Blueprint**: solo tenés
+que completar las dos claves privadas en Render.
 
 1. Abrí [Render](https://dashboard.render.com/) y creá tu cuenta con GitHub.
-2. Tocá **New → Web Service**. Conectá tu repositorio `miapp`. Si usás otra
-   cuenta, podés usar la URL del repositorio público.
-3. Configurá el servicio:
+   Usá el workspace **Hobby** para estas pruebas.
+2. Tocá **New → Blueprint**. Conectá GitHub si Render lo pide y elegí
+   **ramalhectornano-sys/miapp → Connect**. Si el repositorio no aparece,
+   autorizá el acceso de Render a `miapp` desde la conexión de GitHub.
+3. Poné `Trabajo YA` como nombre del Blueprint, elegí la rama
+   **trabajo-ya-real** y dejá **Blueprint Path: `render.yaml`**.
+4. Render te pedirá únicamente estos valores. Pegalos **solo en su panel**:
+
+| Campo de Render | Qué pegar |
+| --- | --- |
+| `SUPABASE_SERVICE_ROLE_KEY` | Tu clave **Secret key** (`sb_secret_…`) o antigua `service_role`, desde Supabase → Settings → API Keys. |
+| `AI_API_KEY` | Tu clave de Groq, desde [API Keys](https://console.groq.com/keys). Usá una nueva si compartiste la anterior. |
+
+5. Revisá que el resumen muestre **un Web Service `trabajo-ya-api` con plan
+   Free**. No agrega una base de datos de Render ni un worker. Tocá
+   **Deploy Blueprint**. Si el panel ofrece otro plan o pide un pago, no
+   aceptes un cambio de plan para seguir esta ruta gratuita; usá la alternativa
+   Web Service de abajo y elegí Free.
+6. Esperá el estado **Live** del servicio `trabajo-ya-api`. Abrilo y copiá la
+   **URL HTTPS** que Render le asignó. Esa URL es el dato que falta para
+   conectar la APK con tu servidor. No compartas las dos claves privadas.
+
+No necesitás credenciales de Google OAuth para probar perfil y chat. El
+Blueprint ya configura Groq, el puerto, `/health` y los envíos desactivados.
+El plan **Hobby** del workspace y el plan **Free** del servicio son ajustes
+distintos: revisá ambos. El soporte de `plan: free` está documentado en la
+[referencia oficial de Blueprint](https://render.com/docs/blueprint-spec), y
+el flujo aparece en la [guía oficial de creación](https://render.com/docs/infrastructure-as-code).
+
+Si Render muestra un error al leer el Blueprint, revisá primero la rama y la
+ruta `render.yaml`. Si pide verificar la cuenta, completá la verificación que
+muestre el proveedor; no podemos confirmar de antemano las verificaciones de
+cada cuenta. No crees un segundo servicio si el primero ya se desplegó.
+
+### Alternativa: formulario Web Service
+
+Usá esta alternativa si no podés crear el Blueprint; permite seleccionar Free
+manualmente. No uses ambas rutas para crear dos servicios.
+
+1. En Render tocá **New → Web Service** y conectá `miapp`. Si usás otra cuenta,
+   podés usar la URL del repositorio público.
+2. Configurá:
 
 | Campo | Valor |
 | --- | --- |
@@ -92,7 +133,7 @@ No selecciones la rama de la demostración.
 | Health Check Path | `/health` |
 | Auto-Deploy | **Off**, para actualizar cuando decidas |
 
-4. En **Advanced → Docker Command**, pegá este comando completo:
+3. En **Advanced → Docker Command**, pegá este comando completo:
 
 ```sh
 sh -c 'exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --no-access-log'
@@ -102,7 +143,7 @@ Render asigna el puerto por la variable `PORT`. El comando respeta ese valor,
 escucha en todas las interfaces y evita guardar las URL de las solicitudes en
 el registro de acceso. No cambies el Dockerfile para cargar secretos.
 
-5. En **Environment Variables**, agregá:
+4. En **Environment Variables**, agregá:
 
 | Nombre | Valor |
 | --- | --- |
@@ -127,20 +168,12 @@ La app Android nativa no necesita CORS. El valor `[]` es correcto. Si después
 publicás una versión web, agregá únicamente los orígenes HTTPS de esa web en un
 array JSON; no hace falta permitir cualquier origen.
 
-6. Revisá que **Instance Type siga siendo Free** y tocá **Create Web Service**.
+5. Revisá que **Instance Type siga siendo Free** y tocá **Create Web Service**.
    Esperá el estado **Live**. Render mostrará la URL HTTPS asignada: guardala.
    No hay una URL de servidor real hasta que ese despliegue termine.
 
-### Alternativa: Blueprint
-
-El archivo [render.yaml](../../render.yaml) contiene estos ajustes sin secretos.
-Si está en la raíz del repositorio, podés usar **New → Blueprint**, elegir `miapp`
-y la rama `trabajo-ya-real`. Si el archivo está dentro de `trabajo-ya/`, indicá
-`trabajo-ya/render.yaml` como **Blueprint Path**. La URL y clave pública de tu
-Supabase ya están cargadas. Render te pedirá únicamente las dos claves privadas
-marcadas `sync: false`: Supabase y Groq. Se cargan directamente en ese panel.
-
-Creá **un solo servicio**, mediante formulario o Blueprint. Si usás un fork o
+El archivo [render.yaml](../../render.yaml) describe la configuración equivalente
+del Blueprint. Si usás un fork o
 una estructura distinta de carpetas, ajustá `repo`, `branch` y `rootDir` antes
 de desplegar. Las rutas del Dockerfile y del contexto se resuelven desde
 `rootDir`, según la [guía oficial de monorepos](https://render.com/docs/monorepo-support).
