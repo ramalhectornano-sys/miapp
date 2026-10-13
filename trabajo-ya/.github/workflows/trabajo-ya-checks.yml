@@ -74,6 +74,25 @@ jobs:
         run: |
           python -m unittest discover -s tests -q
           python -m compileall -q app
+      - name: Construir el contenedor y comprobar el arranque usado por Render
+        run: |
+          docker build --tag trabajo-ya-api-ci "$PROJECT_DIR/backend"
+          docker run --detach --name trabajo-ya-api-ci --publish 127.0.0.1:18743:18743 --env PORT=18743 --env AI_PROVIDER=demo trabajo-ya-api-ci /app/start.sh
+          trap 'docker rm --force trabajo-ya-api-ci >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18743/health > /tmp/trabajo-ya-health.json; then
+              python - <<'PY'
+          import json
+          from pathlib import Path
+          assert json.loads(Path('/tmp/trabajo-ya-health.json').read_text())['status'] == 'ok'
+          print('Contenedor: HTTP 200 en PORT asignado; prueba de arranque sin servicios privados.')
+          PY
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs trabajo-ya-api-ci
+          exit 1
       - name: Comprobar las migraciones y permisos de usuarios
         working-directory: ${{ env.PROJECT_DIR }}/supabase
         run: npm test

@@ -113,7 +113,7 @@ def backend_source():
         raise SetupError("El directorio app debe contener código local, sin enlaces simbólicos.")
     with tempfile.TemporaryDirectory(prefix="trabajo-ya-backend-source-") as folder:
         target_root = Path(folder)
-        sources = [BACKEND / "Dockerfile", BACKEND / "requirements.txt"]
+        sources = [BACKEND / "Dockerfile", BACKEND / "requirements.txt", BACKEND / "start.sh"]
         sources.extend(sorted((BACKEND / "app").rglob("*.py")))
         for source in sources:
             relative = source.relative_to(BACKEND)

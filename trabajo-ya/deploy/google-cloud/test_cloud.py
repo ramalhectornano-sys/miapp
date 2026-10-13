@@ -256,13 +256,13 @@ class DeploymentSafetyTests(unittest.TestCase):
             backend = Path(folder)
             (backend / "app" / "services").mkdir(parents=True)
             (backend / "app" / "__pycache__").mkdir()
-            for path in ("Dockerfile", "requirements.txt", "app/main.py", "app/worker.py", "app/services/__init__.py"):
+            for path in ("Dockerfile", "requirements.txt", "start.sh", "app/main.py", "app/worker.py", "app/services/__init__.py"):
                 (backend / path).write_text("public code")
             for path in (".env", "app/cv.pdf", "app/tokens.json", "app/notes.txt", "app/__pycache__/cached.py"):
                 (backend / path).write_text("private contents")
             with patch.object(cloud, "BACKEND", backend), cloud.backend_source() as staged:
                 included = {str(path.relative_to(staged)) for path in staged.rglob("*") if path.is_file()}
-                self.assertEqual(included, {"Dockerfile", "requirements.txt", "app/main.py", "app/worker.py", "app/services/__init__.py"})
+                self.assertEqual(included, {"Dockerfile", "requirements.txt", "start.sh", "app/main.py", "app/worker.py", "app/services/__init__.py"})
             self.assertFalse(staged.exists())
 
     def test_callback_log_exclusion_preserves_other_sink_filters(self):

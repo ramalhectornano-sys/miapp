@@ -11,7 +11,7 @@ services:
     rootDir: trabajo-ya/backend
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerCommand: sh -c 'exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --no-access-log'
+    dockerCommand: /app/start.sh
     healthCheckPath: /health
     autoDeployTrigger: off
     envVars:

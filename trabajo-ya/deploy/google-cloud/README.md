@@ -320,7 +320,7 @@ Los archivos del directorio son:
 - `test_cloud.py`: pruebas locales con comandos cloud simulados, sin crear recursos.
 
 Además, la herramienta construye una carpeta temporal con la lista explícita de
-fuentes antes de subirla: Dockerfile, requirements y módulos Python de `app`.
+fuentes antes de subirla: Dockerfile, requirements, `start.sh` y módulos Python de `app`.
 Los CV, archivos JSON de tokens, `.env` y otros documentos no se copian a esa
 carpeta, independientemente del comportamiento de los archivos de exclusión.
 

@@ -112,6 +112,33 @@ ruta `render.yaml`. Si pide verificar la cuenta, completá la verificación que
 muestre el proveedor; no podemos confirmar de antemano las verificaciones de
 cada cuenta. No crees un segundo servicio si el primero ya se desplegó.
 
+### Si el servidor ya existe y quedó Failed
+
+Para aplicar la corrección del arranque usá el mismo servicio, sin volver a
+crear cuentas ni pegar sus claves:
+
+1. En Render abrí **trabajo-ya-api → Settings → Build & Deploy**.
+2. En **Docker Command → Edit**, reemplazá el comando anterior por este único
+   valor, sin comillas ni argumentos adicionales:
+
+```text
+/app/start.sh
+```
+
+3. Tocá **Save Changes**. Verificá que la rama siga siendo **trabajo-ya-real**.
+4. Abrí **Manual Deploy → Deploy latest commit**, para construir la versión
+   que incluye el archivo de arranque corregido. No uses **Restart service**:
+   esa opción reinicia la misma versión anterior.
+5. Esperá **Live** y después abrí la URL del servicio seguida de `/health`.
+   Si vuelve a fallar, abrí ese despliegue y copiá las últimas líneas del log
+   que muestran el error, sin mostrar claves del panel Environment.
+
+El archivo `start.sh` se incluye dentro de la imagen Docker. No tenés que
+subirlo a Render manualmente. El comando y las opciones de despliegue están
+explicados en las guías oficiales de
+[Docker](https://render.com/docs/docker) y
+[despliegues manuales](https://render.com/docs/deploys).
+
 ### Alternativa: formulario Web Service
 
 Usá esta alternativa si no podés crear el Blueprint; permite seleccionar Free
@@ -135,13 +162,14 @@ manualmente. No uses ambas rutas para crear dos servicios.
 
 3. En **Advanced → Docker Command**, pegá este comando completo:
 
-```sh
-sh -c 'exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --no-access-log'
+```text
+/app/start.sh
 ```
 
-Render asigna el puerto por la variable `PORT`. El comando respeta ese valor,
+Render asigna el puerto por la variable `PORT`. El archivo de arranque respeta ese valor,
 escucha en todas las interfaces y evita guardar las URL de las solicitudes en
-el registro de acceso. No cambies el Dockerfile para cargar secretos.
+el registro de acceso. Pegá solo `/app/start.sh`, sin envolverlo en `sh -c`.
+No cambies el Dockerfile para cargar secretos.
 
 4. En **Environment Variables**, agregá:
 

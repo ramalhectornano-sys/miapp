@@ -2,6 +2,7 @@
 **
 !Dockerfile
 !requirements.txt
+!start.sh
 !app
 !app/**/*.py
 app/**/__pycache__/
