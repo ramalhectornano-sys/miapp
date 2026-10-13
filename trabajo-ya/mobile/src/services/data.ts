@@ -164,7 +164,7 @@ export async function uploadResume(asset: UploadAsset): Promise<Resume> {
     p_id: id, p_name: filename.replace(/\.(pdf|docx)$/i, ''),
     p_original_filename: filename, p_object_path: path,
     p_mime_type: mime, p_size_bytes: bytes.byteLength,
-  }).single();
+  }).single<Record<string, unknown>>();
   if (result.error || !result.data) {
     const confirmation = await client.from('resume_versions').select('*').eq('id', id).eq('user_id', userId).maybeSingle();
     if (!confirmation.error && confirmation.data?.object_path === path) {
