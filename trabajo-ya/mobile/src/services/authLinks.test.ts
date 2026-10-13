@@ -110,8 +110,8 @@ test('el observador suscribe eventos antes de leer la URL de inicio y deduplica 
 
 test('desmontar el observador evita actualizar la pantalla con un intercambio pendiente', async () => {
   let complete!: (value: typeof session) => void;
-  const stop = observeAuthLinkEvents({ addEventListener: () => ({ remove() {} }), getInitialURL: async () => AUTH_CALLBACK_URL + '?code=code-one' },
-    { handle: () => new Promise(resolve => { complete = resolve; }) }, () => assert.fail('UI after unmount'), () => assert.fail('error after unmount'));
+  const stop = observeAuthLinkEvents<typeof session>({ addEventListener: () => ({ remove() {} }), getInitialURL: async () => AUTH_CALLBACK_URL + '?code=code-one' },
+    { handle: () => new Promise<typeof session | null>(resolve => { complete = resolve; }) }, () => assert.fail('UI after unmount'), () => assert.fail('error after unmount'));
   await drain();
   stop(); complete(session); await drain();
 });
