@@ -109,7 +109,7 @@ test('el observador suscribe eventos antes de leer la URL de inicio y deduplica 
 });
 
 test('desmontar el observador evita actualizar la pantalla con un intercambio pendiente', async () => {
-  let complete!: (session: typeof session) => void;
+  let complete!: (value: typeof session) => void;
   const stop = observeAuthLinkEvents({ addEventListener: () => ({ remove() {} }), getInitialURL: async () => AUTH_CALLBACK_URL + '?code=code-one' },
     { handle: () => new Promise(resolve => { complete = resolve; }) }, () => assert.fail('UI after unmount'), () => assert.fail('error after unmount'));
   await drain();
@@ -123,9 +123,11 @@ const sha256 = async (data: ArrayBuffer | ArrayBufferView) => {
 };
 
 test('el puente nativo produce SHA-256 de PKCE y conserva crypto existente', async () => {
-  const target: { crypto?: unknown } = {};
+  const target: { crypto?: unknown; TextEncoder?: unknown } = {};
   installPkceCrypto(target, { randomValues: randomFillSync, sha256 });
   const crypto = target.crypto as { subtle: { digest: (algorithm: string, data: Uint8Array) => Promise<ArrayBuffer> } };
+  const Encoder = target.TextEncoder as new () => { encode: (input: string) => Uint8Array };
+  for (const text of ['Trabajo YA', 'Neuquén 🚚', '\ud800']) assert.deepEqual(new Encoder().encode(text), new TextEncoder().encode(text));
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk'));
   assert.equal(Buffer.from(digest).toString('base64url'), 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM');
   await assert.rejects(crypto.subtle.digest('MD5', new Uint8Array()));

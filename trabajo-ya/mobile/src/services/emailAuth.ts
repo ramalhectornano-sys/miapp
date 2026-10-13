@@ -1,3 +1,5 @@
+import { AUTH_CALLBACK_URL } from './authLinks.ts';
+
 /** Passwordless authentication boundary, independent of React Native for testing. */
 export const EMAIL_REQUEST_ERROR = 'No pudimos enviar el correo de acceso. Esperá un minuto y volvé a intentarlo.';
 export const EMAIL_VERIFY_ERROR = 'No pudimos verificar el código. Revisalo o solicitá uno nuevo.';
@@ -35,5 +37,4 @@ export function createEmailAuth<Session>(auth: EmailAuthAdapter<Session>) {
     },
   };
 }
-import { AUTH_CALLBACK_URL } from './authLinks.ts';
 
