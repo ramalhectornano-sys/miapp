@@ -1,5 +1,5 @@
 {
-  "backend_url": "",
+  "backend_url": "https://trabajo-ya-api.onrender.com",
   "supabase_url": "https://ecdbcdbwcvwhawtzfkkk.supabase.co",
   "supabase_public_key": "sb_publishable_5Z141MlNoR3ZiYfUuwXk-A_A8TelFR7"
 }
