@@ -87,11 +87,18 @@ export async function saveProfile(profile: Profile): Promise<Profile> {
   });
   const { error } = await client.from('profiles').upsert({ user_id: userId, full_name: profile.full_name.trim(), city: profile.city.trim(), headline: profile.headline.trim(), photo_path: profile.photo_path ?? null });
   check(error, 'No se pudo guardar el perfil.');
-  for (const [table, rows] of [['work_experiences', experiences], ['credentials', credentials], ['professional_references', references]] as const) {
+  // Keep each upsert tied to its own row shape. Passing the union of these
+  // arrays directly to Supabase makes its generic overload infer one section.
+  const sections = [
+    ['work_experiences', experiences, () => client.from('work_experiences').upsert(experiences)],
+    ['credentials', credentials, () => client.from('credentials').upsert(credentials)],
+    ['professional_references', references, () => client.from('professional_references').upsert(references)],
+  ] as const;
+  for (const [table, rows, upsertRows] of sections) {
     const existing = await client.from(table).select('id').eq('user_id', userId);
     check(existing.error, 'No se pudo consultar el perfil antes de guardar.');
     if (rows.length) {
-      const result = await client.from(table).upsert(rows);
+      const result = await upsertRows();
       check(result.error, 'Una sección del perfil no se pudo guardar. Revisá los datos antes de volver a intentarlo.');
     }
     const kept = new Set(rows.map(row => row.id));

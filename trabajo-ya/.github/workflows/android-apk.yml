@@ -112,6 +112,7 @@ jobs:
         run: |
           mkdir -p output-apk
           cp android/app/build/outputs/apk/release/app-release.apk output-apk/Trabajo-YA-0.3.0-demo.apk
+          cp package-lock.json output-apk/package-lock.json
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs output-apk/Trabajo-YA-0.3.0-demo.apk > output-apk/certificado-prueba.txt
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging output-apk/Trabajo-YA-0.3.0-demo.apk > output-apk/apk-info.txt
           python3 - <<'PY'
@@ -139,6 +140,7 @@ jobs:
             ${{ steps.project.outputs.mobile_dir }}/output-apk/certificado-prueba.txt
             ${{ steps.project.outputs.mobile_dir }}/output-apk/apk-info.txt
             ${{ steps.project.outputs.mobile_dir }}/output-apk/commit-compilado.txt
+            ${{ steps.project.outputs.mobile_dir }}/output-apk/package-lock.json
           if-no-files-found: error
           retention-days: 30
 
@@ -160,7 +162,7 @@ jobs:
 
           Adjuntos: checksum SHA-256, huellas públicas del certificado, información del paquete y commit compilado. La APK fue verificada con apksigner y aapt antes de publicar.
           EOF
-          gh release create "$tag" Trabajo-YA-0.3.0-demo.apk Trabajo-YA-0.3.0-demo.apk.sha256 certificado-prueba.txt apk-info.txt commit-compilado.txt --prerelease --target "$GITHUB_SHA" --title 'Trabajo YA 0.3.0 — APK de demostración' --notes-file release-notes.md
+          gh release create "$tag" Trabajo-YA-0.3.0-demo.apk Trabajo-YA-0.3.0-demo.apk.sha256 certificado-prueba.txt apk-info.txt commit-compilado.txt package-lock.json --prerelease --target "$GITHUB_SHA" --title 'Trabajo YA 0.3.0 — APK de demostración' --notes-file release-notes.md
 
       - name: Mostrar instrucciones de descarga
         working-directory: .
