@@ -11,7 +11,7 @@ en el secreto del servidor `SUPABASE_SERVICE_ROLE_KEY`.
 ## Proyecto nuevo desde el celular
 
 La ruta más corta es ejecutar [install-new-project.sql](install-new-project.sql)
-una sola vez. El archivo reúne las **cinco migraciones originales en orden**, sin
+una sola vez. El archivo reúne las **seis migraciones en orden**, sin
 usuarios de demostración ni credenciales. Usá un proyecto Supabase nuevo, dedicado
 a Trabajo YA, antes de registrar usuarios en la app.
 
@@ -25,7 +25,8 @@ a Trabajo YA, antes de registrar usuarios en la app.
    otras, `profiles`, `job_searches` y `applications`. En Storage deben aparecer
    `resumes` y `profile-photos` como buckets privados.
 5. Configurá Auth/SMTP y las claves públicas/privadas mediante los secretos y
-   variables de despliegue indicados en la [guía de Google Cloud](../deploy/google-cloud/README.md).
+   variables de la [guía de Render gratuito](../deploy/render/README.md) o la
+   [guía de Google Cloud](../deploy/google-cloud/README.md).
 
 El instalador comprueba el estado antes de crear objetos y usa una transacción
 completa: rechaza tablas, funciones, permisos o buckets de Trabajo YA existentes,
@@ -41,6 +42,13 @@ sin preparar una línea base del historial. Si usaste el archivo único, las
 actualizaciones se aplican con los nuevos archivos de migración, una vez y en
 orden; no vuelvas a ejecutar el instalador completo. En una base ya administrada
 por CLI, aplicá únicamente las migraciones pendientes con `supabase db push`.
+
+Si ya instalaste las migraciones 001 a 005, aplicá solamente
+[006: CV principal persistente](migrations/202610130006_persistent_primary_resume.sql).
+La nueva columna guarda la selección por usuario y la función de registro
+asocia el CV y su elección en una transacción. El perfil conserva sus otros
+datos. La clave foránea compuesta impide elegir CV de otra cuenta y limpia
+únicamente la selección al borrar ese documento.
 
 Para regenerar o comprobar el archivo, desde la raíz del proyecto:
 
@@ -172,7 +180,7 @@ Storage firmado, workers concurrentes y el proveedor real en cuentas de prueba.
 
 La exclusión mutua real también tiene un harness opcional con **24 procesos psql
 concurrentes**, dos búsquedas con zonas diferentes y reservas automáticas/manuales.
-Requiere las cinco migraciones ya aplicadas a Supabase local, psql y conexión como
+Requiere las seis migraciones ya aplicadas a Supabase local, psql y conexión como
 administrador. Solo admite localhost, crea su propia cuenta ficticia aleatoria,
 comprueba exactamente diez reservas y cero recibos, y borra su fixture al terminar.
 No se ejecutó en este entorno porque no hay PostgreSQL instalado:

@@ -1,8 +1,12 @@
 # Trabajo YA
 
-[Descargar APK de demostración para Android](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk).
-Ya está compilada y publicada; incluye ejemplos identificados y funciona sin
-Expo Go. [Instalación y límites de esta demo](docs/APK_GITHUB.md).
+**La aplicación real todavía requiere crear Supabase y desplegar el servidor.**
+El código 0.3.1 corrige el guardado de fotos y del CV principal. Seguí la
+[configuración gratuita para pruebas](deploy/render/README.md) y la
+[compilación de la APK conectada](docs/APK_REAL.md).
+
+La [APK 0.3.0 publicada](docs/APK_GITHUB.md) es únicamente una demostración:
+no conecta IA ni guarda perfil, fotos o CV en el servidor.
 
 Para activar el proyecto desde el celular, empezar por [EMPEZAR](EMPEZAR.md).
 Para conectar el modelo real, consultar [IA real con Groq](docs/IA_REAL.md).

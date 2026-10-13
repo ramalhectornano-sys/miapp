@@ -1,5 +1,10 @@
 # Trabajo YA: lo que falta activar
 
+Para crear cuentas gratuitas y activar chat, perfil, fotos y CV desde el celular,
+seguí [Supabase Free y Render Free](deploy/render/README.md). Después se compila
+la [APK conectada](docs/APK_REAL.md); todavía no está publicada. Las búsquedas
+programadas necesitan la infraestructura adicional descrita abajo.
+
 Para instalar y recorrer la aplicación, ya está disponible la
 [APK de demostración Trabajo YA 0.3.0](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk).
 No requiere Expo Go. Usa ejemplos identificados y no conecta IA ni envía correos;
@@ -15,7 +20,7 @@ cargan en tus cuentas, sin escribirlas en el código ni enviarlas por chat.
 Entrar a [Supabase](https://supabase.com/dashboard) y crear un proyecto Free propio.
 En un **proyecto nuevo sin usuarios de la app ni instalación anterior**, abrir
 SQL Editor, copiar `supabase/install-new-project.sql` y ejecutar el archivo completo.
-Incluye las cinco migraciones en una transacción y se detiene si detecta una
+Incluye las seis migraciones en una transacción y se detiene si detecta una
 instalación previa. No lo combines con la ejecución individual de esas migraciones.
 No elimina datos para intentar instalar. La guía de actualizaciones está en
 [Supabase](supabase/README.md).

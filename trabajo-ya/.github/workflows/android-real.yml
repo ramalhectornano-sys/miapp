@@ -1,0 +1,205 @@
+name: APK real de Trabajo YA
+
+on:
+  push:
+    branches: [trabajo-ya-real]
+    paths:
+      - trabajo-ya/mobile/services.public.json
+      - mobile/services.public.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: trabajo-ya-real-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-real:
+    name: Compilar APK conectada a servicios reales
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      CI: '1'
+      EXPO_NO_DOTENV: '1'
+      EXPO_PUBLIC_DEMO_MODE: 'false'
+      TRABAJO_YA_BUILD_MODE: real
+
+    steps:
+      - name: Obtener el proyecto
+        uses: actions/checkout@v4
+
+      - name: Detectar la carpeta del proyecto
+        id: project
+        run: |
+          if [[ -f trabajo-ya/mobile/package.json ]]; then
+            echo 'root_dir=trabajo-ya' >> "$GITHUB_OUTPUT"
+            echo 'mobile_dir=trabajo-ya/mobile' >> "$GITHUB_OUTPUT"
+          elif [[ -f mobile/package.json ]]; then
+            echo 'root_dir=.' >> "$GITHUB_OUTPUT"
+            echo 'mobile_dir=mobile' >> "$GITHUB_OUTPUT"
+          else
+            echo '::error::No se encuentra el proyecto móvil de Trabajo YA.'
+            exit 1
+          fi
+
+      # Sin servicios reales la ejecución termina aquí, antes de instalar
+      # dependencias o herramientas nativas. No existe alternativa demo.
+      - name: Validar servicios públicos y comprobar el backend
+        working-directory: ${{ steps.project.outputs.root_dir }}
+        run: python3 scripts/prepare_android_real.py --mobile-dir mobile --check-health --github-env "$GITHUB_ENV"
+
+      - name: Preparar Node.js compatible con Expo SDK 54
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validar el perfil real de Expo antes de prebuild
+        working-directory: ${{ steps.project.outputs.mobile_dir }}
+        run: |
+          node <<'JS'
+          const configure = require('./app.config.js');
+          const app = require('./app.json').expo;
+          configure.validateRealBuild(process.env);
+          configure({ config: app });
+          console.log('Perfil real de Expo validado; demo=false.');
+          JS
+
+      - name: Preparar Java para Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar las herramientas de Android
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+
+      - name: Instalar Android SDK 36 y herramientas de compilación
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
+
+      - name: Instalar las dependencias de la app
+        working-directory: ${{ steps.project.outputs.mobile_dir }}
+        run: npm install --no-audit --no-fund
+
+      - name: Verificar tipos y pruebas de la app
+        working-directory: ${{ steps.project.outputs.mobile_dir }}
+        run: |
+          npm run typecheck
+          npm test
+
+      - name: Generar el proyecto Android real de Expo
+        working-directory: ${{ steps.project.outputs.mobile_dir }}
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Comprobar identidad y firma de prueba del proyecto nativo
+        working-directory: ${{ steps.project.outputs.mobile_dir }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import pathlib
+          import re
+
+          app = json.loads(pathlib.Path('app.json').read_text())['expo']
+          assert app['name'] == 'Trabajo YA', 'Nombre inesperado de la app'
+          assert app['version'] == os.environ['TRABAJO_YA_VERSION'], 'Versión pública inconsistente'
+          assert str(app['android']['versionCode']) == os.environ['TRABAJO_YA_VERSION_CODE'], 'versionCode inconsistente'
+          assert app['android']['package'] == os.environ['TRABAJO_YA_ANDROID_PACKAGE'], 'Paquete Android inesperado'
+          assert os.environ['EXPO_PUBLIC_DEMO_MODE'] == 'false', 'Esta compilación requiere modo real'
+          assert os.environ['TRABAJO_YA_BUILD_MODE'] == 'real', 'Perfil incorrecto de compilación'
+          gradle = pathlib.Path('android/app/build.gradle').read_text()
+          assert re.search(r'release\s*\{[\s\S]*?signingConfig\s+signingConfigs\.debug', gradle), 'Falta la firma debug de la APK de prueba'
+          assert pathlib.Path('android/app/debug.keystore').is_file(), 'Falta el certificado debug de Expo'
+          PY
+
+      - name: Preparar Gradle y su caché
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compilar APK real con JavaScript y recursos incluidos
+        working-directory: ${{ steps.project.outputs.mobile_dir }}/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --max-workers=2 '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g' -PreactNativeArchitectures=arm64-v8a,armeabi-v7a :app:assembleRelease
+
+      - name: Verificar firma, paquete y versión de la APK
+        working-directory: ${{ steps.project.outputs.mobile_dir }}
+        run: |
+          mkdir -p output-apk
+          cp android/app/build/outputs/apk/release/app-release.apk "output-apk/$TRABAJO_YA_APK_FILE"
+          cp package-lock.json output-apk/package-lock.json
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "output-apk/$TRABAJO_YA_APK_FILE" > output-apk/certificado-prueba.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "output-apk/$TRABAJO_YA_APK_FILE" > output-apk/apk-info.txt
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import re
+
+          info = pathlib.Path('output-apk/apk-info.txt').read_text()
+          fields = dict(re.findall(r"(\w+)='([^']*)'", info.splitlines()[0]))
+          expected = {'name': os.environ['TRABAJO_YA_ANDROID_PACKAGE'], 'versionCode': os.environ['TRABAJO_YA_VERSION_CODE'], 'versionName': os.environ['TRABAJO_YA_VERSION']}
+          assert all(fields.get(key) == value for key, value in expected.items()), 'Paquete o versión incorrectos en la APK'
+          assert "application-label:'Trabajo YA'" in info, 'Nombre incorrecto en la APK'
+          PY
+          cd output-apk
+          sha256sum "$TRABAJO_YA_APK_FILE" > "$TRABAJO_YA_APK_FILE.sha256"
+          printf '%s\n' "$GITHUB_SHA" > commit-compilado.txt
+
+      - name: Guardar APK real, checksum y comprobantes
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TRABAJO_YA_ARTIFACT_NAME }}
+          path: |
+            ${{ steps.project.outputs.mobile_dir }}/output-apk/${{ env.TRABAJO_YA_APK_FILE }}
+            ${{ steps.project.outputs.mobile_dir }}/output-apk/${{ env.TRABAJO_YA_APK_FILE }}.sha256
+            ${{ steps.project.outputs.mobile_dir }}/output-apk/certificado-prueba.txt
+            ${{ steps.project.outputs.mobile_dir }}/output-apk/apk-info.txt
+            ${{ steps.project.outputs.mobile_dir }}/output-apk/commit-compilado.txt
+            ${{ steps.project.outputs.mobile_dir }}/output-apk/package-lock.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publicar APK real verificada como versión de prueba
+        working-directory: ${{ steps.project.outputs.mobile_dir }}/output-apk
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$TRABAJO_YA_RELEASE_TAG" > /dev/null 2>&1; then
+            echo '::error::Esta versión real ya existe y no se reemplazará. Incrementá version y versionCode en mobile/app.json para publicar otra.'
+            exit 1
+          fi
+          python3 - <<'PY'
+          import os
+          import pathlib
+
+          version = os.environ['TRABAJO_YA_VERSION']
+          filename = os.environ['TRABAJO_YA_APK_FILE']
+          notes = f'''APK de prueba de Trabajo YA {version}, compilada con modo real (demo=false) y URLs públicas configuradas. Descargá {filename}; no requiere Expo Go.
+
+          La configuración se validó y /health indicó Supabase configurado e IA configured_unverified. Esta comprobación no confirma por sí sola una respuesta del modelo, acceso por OTP, guardado de fotos/CV ni envíos de Gmail. Esas pruebas de integración todavía deben realizarse con una cuenta real en Android.
+
+          Incluye firma debug de prueba; no es una publicación de producción ni una firma privada para Google Play. La APK no contiene claves privadas de IA, Supabase o Gmail.
+
+          Adjuntos: checksum SHA-256, huellas públicas del certificado, información del paquete y commit compilado. apksigner y aapt verificaron la APK antes de publicar.
+          '''
+          pathlib.Path('release-notes.md').write_text(notes, encoding='utf-8')
+          PY
+          gh release create "$TRABAJO_YA_RELEASE_TAG" "$TRABAJO_YA_APK_FILE" "$TRABAJO_YA_APK_FILE.sha256" certificado-prueba.txt apk-info.txt commit-compilado.txt package-lock.json --prerelease --target "$GITHUB_SHA" --title "Trabajo YA $TRABAJO_YA_VERSION — APK real de prueba" --notes-file release-notes.md
+
+      - name: Mostrar el resultado de la compilación real
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+
+          with pathlib.Path(os.environ['GITHUB_STEP_SUMMARY']).open('a', encoding='utf-8') as handle:
+              handle.write(f"APK real de prueba: **{os.environ['TRABAJO_YA_APK_FILE']}**. Descargala en Releases ({os.environ['TRABAJO_YA_RELEASE_TAG']}) o Artifacts.\n\n")
+              handle.write("La compilación usa demo=false y servicios públicos configurados. /health confirma configuración, no respuestas reales de IA ni guardado de datos. Probá OTP, chat, foto, CV y persistencia en Android antes de considerar terminada la integración. La firma es debug de prueba.\n")
+          PY

@@ -4,14 +4,15 @@
 -- Ejecutar el archivo COMPLETO una sola vez en SQL Editor, con rol postgres.
 -- No ejecutar sobre una instalación existente ni combinar con supabase db push.
 -- No contiene usuarios de prueba, semillas ni credenciales privadas.
--- Cantidad de migraciones: 5
--- SHA-256 del conjunto (nombre + NUL + SQL + NUL): 2a7d32f2def6d324c41d741373b92f8a7f9ab9d5a1b757c548cb1260a5a0186f
+-- Cantidad de migraciones: 6
+-- SHA-256 del conjunto (nombre + NUL + SQL + NUL): de7004bfbd6416e6e56bf835d1faca9087abb24aa5bb4a7efb901ff6c54b73f0
 -- Manifiesto SHA-256 de los archivos originales, en orden de aplicación:
 -- 202610120001_initial.sql  0b85b7ac2b14abe96d979c862a0de6947563cdb7e715e2c1baaf64f7574e4418
 -- 202610120002_manual_search.sql  0fde00355d4126c4515708197880f2359d5b60bee065d5a93fa8d8952c9031ad
 -- 202610120003_claim_fencing.sql  90a3e6f99eff20df458e5ef526ab514dbe016f39dacdb032c717dcc8daf30c12
 -- 202610120004_automatic_sending_policy.sql  63d50c0b31382ee084629c9d36d5971fb9f4d1f75981257c59ab5c2f75078711
 -- 202610120005_daily_budget_and_followups.sql  65bc6eed3e81706dd48e68329988d92887c4402ec9c7b6c25c17249aee7728a2
+-- 202610130006_persistent_primary_resume.sql  bd66329cb41706d4ecce5d333af68bf60a232f254f3bc476d95e3a8e1eeaeca0
 
 BEGIN;
 
@@ -41,7 +42,7 @@ begin
   select pg_catalog.array_agg(distinct n.nspname || '.' || p.proname) into existing_objects
     from pg_catalog.pg_proc as p
     join pg_catalog.pg_namespace as n on n.oid = p.pronamespace
-    where n.nspname || '.' || p.proname = any(array['private.current_job_match','private.delivery_budget_available','private.freeze_sending_timezone','private.handle_new_user','private.preserve_delivery_evidence','private.protect_delivered_resume_object','private.touch_updated_at','private.validate_fresh_match','public.assert_search_claim','public.claim_application_send','public.claim_due_searches','public.claim_search_now','public.complete_search_run','public.consume_oauth_state','public.create_initial_application','public.get_email_secret','public.grant_sending_consent','public.prepare_automatic_application','public.prepare_followup_application','public.revoke_sending_consent','public.stop_recipient_followups','public.store_email_secret','public.store_oauth_state','public.valid_timezone','public.valid_weekdays']::text[]);
+    where n.nspname || '.' || p.proname = any(array['private.current_job_match','private.delivery_budget_available','private.freeze_sending_timezone','private.handle_new_user','private.preserve_delivery_evidence','private.protect_delivered_resume_object','private.touch_updated_at','private.validate_fresh_match','public.assert_search_claim','public.claim_application_send','public.claim_due_searches','public.claim_search_now','public.complete_search_run','public.consume_oauth_state','public.create_initial_application','public.get_email_secret','public.grant_sending_consent','public.prepare_automatic_application','public.prepare_followup_application','public.register_resume_version','public.revoke_sending_consent','public.stop_recipient_followups','public.store_email_secret','public.store_oauth_state','public.valid_timezone','public.valid_weekdays']::text[]);
   if existing_objects is not null then
     raise exception 'Trabajo YA: ya existen funciones de la aplicación. No se cambió nada. Aplicá solo las migraciones pendientes en ese proyecto.';
   end if;
@@ -1429,6 +1430,46 @@ grant execute on function public.grant_sending_consent(uuid,uuid,uuid,uuid,text[
 -- CREATE OR REPLACE conserva ACL de prepare/claim/revoke; las funciones nuevas
 -- de triggers solo se ejecutan por los triggers, con privilegios del servidor.
 -- ===== FIN MIGRACIÓN: 202610120005_daily_budget_and_followups.sql =====
+
+-- ===== INICIO MIGRACIÓN: 202610130006_persistent_primary_resume.sql =====
+-- Persist the primary CV in the account rather than in one app session.
+alter table public.profiles add column preferred_resume_id uuid;
+alter table public.profiles add constraint profile_preferred_resume_owner
+  foreign key (user_id, preferred_resume_id)
+  references public.resume_versions(user_id, id)
+  on delete set null (preferred_resume_id);
+
+-- Register the uploaded object and select it as primary in one transaction.
+-- The caller keeps its own RLS permissions; this function cannot read or write
+-- another account's CV, and object ownership/size/type constraints still apply.
+create function public.register_resume_version(
+  p_id uuid, p_name text, p_original_filename text, p_object_path text,
+  p_mime_type text, p_size_bytes bigint
+) returns setof public.resume_versions
+language plpgsql security invoker set search_path = '' as $$
+declare
+  owner_id uuid := auth.uid();
+  registered public.resume_versions;
+begin
+  if owner_id is null then
+    raise exception 'Authentication required' using errcode = '42501';
+  end if;
+  insert into public.resume_versions(
+    id, user_id, name, original_filename, object_path, mime_type, size_bytes
+  ) values (
+    p_id, owner_id, p_name, p_original_filename, p_object_path, p_mime_type, p_size_bytes
+  ) returning * into registered;
+  insert into public.profiles(user_id, preferred_resume_id)
+  values (owner_id, p_id)
+  on conflict (user_id) do update set preferred_resume_id = excluded.preferred_resume_id;
+  return next registered;
+end;
+$$;
+revoke all on function public.register_resume_version(uuid,text,text,text,text,bigint)
+  from public, anon;
+grant execute on function public.register_resume_version(uuid,text,text,text,text,bigint)
+  to authenticated;
+-- ===== FIN MIGRACIÓN: 202610130006_persistent_primary_resume.sql =====
 
 -- Commit confirma únicamente el esquema; no verifica IA, Gmail ni tareas.
 COMMIT;

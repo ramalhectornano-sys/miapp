@@ -26,11 +26,12 @@ class DatabaseInstallTests(unittest.TestCase):
         self.assertEqual(installed, expected)
         self.assertEqual(installer.render_bundle(self.migrations), expected)
 
-    def test_all_five_original_migrations_are_ordered_and_preserved(self):
+    def test_all_migrations_are_ordered_and_preserved(self):
         self.assertEqual([migration.name for migration in self.migrations], [
             "202610120001_initial.sql", "202610120002_manual_search.sql",
             "202610120003_claim_fencing.sql", "202610120004_automatic_sending_policy.sql",
             "202610120005_daily_budget_and_followups.sql",
+            "202610130006_persistent_primary_resume.sql",
         ])
         bundle = installer.render_bundle(self.migrations)
         positions = []
@@ -121,7 +122,7 @@ class DatabaseInstallTests(unittest.TestCase):
             bundle = installer.render_bundle(installer.load_migrations(migrations))
             self.assertNotIn("TEST_FIXTURE_NEVER_INSTALL", bundle)
             self.assertNotIn("PRIVATE_FIXTURE_NEVER_INSTALL", bundle)
-            self.assertEqual(len(installer.load_migrations(migrations)), 5)
+            self.assertEqual(len(installer.load_migrations(migrations)), len(self.migrations))
 
     def test_invalid_duplicate_versions_and_incomplete_sources_fail(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -10,7 +10,7 @@ interface Props {
   configured: boolean;
   onRequestCode: (email: string, name?: string) => Promise<void>;
   onVerifyCode: (email: string, token: string) => Promise<void>;
-  onDemo: () => void;
+  onDemo?: () => void;
 }
 
 export default function AuthScreen({ configured, onRequestCode, onVerifyCode, onDemo }: Props) {
@@ -37,7 +37,7 @@ export default function AuthScreen({ configured, onRequestCode, onVerifyCode, on
   const requestCode = async () => {
     if (operationPending.current || emailCodeWaitSeconds(challenge, Date.now()) > 0) return;
     setFeedback(null);
-    if (!configured) { setFeedback({ text: 'Para crear una cuenta real, configurá Supabase según las instrucciones del proyecto. Podés recorrer la demostración ahora.', error: true }); return; }
+    if (!configured) { setFeedback({ text: 'El acceso a tu cuenta todavía no está disponible. Intentá nuevamente cuando se configure el servicio de la aplicación.', error: true }); return; }
     const email = challenge.requestedEmail ?? normalizeEmail(challenge.email);
     if (!isValidEmail(email)) { setFeedback({ text: 'Ingresá un correo electrónico válido.', error: true }); return; }
     operationPending.current = true;
@@ -90,9 +90,11 @@ export default function AuthScreen({ configured, onRequestCode, onVerifyCode, on
             <Button label={waitSeconds > 0 ? `Reenviar código en ${waitSeconds}s` : 'Reenviar código'} variant="ghost" onPress={() => void requestCode()} disabled={busy || waitSeconds > 0} />
             <Pressable onPress={() => { if (operationPending.current) return; setChallenge(editEmailChallenge); setFeedback(null); }} disabled={busy} accessibilityRole="button"><Text style={{ color: colors.primary, fontSize: 12, textAlign: 'center' }}>Cambiar correo</Text></Pressable>
           </View> : null}
-          <View style={{ height: 1, backgroundColor: colors.border }} />
-          <Button label="Explorar demostración" variant="secondary" icon="sparkles-outline" onPress={onDemo} disabled={busy} />
-          <Text style={{ color: colors.muted, fontSize: 10, lineHeight: 18, textAlign: 'center' }}>La demostración usa ejemplos identificados. No se ejecutan búsquedas ni se envían correos.</Text>
+          {onDemo ? <>
+            <View style={{ height: 1, backgroundColor: colors.border }} />
+            <Button label="Explorar demostración" variant="secondary" icon="sparkles-outline" onPress={onDemo} disabled={busy} />
+            <Text style={{ color: colors.muted, fontSize: 10, lineHeight: 18, textAlign: 'center' }}>La demostración usa ejemplos identificados. No se ejecutan búsquedas ni se envían correos.</Text>
+          </> : null}
         </Card>
       </View>
       <Text style={{ color: colors.muted, fontSize: 10, lineHeight: 18, textAlign: 'center', marginTop: 45 }}>Tu currículum y tus datos se guardan de forma privada en tu cuenta.</Text>

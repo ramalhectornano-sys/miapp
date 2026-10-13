@@ -6,11 +6,16 @@ import { deleteResumeDocument, mapApplication } from './backend';
 import { requireSession, requireSupabase } from './supabase';
 
 export type UploadAsset = { uri: string; name?: string; mimeType?: string | null; size?: number; file?: File };
-const selectedResumes = new Map<string, string>();
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ensureId = (id: string) => uuidPattern.test(id) ? id : Crypto.randomUUID();
 
 function check(error: unknown, message: string) { if (error) throw new Error(message); }
+function databaseRejected(error: unknown): boolean {
+  // SQLSTATE/PostgREST codes come from a server rejection. A fetch/timeout
+  // failure gives no assurance that the database transaction did not commit.
+  const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
+  return /^(?:[0-9]{2}[0-9A-Z]{3}|P[0-9]{4}|XX[0-9]{3}|PGRST\d+)$/.test(code);
+}
 export const emptyProfile = (): Profile => ({ full_name: '', city: '', headline: '', photo_path: null, experiences: [], credentials: [], references: [] });
 
 export function mapResume(row: Record<string, unknown>, isDefault = false): Resume {
@@ -39,7 +44,7 @@ export async function loadState(): Promise<AppState> {
   results.forEach(result => check(result.error, 'No se pudieron cargar tus datos privados. Intentá nuevamente.'));
   const [identity, experiences, credentials, references, resumes, searches, applications, messages, consents, connections, suppressions] = results;
   const base = identity.data ?? emptyProfile();
-  const preferred = selectedResumes.get(userId);
+  const preferred = identity.data?.preferred_resume_id;
   const defaultId = resumes.data?.some(row => row.id === preferred) ? preferred : resumes.data?.[0]?.id;
   return {
     profile: { full_name: base.full_name ?? '', city: base.city ?? '', headline: base.headline ?? '', photo_path: base.photo_path ?? null,
@@ -85,7 +90,10 @@ export async function saveProfile(profile: Profile): Promise<Profile> {
     if (!item.full_name.trim()) throw new Error('Completá el nombre de cada referencia.');
     return { id: ensureId(item.id), user_id: userId, full_name: item.full_name.trim(), relationship: item.relationship.trim(), contact: item.contact.trim(), consent_to_contact: Boolean(item.consent_to_contact) };
   });
-  const { error } = await client.from('profiles').upsert({ user_id: userId, full_name: profile.full_name.trim(), city: profile.city.trim(), headline: profile.headline.trim(), photo_path: profile.photo_path ?? null });
+  // The photo has its own upload/commit operation. A profile draft can contain
+  // an older path (for example after another device changed the photo), so a
+  // text-only save must not overwrite the current private photo reference.
+  const { error } = await client.from('profiles').upsert({ user_id: userId, full_name: profile.full_name.trim(), city: profile.city.trim(), headline: profile.headline.trim() });
   check(error, 'No se pudo guardar el perfil.');
   // Keep each upsert tied to its own row shape. Passing the union of these
   // arrays directly to Supabase makes its generic overload infer one section.
@@ -152,12 +160,24 @@ export async function uploadResume(asset: UploadAsset): Promise<Resume> {
   const id = Crypto.randomUUID(), path = `${userId}/${id}.${extension}`;
   const upload = await client.storage.from('resumes').upload(path, bytes, { contentType: mime, upsert: false });
   check(upload.error, 'No se pudo cargar el currículum privado.');
-  const result = await client.from('resume_versions').insert({ id, user_id: userId, name: filename.replace(/\.(pdf|docx)$/i, ''), original_filename: filename, object_path: path, mime_type: mime, size_bytes: bytes.byteLength }).select().single();
+  const result = await client.rpc('register_resume_version', {
+    p_id: id, p_name: filename.replace(/\.(pdf|docx)$/i, ''),
+    p_original_filename: filename, p_object_path: path,
+    p_mime_type: mime, p_size_bytes: bytes.byteLength,
+  }).single();
   if (result.error || !result.data) {
+    const confirmation = await client.from('resume_versions').select('*').eq('id', id).eq('user_id', userId).maybeSingle();
+    if (!confirmation.error && confirmation.data?.object_path === path) {
+      // The response was lost after the transactional registration committed.
+      // A fresh account-owned row confirms the CV is saved; preserve its file.
+      return mapResume(confirmation.data, true);
+    }
+    if (confirmation.error || !databaseRejected(result.error)) {
+      throw new Error('No se pudo confirmar el registro del CV. El archivo privado se conserva para evitar pérdidas. Actualizá tus currículums antes de volver a intentarlo.');
+    }
     const rollback = await client.storage.from('resumes').remove([path]);
     throw new Error(rollback.error ? 'No se guardó el CV y no se pudo limpiar el archivo cargado. Revisá el almacenamiento antes de repetir.' : 'No se pudo registrar el currículum; se retiró el archivo cargado.');
   }
-  selectedResumes.set(userId, id);
   return mapResume(result.data, true);
 }
 
@@ -166,14 +186,13 @@ export async function makeDefaultResume(id: string): Promise<void> {
   const userId = (await requireSession()).user.id;
   const { data, error } = await client.from('resume_versions').select('id').eq('id', id).eq('user_id', userId).maybeSingle();
   if (error || !data) throw new Error('No se encontró esa versión del currículum en tu cuenta.');
-  selectedResumes.set(userId, id);
+  const updated = await client.from('profiles').update({ preferred_resume_id: id }).eq('user_id', userId).select('user_id');
+  if (updated.error || !updated.data?.length) throw new Error('No se pudo guardar el currículum principal en tu cuenta.');
 }
 
 export async function deleteResume(resume: Resume): Promise<void> {
   const result = await deleteResumeDocument(resume.id);
   if (!result.deleted) throw new Error('No se confirmó la eliminación del currículum.');
-  const userId = (await requireSession()).user.id;
-  if (selectedResumes.get(userId) === resume.id) selectedResumes.delete(userId);
 }
 
 async function signedUrl(bucket: 'resumes' | 'profile-photos', path: string): Promise<string> {
@@ -198,11 +217,31 @@ export async function uploadPhoto(asset: UploadAsset): Promise<{ path: string; u
   check(previous.error, 'No se pudo consultar la fotografía actual.');
   const upload = await client.storage.from('profile-photos').upload(path, bytes, { contentType: mime, upsert: false });
   check(upload.error, 'No se pudo cargar la fotografía privada.');
+  // Verify the image can be opened before replacing the persisted reference or
+  // deleting the previous image. Otherwise a signed-URL failure would leave
+  // the app displaying an already deleted photo after a successful DB update.
+  let url: string;
+  try {
+    url = await getPhotoUrl(path);
+  } catch {
+    const rollback = await client.storage.from('profile-photos').remove([path]);
+    throw new Error(rollback.error
+      ? 'No se pudo preparar la fotografía privada ni retirar el archivo nuevo. La fotografía anterior se conserva.'
+      : 'No se pudo preparar la fotografía privada. La fotografía anterior se conserva; intentá nuevamente.');
+  }
   const updated = await client.from('profiles').update({ photo_path: path }).eq('user_id', userId).select('user_id');
   if (updated.error || !updated.data?.length) {
-    await client.storage.from('profile-photos').remove([path]);
-    throw new Error('No se pudo asociar la fotografía al perfil.');
+    const confirmation = await client.from('profiles').select('photo_path').eq('user_id', userId).maybeSingle();
+    if (confirmation.error || (confirmation.data?.photo_path !== path && updated.error && !databaseRejected(updated.error))) {
+      throw new Error('No se pudo confirmar la fotografía del perfil. Los archivos privados se conservan para evitar pérdidas. Actualizá el perfil antes de volver a intentarlo.');
+    }
+    if (confirmation.data?.photo_path !== path) {
+      const rollback = await client.storage.from('profile-photos').remove([path]);
+      throw new Error(rollback.error
+        ? 'No se pudo asociar la fotografía al perfil ni retirar el archivo nuevo. La fotografía anterior se conserva.'
+        : 'No se pudo asociar la fotografía al perfil. La fotografía anterior se conserva.');
+    }
   }
   if (previous.data?.photo_path) await client.storage.from('profile-photos').remove([previous.data.photo_path]);
-  return { path, url: await getPhotoUrl(path) };
+  return { path, url };
 }
