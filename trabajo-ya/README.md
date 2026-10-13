@@ -2,11 +2,11 @@
 
 **Supabase ya está creado y el backend está publicado en
 https://trabajo-ya-api.onrender.com.** La configuración pública de Android está
-completa y la **APK conectada 0.3.1 / 4 está publicada**:
-[descargar Trabajo YA para Android](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.1-real/Trabajo-YA-0.3.1-real.apk).
-La [compilación 38447381098](https://github.com/ramalhectornano-sys/miapp/actions/runs/38447381098)
+completa y la **APK conectada 0.3.2 / 5 está publicada**:
+[descargar Trabajo YA para Android](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.2-real/Trabajo-YA-0.3.2-real.apk).
+La [compilación 38453859661](https://github.com/ramalhectornano-sys/miapp/actions/runs/38453859661)
 terminó correctamente y verificó el paquete y la firma de prueba. El código
-0.3.1 corrige el guardado de fotos y del CV principal. Los pasos de instalación
+0.3.2 añade el regreso por enlace de autenticación y conserva las correcciones de foto y CV principal. Los pasos de instalación
 y prueba están en [APK conectada](docs/APK_REAL.md).
 
 La [APK 0.3.0 publicada](docs/APK_GITHUB.md) es la demostración anterior:
@@ -16,10 +16,12 @@ nueva compilación conectada.
 Todavía no se verificaron un ingreso por código OTP, la persistencia de perfil,
 foto o CV desde Android ni una respuesta real del modelo. Render Free sostiene
 la API de pruebas; no se configuró allí un worker ni se activaron correos o
-búsquedas automáticas. Falta configurar SMTP propio en Supabase, guardar
-`{{ .Token }}` en las plantillas **Magic Link** y **Confirm signup** y comprobar
-el código desde la app. Los proyectos Free nuevos exigen SMTP propio para
-editar esas plantillas; ver [acceso sin contraseña](docs/AUTH_SETUP.md). La creación
+búsquedas automáticas. La actualización 0.3.2 añade ingreso por enlace PKCE,
+además del código opcional. Configurar Site URL y Redirect URLs con
+`autoempleoia://auth/callback` y comprobar un correo nuevo desde esa APK.
+SMTP propio es necesario para editar las plantillas Free o usar otros
+remitentes/destinatarios, no para el enlace predeterminado del equipo.
+Ver [acceso sin contraseña](docs/AUTH_SETUP.md). La creación
 de los servicios y la compilación no acreditan esas operaciones.
 
 Para activar el proyecto desde el celular, empezar por [EMPEZAR](EMPEZAR.md).

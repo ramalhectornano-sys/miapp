@@ -2,15 +2,15 @@
 
 La APK de demostración publicada no autentica usuarios ni guarda sus datos en un servidor. La nueva ruta de compilación usa **`EXPO_PUBLIC_DEMO_MODE=false` y `TRABAJO_YA_BUILD_MODE=real`**, requiere servicios desplegados y falla si falta la configuración. No cambia automáticamente a una demo para completar una compilación.
 
-**Estado actual: APK real 0.3.1 publicada para pruebas.** [Descargar Trabajo-YA-0.3.1-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.1-real/Trabajo-YA-0.3.1-real.apk) o abrir la [versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.3.1-real). La [ejecución de GitHub Actions 38447381098](https://github.com/ramalhectornano-sys/miapp/actions/runs/38447381098) terminó correctamente y verificó la firma con `apksigner` y los datos del paquete con `aapt`: **Trabajo YA**, **`com.trabajoya.autoempleoia`**, versión **0.3.1**, `versionCode` **4**. La APK ocupa **51.829.057 bytes** y su SHA-256 es:
+**Estado actual: APK real 0.3.2 publicada para pruebas.** [Descargar Trabajo-YA-0.3.2-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.2-real/Trabajo-YA-0.3.2-real.apk) o abrir la [versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.3.2-real). La [ejecución de GitHub Actions 38453859661](https://github.com/ramalhectornano-sys/miapp/actions/runs/38453859661) terminó correctamente y verificó la firma con `apksigner` y los datos del paquete con `aapt`: **Trabajo YA**, **`com.trabajoya.autoempleoia`**, versión **0.3.2**, `versionCode` **5**. La APK ocupa **51.835.005 bytes** y su SHA-256 es:
 
 ```text
-85ae0acee37710efd52ded50420f2f109888d3db6825fff0f557c94643150a51
+91ffd2af51d3060fc5cc913a2e79c2c14cce0d2844cfec2c9745f6942222fc00
 ```
 
 El backend está publicado en **https://trabajo-ya-api.onrender.com** y el proyecto Supabase ya existe. El endpoint de salud de Supabase Auth respondió HTTP 200; también se comprobó que la tabla de perfiles existe y que el acceso anónimo está protegido. La APK incorpora la configuración pública de esos servicios y el modo real. Todavía no se probó en un teléfono físico ni se confirmó el funcionamiento completo de las integraciones.
 
-Queda configurar SMTP propio y guardar las plantillas OTP en Supabase, confirmar la aplicación de las seis migraciones remotas, recibir y verificar un código OTP, guardar y recuperar datos desde Android y obtener una respuesta real del proveedor de IA. Crear los servicios y comprobar `/health` no acredita esas operaciones. Para chat, perfil, fotos y CV no hace falta conectar Gmail todavía. Render Free permite estas pruebas de la API; las tareas automáticas requieren un worker/programador separado, como la [ruta de Google Cloud](../deploy/google-cloud/README.md). Ni esta compilación ni el despliegue de Render activan envíos automáticos.
+Queda guardar la configuración de redirección y comprobar el ingreso por enlace en Supabase, confirmar la aplicación de las seis migraciones remotas, recibir y verificar un código OTP, guardar y recuperar datos desde Android y obtener una respuesta real del proveedor de IA. Crear los servicios y comprobar `/health` no acredita esas operaciones. Para chat, perfil, fotos y CV no hace falta conectar Gmail todavía. Render Free permite estas pruebas de la API; las tareas automáticas requieren un worker/programador separado, como la [ruta de Google Cloud](../deploy/google-cloud/README.md). Ni esta compilación ni el despliegue de Render activan envíos automáticos.
 
 Los pasos siguientes se conservan para preparar otra instalación o repetir la compilación. Para la configuración actual no hace falta volver a crear los servicios ni reemplazar los datos públicos ya cargados.
 
@@ -48,7 +48,7 @@ La clave pública de Supabase forma parte de cualquier app que use Supabase; el 
 7. Esperá a que la ejecución complete la compilación, verifique la firma y publique la prerelease. Recién entonces habrá una APK nueva. Abrí **Releases** y descargá el archivo `Trabajo-YA-<versión>-real.apk`. Como alternativa, descargá el artefacto `Trabajo-YA-<versión>-real` desde esa ejecución de Actions y extraé el ZIP.
 8. Abrí la APK desde Archivos y completá la instalación en Android. No requiere Expo Go ni un servidor Metro.
 
-La versión y `versionCode` se obtienen de `mobile/app.json`; la revisión publicada es **0.3.1 / 4**. El archivo APK, nombre de artefacto y tag se generan a partir de esa versión; no hay un nombre fijo en el workflow. Una versión publicada no se reemplaza automáticamente: para una siguiente entrega hay que incrementar `version` y `android.versionCode`.
+La versión y `versionCode` se obtienen de `mobile/app.json`; la revisión publicada es **0.3.2 / 5**. El archivo APK, nombre de artefacto y tag se generan a partir de esa versión; no hay un nombre fijo en el workflow. Una versión publicada no se reemplaza automáticamente: para una siguiente entrega hay que incrementar `version` y `android.versionCode`.
 
 ## Qué comprueba la compilación
 
@@ -62,18 +62,26 @@ Esta ruta usa **firma debug de prueba generada por Expo**, igual que la ruta de 
 
 Antes de considerar terminada la integración, comprobá en Android:
 
-1. Recibir e ingresar el código OTP de Supabase y volver a abrir la app conservando la sesión.
+1. Recibir un correo, abrir su enlace en el mismo celular (o ingresar el OTP si lo incluye) y volver a abrir la app conservando la sesión.
 2. Guardar un perfil y una foto, cerrar la app y confirmar que ambos siguen disponibles al entrar de nuevo. Verificá también con otra sesión que los datos correspondan al usuario correcto.
 3. Subir un PDF o DOCX, elegir el CV principal y comprobar que permanece seleccionado después de volver a entrar. El archivo debe quedar en almacenamiento privado.
 4. Escribir una instrucción en el chat, obtener una respuesta del modelo real y confirmar que se conserva el historial. En Cloud Run se puede ejecutar además `test-ai`; en Render Free se verifica con esa llamada autenticada real. El valor `configured_unverified` de `/health` no reemplaza una respuesta del modelo.
 5. Crear una búsqueda y verificar su persistencia y una ejecución del worker con una fuente real autorizada. El horario se ejecuta en el servidor.
 6. Conectar Gmail, conceder explícitamente el permiso y comprobar un envío a un destinatario verificado autorizado. Solo debe figurar como enviado con confirmación del proveedor. Activar el scheduler y los envíos es una configuración separada del backend; compilar esta APK no los activa.
 
-Para el primer ingreso, Supabase debe enviar **un código de números**, no solamente un enlace. En esta instalación falta configurar y guardar SMTP propio: Supabase bloquea
-la edición de plantillas en proyectos Free nuevos que usan el correo predeterminado.
-Después se podrán configurar y guardar las plantillas remotas. En **Authentication → Email Templates**, las plantillas **Magic Link** y **Confirm signup** deben mostrar `{{ .Token }}`; los archivos incluidos ya lo hacen, pero no cambian automáticamente el Dashboard remoto. Guardá ambas plantillas antes de probar el registro, siguiendo [acceso sin contraseña](AUTH_SETUP.md). Si no llega correo, revisá Spam, configuración y límites del proveedor SMTP elegido. La entrega y verificación del código todavía no se comprobaron en esta instalación.
+La APK **0.3.2** añade el regreso por enlace PKCE. Guardar Site URL y
+Redirect URLs con `autoempleoia://auth/callback`, pedir un correo nuevo desde la
+APK y abrirlo en ese mismo celular. La plantilla predeterminada del proyecto
+Free sirve para este ingreso; el OTP numérico es opcional si el correo incluye
+`{{ .Token }}`. Para personalizar el mensaje se necesita SMTP propio. El botón
+Sign in del preview del Dashboard no es un enlace real. Ver la
+[configuración y diagnóstico completos](AUTH_SETUP.md).
 
-Las pruebas offline y las herramientas de firma no sustituyen estas comprobaciones del dispositivo y los servicios externos.
+Antes de dar por verificado el acceso, probar una apertura con la app cerrada,
+otra con la app abierta y un enlace vencido o reutilizado. Confirmar persistencia
+de la sesión y comprobar chat/perfil/foto/CV con esa cuenta. Estas pruebas desde
+el teléfono todavía no se ejecutaron. Las búsquedas y los correos automáticos
+continúan pendientes de integración y programación.
 
 ## Compilación propia con las mismas variables públicas
 

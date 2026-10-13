@@ -2,16 +2,18 @@
 
 **El proyecto Supabase ya existe y Render muestra el backend Live en
 https://trabajo-ya-api.onrender.com.** La configuración pública de Android está
-cargada y la **APK real 0.3.1 / 4 ya está publicada**:
-[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.1-real/Trabajo-YA-0.3.1-real.apk).
-La [compilación 38447381098](https://github.com/ramalhectornano-sys/miapp/actions/runs/38447381098)
+cargada y la **APK real 0.3.2 / 5 ya está publicada**:
+[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.2-real/Trabajo-YA-0.3.2-real.apk).
+La [compilación 38453859661](https://github.com/ramalhectornano-sys/miapp/actions/runs/38453859661)
 terminó correctamente. Los pasos de instalación y las comprobaciones pendientes
 están en [APK conectada](docs/APK_REAL.md).
 
-Antes de ingresar, falta configurar y guardar SMTP propio en Supabase;
-el proyecto Free nuevo lo requiere para editar las plantillas. Después guardar
-`{{ .Token }}` en **Magic Link** y **Confirm signup** siguiendo
-[acceso sin contraseña](docs/AUTH_SETUP.md). Después falta probar en el teléfono el código OTP, el guardado
+La actualización 0.3.2 recibe el enlace predeterminado de Supabase mediante
+PKCE. Antes de ingresar, guardar **Site URL** y **Redirect URLs** con
+`autoempleoia://auth/callback` y solicitar un correo nuevo desde esa APK.
+El SMTP propio se necesita para personalizar las plantillas o ampliar los
+usuarios de prueba; la plantilla predeterminada sirve para el ingreso por enlace.
+Seguir [acceso sin contraseña](docs/AUTH_SETUP.md). Después falta probar en el teléfono el código OTP, el guardado
 y la recuperación de perfil, foto y CV y una respuesta real de la IA. Esas
 operaciones todavía no se comprobaron. No necesitás crear de nuevo Supabase ni
 Render. Las búsquedas programadas y los correos automáticos requieren configuración
@@ -44,8 +46,8 @@ No elimina datos para intentar instalar. La guía de actualizaciones está en
 [Supabase](supabase/README.md).
 
 En Authentication configurar el correo por código siguiendo
-[AUTH_SETUP](docs/AUTH_SETUP.md). Esta instalación necesita SMTP propio antes de
-editar las plantillas y entregar el código. Revisar también los límites del
+[AUTH_SETUP](docs/AUTH_SETUP.md). Para editar las plantillas Free y mostrar
+un código numérico se necesita SMTP propio; el enlace predeterminado no requiere editarlo. Revisar también los límites del
 proveedor de correo elegido.
 Guardar la URL del proyecto, la clave pública y la privada en un gestor de claves.
 La clave pública se usa en Android; la privada se usa solo en el servidor.
@@ -116,7 +118,7 @@ permiso para enviar: se autoriza dentro de la app.
 ## 4. Compilar Android en la nube
 
 La ruta actual usa GitHub Actions con los datos públicos ya cargados. La
-compilación 0.3.1 / 4 terminó y publicó la APK conectada; no hace falta una cuenta
+compilación 0.3.2 / 5 terminó y publicó la APK conectada; no hace falta una cuenta
 Expo para esa ruta. Descargarla desde el enlace de arriba e instalarla siguiendo
 [APK conectada](docs/APK_REAL.md). La APK 0.3.0 de demostración no se conecta a
 los nuevos servicios por instalarla de nuevo. Si Android rechaza la actualización
@@ -149,7 +151,7 @@ todavía esa APK. Si el login o la firma piden verificación de tu cuenta, la co
   diarios y recordatorios después de 72 horas, sujetos a vacante vigente y permiso activo.
 - Perfiles de compilación Android y controles locales/CI.
 - Supabase creado y API de pruebas publicada en Render.
-- Configuración pública y APK conectada 0.3.1 / 4 compilada, verificada y publicada.
+- Configuración pública y APK conectada 0.3.2 / 5 compilada, verificada y publicada.
 - APK autónoma anterior de demostración compilada y publicada en GitHub.
 
 Lo que requiere tu acceso ahora: comprobar las migraciones y el acceso OTP en

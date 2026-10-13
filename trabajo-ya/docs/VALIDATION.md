@@ -1,4 +1,38 @@
-# Validación de Trabajo YA: APK conectada 0.3.1
+# Validación de Trabajo YA: autenticación Android 0.3.2
+
+## Corrección de enlaces de autenticación 0.3.2
+
+Se incorporó `emailRedirectTo: autoempleoia://auth/callback`, `flowType: pkce`,
+el receptor de URL inicial y eventos de React Native Linking, y el canje del
+código mediante el SDK Supabase. Se validan esquema, host, ruta, parámetros
+repetidos/mezclados y errores; no se aceptan tokens implícitos antiguos. Los
+intercambios concurrentes se deduplican. La restauración inicial de sesión no
+sobrescribe un evento de Auth posterior. El puente nativo usa entropía Expo y
+SHA-256 para S256, con soporte UTF-8 cuando falta TextEncoder.
+
+La [verificación 38453859674](https://github.com/ramalhectornano-sys/miapp/actions/runs/38453859674)
+terminó correctamente: **44 pruebas móviles** (12 nuevas de enlaces/PKCE),
+TypeScript, 149 pruebas backend, 29 pruebas cloud y seis migraciones SQL.
+La prueba del SDK real sustituye únicamente el transporte y comprueba redirect
+exacto, challenge S256 y exclusión del verifier del cuerpo HTTP. No envía correo
+ni valida tokens contra el proyecto remoto. La compilación nativa en
+[38453859661](https://github.com/ramalhectornano-sys/miapp/actions/runs/38453859661)
+terminó correctamente y publicó la APK **0.3.2 / versionCode5** con firma debug.
+`apksigner` y `aapt` verificaron firma, paquete y versión. APK: 51.835.005 bytes;
+SHA-256 `91ffd2af51d3060fc5cc913a2e79c2c14cce0d2844cfec2c9745f6942222fc00`.
+Commit compilado: `60319e1f09c86f5eefbe4186cec9dbebaaf04916`.
+[Descargar APK0.3.2](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.2-real/Trabajo-YA-0.3.2-real.apk).
+El comprobante del certificado tiene el mismo digest que la entrega0.3.1;
+la actualización conserva el certificado de prueba. Se comprobó que el manifest
+Android generado contiene el esquema en un intent VIEW/BROWSABLE/DEFAULT.
+
+Site URL y Redirect URLs deben ser `autoempleoia://auth/callback`. El propietario
+respondió “listo”, pero estas herramientas no acceden al Dashboard ni confirman
+sus valores guardados. La guía está en [AUTH_SETUP.md](AUTH_SETUP.md).
+No se configuraron Android App Links HTTPS o assetlinks.json. El enlace se debe
+solicitar nuevamente desde la APK0.3.2 y abrir en la misma instalación. No se
+probó físicamente un ingreso completo, un enlace vencido ni la sesión tras
+reiniciar; siguen pendientes de comprobación en el teléfono.
 
 ## Comprobaciones del código conectado 0.3.1
 
@@ -124,14 +158,16 @@ adaptación. Falta comprobar el icono en un lanzador Android.
 
 ## Verificación funcional pendiente
 
-El propietario confirmó que aún no configuró las plantillas de correo OTP de
-Supabase. Se le indicaron las plantillas Magic Link y Confirm signup con
+El propietario confirmó que no configuró las plantillas numéricas de Supabase.
+La APK0.3.1 no procesaba los enlaces de la plantilla predeterminada, y el
+propietario informó `localhost:3000` con `access_denied`. Se le indicaron las plantillas Magic Link y Confirm signup con
 `{{ .Token }}`. La captura posterior mostró que Supabase bloquea la edición de templates hasta
 configurar SMTP propio, conforme al cambio de los proyectos Free nuevos del
 3 de junio de 2026. Se corrigieron las guías y se preparó la configuración de
 Gmail SMTP para pruebas, con contraseña de aplicación guardada solo en Supabase.
-Todavía no se configuró ni se comprobó ese envío; no se solicitaron códigos
-desde estas herramientas ni se obtuvo una sesión de usuario.
+La APK0.3.2 añade el ingreso mediante el enlace predeterminado; SMTP propio
+queda como requisito de personalización o entrega a otros usuarios. No se
+solicitaron códigos desde estas herramientas ni se obtuvo una sesión de usuario.
 [Regla oficial](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier).
 
 No se probó en un dispositivo físico ni emulador. Con Supabase y

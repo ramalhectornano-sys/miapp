@@ -37,30 +37,23 @@ no ejecutes también el instalador. La guía del esquema está en
    Email y el registro de nuevos usuarios. Mantené la confirmación de correo.
 2. Si aparece **Email OTP expiration**, elegí **600 segundos** y código de
    **6 dígitos**, para coincidir con la app y las plantillas.
-3. Configurá y guardá **SMTP propio** en **Authentication → Emails → SMTP
-   Settings**. En los proyectos Free creados desde el 3 de junio de 2026,
-   Supabase exige este ajuste para editar las plantillas. Si aparece **Set up
-   custom SMTP to edit templates**, todavía falta completarlo; activar el
-   interruptor con los campos vacíos no configura el envío. Para pruebas con
-   Gmail, seguí [Gmail para códigos de acceso](../../docs/AUTH_SETUP.md).
-4. En **Authentication → Email Templates**, elegí **Source** y pegá
-   [magic_link.html](../../supabase/templates/magic_link.html) en **Magic Link**
-   y [confirmation.html](../../supabase/templates/confirmation.html) en
-   **Confirm signup**. Ambos muestran `{{ .Token }}`, el código que el usuario
-   escribe en la app.
-5. En **URL Configuration → Redirect URLs**, agregá
-   `autoempleoia://auth/callback`. La app conserva este identificador técnico.
-6. Para tu primera prueba ingresá en la app con **el mismo correo de tu cuenta
-   Supabase**, que es miembro del equipo del proyecto.
+3. En **Authentication → URL Configuration**, guardá **Site URL**
+   `autoempleoia://auth/callback` y agregá ese mismo valor exacto a **Redirect URLs**.
+   La APK **0.3.2** solicita ese destino y recibe el enlace mediante PKCE.
+4. La plantilla predeterminada de Supabase funciona para ingresar por enlace.
+   Solicitá un correo nuevo desde la APK actualizada y abrilo en el mismo celular;
+   el botón del preview del Dashboard no tiene un token real.
+5. Para el correo integrado, usá una dirección que sea miembro del equipo del
+   proyecto. Actualmente permite **2 mensajes por hora**. Para más usuarios,
+   personalizar mensajes o mostrar un código numérico, configurá SMTP propio.
+   El bloqueo de plantillas Free nuevas no impide configurar la redirección.
 
-El correo predeterminado de Supabase limita destinatarios a miembros del equipo
-y envíos a **2 mensajes por hora**. Además, en proyectos Free nuevos impide
-personalizar las plantillas; esta app necesita mostrar el OTP numérico. Por eso
-la ruta actual requiere SMTP propio antes del primer ingreso.
-[Regla oficial de plantillas Free](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier). No desactives la
-confirmación para evitar ese límite. Esto es independiente de Gmail para enviar
-postulaciones. Ver [configuración de autenticación](../../docs/AUTH_SETUP.md) y
-[restricciones oficiales de SMTP](https://supabase.com/docs/guides/auth/auth-smtp).
+Si personalizás el correo, guardá las plantillas Magic Link y Confirm signup:
+`{{ .ConfirmationURL }}` mantiene el enlace a la app y `{{ .Token }}` añade
+el código opcional. No desactives la confirmación. Las instrucciones completas,
+SMTP de Gmail para pruebas y el diagnóstico `access_denied` están en
+[acceso sin contraseña](../../docs/AUTH_SETUP.md).
+El remitente de los códigos/enlaces no conecta Gmail para postulaciones.
 
 ## 3. Encontrar los datos de Supabase
 

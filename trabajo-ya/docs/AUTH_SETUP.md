@@ -1,17 +1,95 @@
-# Acceso sin contraseña
+# Acceso sin contraseña: enlace a Android y código opcional
 
-Trabajo YA crea la cuenta o inicia sesión con un código de un solo uso enviado al
-correo del usuario. El nombre completo es opcional al ingresar y se completa en
-Mi perfil. No se guarda una contraseña ni se permite entrar con un correo que no
-haya sido verificado.
+Desde la APK **0.3.2 / 5**, Trabajo YA admite el enlace de acceso de Supabase.
+La persona solicita el correo desde la app y abre su enlace en el mismo celular;
+la app recibe `autoempleoia://auth/callback` y canjea el código de autorización
+mediante PKCE. Supabase confirma la sesión y se conserva en SecureStore.
+Si la plantilla muestra un código numérico, también puede ingresarse mediante
+`verifyOtp(type: email)`. El enlace y el código son de un solo uso.
 
-La aplicación solicita el código con `signInWithOtp`, `shouldCreateUser: true` y,
-si se indicó, `data.full_name`. Después usa `verifyOtp` con `type: 'email'` y solo
-considera al usuario autenticado cuando Supabase devuelve una sesión válida. La
-sesión se guarda con SecureStore en Android. El campo acepta entre 6 y 8 dígitos
-para soportar diferentes configuraciones del proveedor; este proyecto configura
-6 dígitos, vencimiento de 10 minutos y un intervalo mínimo de 60 segundos entre
-solicitudes de código.
+La APK 0.3.1 esperaba un OTP numérico: no enviaba `emailRedirectTo` ni tenía
+un receptor de enlaces Auth. Cambiar solo el Dashboard no corrige aquella APK.
+No se habilitó acceso sin verificar el correo ni se desactivó su confirmación.
+
+## Valores exactos de Supabase para esta APK
+
+En **Authentication → URL Configuration**, guardar:
+
+| Campo | Valor exacto |
+| --- | --- |
+| **Site URL** | `autoempleoia://auth/callback` |
+| **Redirect URLs** | Agregar `autoempleoia://auth/callback` |
+
+No agregar comodines ni conservar `localhost:3000` como destino de esta
+instalación Android. Es un URI real basado en `expo.scheme=autoempleoia`,
+paquete `com.trabajoya.autoempleoia`; no es una página web ni el callback OAuth
+de Google/Gmail. Supabase admite esquemas móviles también en Site URL.
+[Documentación oficial de redirecciones](https://supabase.com/docs/guides/auth/redirect-urls).
+
+La app solicita cada correo con `emailRedirectTo` exactamente igual a ese URI
+y `flowType: pkce`. La comprobación de la compilación inspecciona el manifest
+Android generado: exige un intent VIEW/BROWSABLE/DEFAULT del esquema. El receptor
+JavaScript contempla la apertura inicial y los eventos con la app abierta,
+valida host/ruta y deduplica el intercambio del código. Usa entropía nativa y
+SHA-256 para PKCE; no muestra ni registra URL, código, tokens o error del proveedor.
+Los tokens de enlaces implícitos antiguos se rechazan: solicitar un enlace nuevo
+desde la APK actualizada. PKCE necesita el verificador guardado en esa misma
+instalación; borrar datos, reinstalar o pedir otro correo puede invalidar el enlace
+anterior. [Flujo PKCE](https://supabase.com/docs/guides/auth/sessions/pkce-flow).
+
+Se usa **deep linking por esquema personalizado**. No se configuraron Android
+App Links HTTPS ni `assetlinks.json`. Para esa alternativa harían falta un dominio
+controlado, el archivo publicado y la huella SHA-256 del certificado que firma
+la APK. No se inventó un endpoint HTTPS de confirmación.
+[Enlaces móviles](https://supabase.com/docs/guides/auth/native-mobile-deep-linking).
+
+## Primera prueba con la plantilla predeterminada
+
+1. Instalar la APK 0.3.2 y guardar los dos valores de URL Configuration.
+2. Solicitar un correo nuevo desde esa APK. Para el correo integrado Free,
+   usar una dirección miembro de la organización del proyecto.
+3. Abrir el correo real en ese celular y tocar su enlace una sola vez.
+   El botón Sign in en el preview del Dashboard contiene una plantilla,
+   no un token real, y no sirve para probar el acceso.
+4. Confirmar que vuelve a Trabajo YA y se muestra el perfil de la cuenta.
+   Cerrar/reabrir la app y verificar que conserva la sesión.
+
+La plantilla predeterminada **sí sirve para este flujo por enlace**, sin editarla.
+El proveedor incluido sigue restringido a correos del equipo y dos mensajes
+por hora. Si se agotó ese cupo, esperar o configurar SMTP propio; cambiar la
+redirección no elimina límites del correo. Para otras personas o producción,
+configurar un remitente autorizado.
+[SMTP de Supabase](https://supabase.com/docs/guides/auth/auth-smtp).
+
+## Qué significa access_denied
+
+`localhost:3000` es el destino predeterminado de Supabase cuando la solicitud
+no define un redirect permitido. Corregir el URI evita esa salida a localhost.
+`access_denied` indica además que Auth rechazó la operación: no demuestra por
+sí solo cuál fue la causa. Si `error_code=otp_expired`, el enlace puede estar
+vencido o consumido (incluidas previsualizaciones/escáneres de correo).
+Solicitar un enlace nuevo; no reutilizar el que ya falló ni pegarlo en el chat.
+La app muestra mensajes fijos y no autentica ante errores de Supabase.
+Consultar los logs de Auth sin publicar tokens o el enlace completo.
+
+## Plantillas personalizadas y códigos numéricos
+
+Para personalizar el correo o mostrar OTP en proyectos Free nuevos, primero
+configurar y guardar SMTP propio: el bloqueo observado en el Dashboard se
+aplica a la edición de plantillas, no a la redirección del enlace predeterminado.
+Se pueden conservar `{{ .Token }}` y añadir el enlace:
+
+```html
+<a href="{{ .ConfirmationURL }}">Ingresar a Trabajo YA</a>
+<p>También podés ingresar este código en la app: {{ .Token }}</p>
+```
+
+Usar `{{ .ConfirmationURL }}` para que Supabase verifique primero el correo
+y genere el código PKCE de regreso. No construir el href con `{{ .SiteURL }}`
+ni copiar tokens reales a la plantilla. Cambiar Magic Link y Confirm signup,
+seleccionar Source y guardar ambas. Mantener confirmación de correo y, para las
+plantillas locales, OTP de 6 dígitos y 600 segundos de vencimiento.
+[Variables oficiales](https://supabase.com/docs/guides/auth/auth-email-templates).
 
 ## Supabase local
 
@@ -27,7 +105,7 @@ de la CLI para abrir el buzón local de prueba y leer el código. Supabase local
 no entrega correo al buzón personal del usuario salvo que se configure SMTP.
 Si la CLI ya estaba iniciada, reiniciar el stack para aplicar los cambios de Auth.
 
-## Proyecto Supabase remoto
+## Personalizar las plantillas del proyecto remoto
 
 El archivo local no cambia las opciones de un proyecto alojado. **Primero
 comprobar si las plantillas se pueden editar.** En proyectos Free creados desde
@@ -53,8 +131,8 @@ En el Dashboard:
    para mostrar `{{ .Token }}` y el
    texto de `magic_link.html`. Editar también **Confirm signup** con el contenido
    de `confirmation.html`. En la CLI esa segunda plantilla se llama `confirmation`.
-   Guardar ambas plantillas. No dejar solo `{{ .ConfirmationURL }}`: la aplicación
-   espera un código. `signInWithOtp` usa la plantilla de correo configurada;
+   Guardar ambas plantillas. `{{ .ConfirmationURL }}` permite volver a la APK0.3.2;
+   `{{ .Token }}` añade la alternativa de ingresar el código numérico. `signInWithOtp` usa la plantilla de correo configurada;
    su nombre no obliga al proveedor a enviar números en vez de un enlace.
    Ver [Email OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless)
    y [variables de las plantillas](https://supabase.com/docs/guides/auth/auth-email-templates).
