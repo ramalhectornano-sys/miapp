@@ -1,0 +1,11 @@
+# Cloud Build source uploads contain only the Dockerfile and backend code.
+**
+!Dockerfile
+!requirements.txt
+!app/
+!app/**/
+!app/**/*.py
+app/**/__pycache__/
+app/**/*.pyc
+app/**/.env
+app/**/.env.*

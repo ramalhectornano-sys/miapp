@@ -1,0 +1,88 @@
+name: Verificar código de Trabajo YA
+
+on:
+  push:
+    branches: [trabajo-ya-real]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Encontrar el proyecto
+        run: |
+          if [[ -f trabajo-ya/mobile/package.json ]]; then
+            echo 'PROJECT_DIR=trabajo-ya' >> "$GITHUB_ENV"
+          else
+            echo 'PROJECT_DIR=.' >> "$GITHUB_ENV"
+          fi
+      - name: Comprobar el proyecto Supabase sin leer datos personales
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from urllib.error import HTTPError, URLError
+          from urllib.request import Request, urlopen
+          config_path = Path(os.environ['PROJECT_DIR']) / 'mobile/services.public.json'
+          if not config_path.is_file():
+              print('Supabase remoto: sin configuración propia; no se consultó.')
+              raise SystemExit(0)
+          config = json.loads(config_path.read_text())
+          base = config.get('supabase_url', '').rstrip('/')
+          key = config.get('supabase_public_key', '')
+          if not base or not key:
+              print('Supabase remoto: faltan datos públicos; no se consultó.')
+              raise SystemExit(0)
+          for route, label in [('/auth/v1/health', 'Autenticación'), ('/rest/v1/profiles?select=user_id&limit=0', 'Tabla profiles')]:
+              request = Request(base + route, headers={'apikey': key, 'Accept': 'application/json'})
+              try:
+                  with urlopen(request, timeout=20) as response:
+                      print(f'{label}: HTTP {response.status}; no se leyeron datos personales.')
+              except HTTPError as error:
+                  body = error.read(8192)
+                  try:
+                      code = json.loads(body).get('code', '')
+                  except (ValueError, UnicodeError):
+                      code = ''
+                  if label == 'Tabla profiles' and code == '42501':
+                      print('Tabla profiles: existe y el rol anónimo no tiene permiso de lectura.')
+                  elif label == 'Tabla profiles' and code in ('PGRST205', '42P01'):
+                      print('Tabla profiles: todavía no instalada. Aplicar instalador SQL en el proyecto nuevo.')
+                  else:
+                      print(f'{label}: HTTP {error.code}; no se verificó la conexión.')
+              except (URLError, TimeoutError, OSError):
+                  print(f'{label}: no se pudo verificar por red.')
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependencias para comprobar el código
+        run: |
+          python -m pip install -r "$PROJECT_DIR/backend/requirements-dev.txt"
+          npm install --prefix "$PROJECT_DIR/mobile" --no-audit --no-fund
+          npm install --prefix "$PROJECT_DIR/supabase" --no-audit --no-fund
+      - name: Comprobar backend y configuración real
+        working-directory: ${{ env.PROJECT_DIR }}/backend
+        run: |
+          python -m unittest discover -s tests -q
+          python -m compileall -q app
+      - name: Comprobar las migraciones y permisos de usuarios
+        working-directory: ${{ env.PROJECT_DIR }}/supabase
+        run: npm test
+      - name: Comprobar compilación de TypeScript y persistencia
+        working-directory: ${{ env.PROJECT_DIR }}/mobile
+        run: |
+          npm run typecheck
+          npm test
+      - name: Comprobar instalador y despliegue
+        run: |
+          python "$PROJECT_DIR/scripts/build_database_install.py" --check
+          python -m unittest discover -s "$PROJECT_DIR/deploy/google-cloud" -p 'test_*.py' -q

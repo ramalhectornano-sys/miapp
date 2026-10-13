@@ -1,0 +1,80 @@
+name: trabajo-ya
+
+x-backend: &backend
+  build:
+    context: ../backend
+  image: trabajo-ya-backend:0.3.0
+  env_file: .env
+  environment:
+    AI_PROVIDER: ollama
+    AI_BASE_URL: http://ollama:11434
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+
+services:
+  api:
+    <<: *backend
+    command: [uvicorn, app.main:app, --host, 0.0.0.0, --port, '8000', --no-access-log]
+    expose: ['8000']
+    depends_on:
+      model-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+
+  worker:
+    <<: *backend
+    command: [python, -m, app.worker]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+    expose: ['11434']
+
+  model-init:
+    image: ollama/ollama:latest
+    restart: 'no'
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      AI_MODEL: ${AI_MODEL:-qwen2.5:7b}
+    entrypoint: [/bin/sh, -c]
+    command:
+      - 'for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do if ollama list >/dev/null 2>&1; then exec ollama pull "$$AI_MODEL"; fi; sleep 2; done; echo "Ollama no inició; no se descargó el modelo." >&2; exit 1'
+    depends_on:
+      ollama:
+        condition: service_started
+
+  https:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Configurar API_DOMAIN en deploy/.env}
+      ACME_EMAIL: ${ACME_EMAIL:?Configurar ACME_EMAIL en deploy/.env}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  ollama-data:
+  caddy-data:
+  caddy-config:

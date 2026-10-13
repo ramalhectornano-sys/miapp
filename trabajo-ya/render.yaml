@@ -1,0 +1,39 @@
+# API de pruebas. La base de datos y los documentos privados viven en Supabase.
+# El repositorio GitHub contiene el proyecto dentro de trabajo-ya/.
+# No hay worker ni cron en este Blueprint: Render no ofrece esos servicios Free.
+services:
+  - type: web
+    name: trabajo-ya-api
+    runtime: docker
+    plan: free
+    repo: https://github.com/ramalhectornano-sys/miapp
+    branch: trabajo-ya-real
+    rootDir: trabajo-ya/backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: sh -c 'exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --no-access-log'
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: SUPABASE_URL
+        value: https://ecdbcdbwcvwhawtzfkkk.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: sb_publishable_5Z141MlNoR3ZiYfUuwXk-A_A8TelFR7
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_PROVIDER
+        value: openai_compatible
+      - key: AI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: AI_MODEL
+        value: openai/gpt-oss-20b
+      - key: DEFAULT_TIMEZONE
+        value: America/Argentina/Buenos_Aires
+      - key: CORS_ORIGINS
+        value: '[]'
+      - key: AUTHORIZED_JOB_FEEDS
+        value: '[]'
+      - key: MAIL_SEND_ENABLED
+        value: 'false'

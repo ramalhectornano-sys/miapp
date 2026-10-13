@@ -1,0 +1,17 @@
+{
+  "project_id": "tu-proyecto-google",
+  "region": "us-central1",
+  "api_name": "trabajo-ya-api",
+  "worker_name": "trabajo-ya-worker",
+  "scheduler_name": "trabajo-ya-cada-15-min",
+  "artifact_repository": "trabajo-ya",
+  "supabase_url": "https://tu-proyecto.supabase.co",
+  "supabase_anon_key": "",
+  "google_client_id": "TU_CLIENT_ID.apps.googleusercontent.com",
+  "google_redirect_uri": "",
+  "cors_origins": [],
+  "ai_provider": "demo",
+  "ai_base_url": "",
+  "ai_model": "",
+  "ai_api_key_required": false
+}

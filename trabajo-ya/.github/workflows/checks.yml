@@ -1,0 +1,78 @@
+name: Verificar Trabajo YA
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      - name: Instalar dependencias del servidor
+        run: python -m pip install -r backend/requirements-dev.txt
+      - name: Pruebas del servidor sin servicios externos
+        working-directory: backend
+        run: |
+          python -m unittest discover -s tests -v
+          python -m compileall -q app
+      - name: Verificar instalador SQL sincronizado con migraciones
+        run: python scripts/build_database_install.py --check
+      - name: Comprobar despliegue sin acceder a Google Cloud
+        run: python -m unittest discover -s deploy/google-cloud -p 'test_*.py' -v
+
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias de Expo
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Comprobar compatibilidad con Expo
+        working-directory: mobile
+        run: npx expo install --check
+      - name: Pruebas y tipos de TypeScript
+        working-directory: mobile
+        run: |
+          npm test
+          npm run typecheck
+      - name: Exportar JavaScript y recursos para Android
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_DEMO_MODE: 'true'
+          CI: '1'
+        run: npm run export:android
+      - name: Conservar exportacion de Android
+        uses: actions/upload-artifact@v4
+        with:
+          name: trabajo-ya-android-export
+          path: mobile/dist
+          if-no-files-found: error
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar PostgreSQL embebido
+        working-directory: supabase
+        run: npm install --no-audit --no-fund
+      - name: Migraciones y permisos con PostgreSQL embebido
+        working-directory: supabase
+        run: npm test

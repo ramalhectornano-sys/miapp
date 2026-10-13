@@ -1,0 +1,9 @@
+# El contexto de build es backend/; .gcloudignore excluye .env y documentos.
+# Cloud Build usa una identidad propia, distinta del runtime que lee secretos.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '-t', '${_IMAGE}', '.']
+images: ['${_IMAGE}']
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s
