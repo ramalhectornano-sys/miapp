@@ -7,6 +7,16 @@ Android. El logo original proporcionado se conserva sin cambios en
 
 ## Comprobaciones ejecutadas
 
+- **APK demo 0.3.0 compilada, verificada y publicada en GitHub** en la
+  [ejecución 38427300341](https://github.com/ramalhectornano-sys/miapp/actions/runs/38427300341).
+  Aprobaron el compilador TypeScript, las 18 pruebas móviles, Expo prebuild y
+  Gradle `assembleRelease`. `apksigner` verificó la firma debug y `aapt`
+  comprobó `Trabajo YA`, paquete `com.trabajoya.autoempleoia`, versión 0.3.0 y
+  versionCode 3. La APK incluye JavaScript y recursos; no requiere Metro.
+- [APK descargable](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk):
+  51.826.293 bytes, commit `2686a70130060c075bc7eea11122885b74ee30c7`, SHA-256
+  `3839f47c4bba1a0cab47d4c9f112132772e9d687830be8d44a783f1d2bbbead1`.
+  Es una demo sin IA, Supabase ni Gmail reales; no se probó en un dispositivo.
 - **135 pruebas Python del backend aprobadas**, además de compileall.
 - **29 pruebas del despliegue Google Cloud aprobadas**, con gcloud simulado:
   secretos ocultos, versiones compartidas, fuentes verificadas, activación
@@ -24,7 +34,9 @@ Android. El logo original proporcionado se conserva sin cambios en
   una compilación sin variables reales se rechaza en la comprobación previa.
 - applicationId y callback Google contrastados con el código. El helper de
   huellas se probó con un certificado público temporal de keytool, eliminado
-  después; no se generó ni configuró el certificado de la APK de prueba.
+  después. La APK publicada usa el certificado debug de Expo; sus huellas
+  públicas están en `certificado-prueba.txt` dentro de la versión publicada.
+  No se configuró una firma privada de producción.
 - Docker Compose validado estáticamente con PyYAML y el parser de Compose,
   usando exclusivamente el archivo de ejemplo; no se ejecutaron contenedores.
 - Archivo ZIP final comprobado íntegro y con logo, icono, migraciones y plantillas.
@@ -86,28 +98,27 @@ pasos para crear/cargar esa clave y comprobar una respuesta real.
 
 ## Comprobaciones pendientes
 
-La instalación de paquetes npm no pudo completarse en este entorno por el
-acceso de red; la comprobación del registro devuelve EPERM y la caché está vacía.
-El acceso al socket de Docker también devuelve EPERM. No se ejecutaron
-el compilador TypeScript con las dependencias
-Expo, la exportación Android, una compilación APK/AAB, un emulador ni las pruebas
-SQL de PGlite. Las cinco migraciones se revisaron, pero no se aplicaron a
+GitHub Actions completó la instalación npm, TypeScript y la compilación APK
+de demostración. No se ejecutaron EAS, una compilación AAB, un emulador,
+pruebas en dispositivo físico ni las pruebas SQL de PGlite. Las cinco
+migraciones se revisaron, pero no se aplicaron a
 Supabase. La prueba opcional de concurrencia con 24 sesiones PostgreSQL tampoco
 se ejecutó: no hay PostgreSQL disponible. Tampoco se probaron OTP por SMTP,
 OAuth Gmail, Ollama o feeds reales.
 
 Para completar esos controles, instalar las dependencias del README y ejecutar
 `bash scripts/check.sh`. El proyecto también incluye
-`.github/workflows/checks.yml` para controles reproducibles cuando se suba a
-un repositorio y tenga acceso a los paquetes. Ese workflow no se ejecutó aquí.
-La exportación de JavaScript Android del workflow no genera un APK.
+`.github/workflows/checks.yml` para controles reproducibles. Ese workflow
+general no se ejecutó aquí; el workflow ejecutado fue `android-apk.yml`.
+La exportación de JavaScript Android del workflow general no genera un APK.
 
 Luego verificar en Android: registro y acceso OTP, reenvío y vencimiento de
 códigos, tema conservado tras reiniciar, carga PDF/DOCX y foto, correo conectado,
 autorización/revocación de envíos, tarea diaria con el celular apagado, cupo entre
 búsquedas, recordatorios después de 72 horas, detención por empresa e historial.
-El icono del lanzador requiere una nueva compilación nativa; Expo Go conserva
-su propio icono como aplicación anfitriona.
+La APK publicada incorpora el icono nativo de Trabajo YA; falta comprobar su
+presentación en un lanzador Android. Expo Go conserva su propio icono como
+aplicación anfitriona.
 
 Un comprobante de Gmail confirma aceptación de la operación; no confirma entrega
 al destinatario ni una respuesta. La detección automática de respuestas, OCR

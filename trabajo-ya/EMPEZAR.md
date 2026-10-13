@@ -1,5 +1,10 @@
 # Trabajo YA: lo que falta activar
 
+Para instalar y recorrer la aplicación, ya está disponible la
+[APK de demostración Trabajo YA 0.3.0](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk).
+No requiere Expo Go. Usa ejemplos identificados y no conecta IA ni envía correos;
+seguí la [guía de instalación](docs/APK_GITHUB.md).
+
 El proyecto trae el código de Android, servidor, tareas, base de datos y pruebas.
 Todavía no hay un backend publicado ni un APK compilado con tus servicios reales.
 Podés realizar los pasos siguientes desde el celular; las claves privadas se
@@ -99,8 +104,11 @@ todavía esa APK. Si el login o la firma piden verificación de tu cuenta, la co
 - Gmail OAuth por usuario, autorizaciones y comprobantes, máximo de 10 intentos
   diarios y recordatorios después de 72 horas, sujetos a vacante vigente y permiso activo.
 - Perfiles de compilación Android y controles locales/CI.
+- APK autónoma de demostración compilada, verificada y publicada en GitHub.
 
 Lo que requiere tu acceso: crear proyectos y cuentas, habilitar facturación,
 cargar credenciales, conectar proveedor de IA y fuente autorizada, autorizar
 Gmail y verificar la app instalada. Los resultados reales se comprueban después
-de esos pasos; hasta ahora las comprobaciones se hicieron localmente.
+de esos pasos. Las pruebas del servidor fueron offline; la compilación y
+verificación de la APK demo se ejecutaron correctamente en GitHub Actions,
+sin pruebas todavía en un celular o emulador.

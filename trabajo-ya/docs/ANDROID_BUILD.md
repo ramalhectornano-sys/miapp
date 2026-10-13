@@ -1,9 +1,14 @@
 # Compilar Trabajo YA para Android
 
-Este repositorio todavía no incluye un APK ni un AAB generado. La compilación
-requiere instalar dependencias y configurar una cuenta Expo/EAS. El modo real
-requiere además Supabase y el backend desplegado con HTTPS público; el APK usa
-esos servicios y no contiene el servidor, la IA ni las tareas programadas.
+Ya podés [descargar la APK de demostración Trabajo YA 0.3.0](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk).
+Se compiló y publicó desde GitHub Actions; es autónoma, usa firma debug y no
+requiere Expo Go ni una cuenta Expo para instalarla. No conecta IA, usuarios o
+correo reales. La [guía de instalación](APK_GITHUB.md) explica sus límites.
+
+Las instrucciones EAS siguientes sirven para nuevas compilaciones y para el
+modo real. Este requiere Supabase y el backend desplegado con HTTPS público;
+el APK usa esos servicios y no contiene el servidor, la IA ni las tareas
+programadas. Todavía no se generó una APK conectada ni un AAB de producción.
 
 ## Artefactos y perfiles
 
@@ -125,10 +130,11 @@ Para compilar sin EAS cloud, instalar un **JDK completo**, Android SDK y las
 herramientas requeridas por Expo/EAS; después usar `--local`. Tener solo el
 runtime `java` no alcanza. La compilación cloud no requiere Android SDK local.
 
-## Estado comprobado en este entorno
+## Estado comprobado
 
-Se revisaron los perfiles, el guard de configuración y la sintaxis de los
-scripts. No hay dependencias npm instaladas, EAS CLI, cuenta Expo vinculada,
-JDK completo ni Android SDK. El intento de acceso a npm terminó en `EPERM` por
-el sandbox y la caché npm no contiene esas dependencias. Por estos motivos
-**no se ejecutó un build Android ni se generó un APK/AAB** aquí.
+La [ejecución de GitHub Actions](https://github.com/ramalhectornano-sys/miapp/actions/runs/38427300341)
+aprobó TypeScript, las 18 pruebas de lógica móvil, Expo prebuild y
+`assembleRelease`. `apksigner` verificó la firma y `aapt` confirmó el nombre,
+paquete y versión antes de publicar la APK demo. No se usó EAS para esa
+compilación. No se ejecutó un emulador ni una prueba en dispositivo físico,
+y no se generó un AAB ni se validaron servicios reales desde Android.

@@ -1,5 +1,9 @@
 # Trabajo YA
 
+[Descargar APK de demostración para Android](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk).
+Ya está compilada y publicada; incluye ejemplos identificados y funciona sin
+Expo Go. [Instalación y límites de esta demo](docs/APK_GITHUB.md).
+
 Para activar el proyecto desde el celular, empezar por [EMPEZAR](EMPEZAR.md).
 Para conectar el modelo real, consultar [IA real con Groq](docs/IA_REAL.md).
 
@@ -20,7 +24,8 @@ mantener el servidor configurado y disponible.
 
 La demostración es local y está identificada. No consulta portales, no conecta
 cuentas de correo y no envía postulaciones. En modo real hacen falta tu proyecto
-Supabase, API, worker y proveedores configurados. No se entrega un APK ya generado.
+Supabase, API, worker y proveedores configurados. La APK publicada es de
+demostración; todavía no se generó una APK conectada con servicios reales.
 
 Para ponerla en marcha en la nube, consultar
 [pruebas desde el celular con Google Cloud](deploy/google-cloud/README.md),
@@ -244,8 +249,9 @@ npx eas-cli build --profile production --platform android
 ```
 
 Configurar las variables públicas de producción en EAS antes del build. Las
-credenciales privadas siguen en el servidor. Estos comandos son instrucciones;
-no se ejecutó una compilación EAS ni se generó un APK/AAB en esta entrega.
+credenciales privadas siguen en el servidor. Estos comandos EAS son instrucciones;
+no se ejecutó una compilación EAS ni se generó un AAB. La APK de demostración
+disponible se compiló con Gradle desde GitHub Actions.
 
 ## Comprobaciones
 
