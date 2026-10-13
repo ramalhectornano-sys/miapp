@@ -22,6 +22,7 @@ PUBLIC_FIELDS = {"backend_url", "supabase_url", "supabase_public_key"}
 ANDROID_PACKAGE = "com.trabajoya.autoempleoia"
 MAX_CONFIG_BYTES = 16_384
 MAX_HEALTH_BYTES = 65_536
+HEALTH_PROBE_TIMEOUT_SECONDS = 120  # Render Free can need about a minute to wake.
 
 
 class ConfigurationError(ValueError):
@@ -151,7 +152,7 @@ class NoRedirect(HTTPRedirectHandler):
 def probe_health(backend_url: str) -> None:
     request = Request(backend_url + "/health", headers={"Accept": "application/json", "User-Agent": "Trabajo-YA-Android-Preflight/1"})
     try:
-        with build_opener(NoRedirect()).open(request, timeout=15) as response:
+        with build_opener(NoRedirect()).open(request, timeout=HEALTH_PROBE_TIMEOUT_SECONDS) as response:
             if response.status != 200:
                 raise ConfigurationError("El backend no respondió correctamente a /health.")
             raw = response.read(MAX_HEALTH_BYTES + 1)

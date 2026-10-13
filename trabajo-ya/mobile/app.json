@@ -2,13 +2,13 @@
   "expo": {
     "name": "Trabajo YA",
     "slug": "autoempleo-ia",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "orientation": "portrait",
     "scheme": "autoempleoia",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.trabajoya.autoempleoia",
-      "versionCode": 4,
+      "versionCode": 5,
       "permissions": [
         "INTERNET"
       ],

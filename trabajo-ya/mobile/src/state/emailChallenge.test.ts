@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { AUTH_CALLBACK_URL } from '../services/authLinks.ts';
 import { createEmailAuth, EMAIL_REQUEST_ERROR, EMAIL_VERIFY_ERROR, isValidEmailCode } from '../services/emailAuth.ts';
 import { editEmailChallenge, emailCodeRequested, emailCodeWaitSeconds, emailVerificationCredentials, initialEmailChallenge } from './emailChallenge.ts';
 
@@ -12,8 +13,8 @@ test('solicitar un código permite crear cuenta y entrega a Supabase solo datos 
   await auth.requestEmailCode(' persona@ejemplo.com ', ' Ana López ');
   await auth.requestEmailCode('persona@ejemplo.com', '   ');
   assert.deepEqual(requests, [
-    { email: 'persona@ejemplo.com', options: { shouldCreateUser: true, data: { full_name: 'Ana López' } } },
-    { email: 'persona@ejemplo.com', options: { shouldCreateUser: true } },
+    { email: 'persona@ejemplo.com', options: { shouldCreateUser: true, emailRedirectTo: AUTH_CALLBACK_URL, data: { full_name: 'Ana López' } } },
+    { email: 'persona@ejemplo.com', options: { shouldCreateUser: true, emailRedirectTo: AUTH_CALLBACK_URL } },
   ]);
   await assert.rejects(auth.requestEmailCode('correo inválido'), /correo electrónico válido/);
   assert.equal(requests.length, 2);

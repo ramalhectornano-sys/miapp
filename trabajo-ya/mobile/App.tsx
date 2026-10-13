@@ -17,7 +17,8 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import AuthScreen from './src/screens/AuthScreen';
 import { initialDemoState, demoChat, demoSearch } from './src/state/demo';
 import { config } from './src/config';
-import { getSession, observeAuthRefresh, requestEmailCode, verifyEmailCode, signOut, supabase, SUPABASE_CONFIGURED } from './src/services/supabase';
+import { getSession, observeAuthRefresh, requestEmailCode, verifyEmailCode, signOut, supabase, SUPABASE_CONFIGURED, authLinkHandler } from './src/services/supabase';
+import { observeAuthLinkEvents } from './src/services/authLinks';
 import { chat, createSearch, updateSearch, runSearch, extractResume, startGoogleOAuth, sendApplication, stopApplicationFollowups, deleteAccount, getRuns, type SearchRun } from './src/services/backend';
 import { loadState, saveProfile, uploadResume, deleteResume, getResumeUrl, uploadPhoto, getPhotoUrl, makeDefaultResume } from './src/services/data';
 import type { AppState, ChatMessage, JobSearch, Notice, Profile, Resume, SearchProposal, Tab } from './src/types';
@@ -65,16 +66,23 @@ function Workspace() {
     mounted.current = true;
     if (!supabase) { setLoading(false); return () => { mounted.current = false; }; }
     const stopRefresh = observeAuthRefresh();
+    let authRevision = 0;
     const subscription = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted.current) return;
+      authRevision++;
       if (currentScope.current.userId !== nextSession?.user.id && !currentScope.current.demo) {
         setData(emptyState()); setPhotoUrl(undefined); setExtraction(null); setPermissionsId(null); setExecutionHistory(null); setLoading(!!nextSession);
       }
       currentScope.current = { ...currentScope.current, userId: nextSession?.user.id };
+      if (!nextSession) setLoading(false);
       setSession(nextSession);
     });
-    void getSession().then(nextSession => { if (mounted.current) { setSession(nextSession); if (!nextSession) setLoading(false); } }).catch(caught => { if (mounted.current) { setNotice({ text: errorText(caught), kind: 'error' }); setLoading(false); } });
-    return () => { mounted.current = false; subscription.data.subscription.unsubscribe(); stopRefresh(); };
+    const initialRevision = authRevision;
+    void getSession().then(nextSession => { if (mounted.current && authRevision === initialRevision) { setSession(nextSession); if (!nextSession) setLoading(false); } }).catch(caught => { if (mounted.current && authRevision === initialRevision) { setNotice({ text: errorText(caught), kind: 'error' }); setLoading(false); } });
+    const stopLinks = config.demo || Platform.OS === 'web' ? () => {} : observeAuthLinkEvents(Linking, authLinkHandler,
+      () => { if (mounted.current) setNotice({ text: 'Correo verificado. Ya podés usar tu cuenta.', kind: 'success' }); },
+      text => { if (mounted.current) setNotice({ text, kind: 'error' }); });
+    return () => { mounted.current = false; stopLinks(); subscription.data.subscription.unsubscribe(); stopRefresh(); };
   }, []);
 
   const refresh = useCallback(async () => {

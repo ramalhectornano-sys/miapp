@@ -4,6 +4,15 @@ import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import { createEmailAuth } from './emailAuth';
+import { createAuthLinkHandler } from './authLinks';
+import { installPkceCrypto } from './pkceCrypto';
+
+if (Platform.OS !== 'web') {
+  installPkceCrypto(globalThis, {
+    randomValues: array => Crypto.getRandomValues(array),
+    sha256: data => Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, data as BufferSource),
+  });
+}
 
 export const DEMO_MODE = process.env.EXPO_PUBLIC_DEMO_MODE !== 'false';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? '';
@@ -107,7 +116,7 @@ export const sessionStorage = {
 
 export const supabase: SupabaseClient | null = SUPABASE_CONFIGURED
   ? createClient(supabaseUrl, publicKey, {
-      auth: { storage: sessionStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+      auth: { storage: sessionStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, flowType: 'pkce' },
     }) : null;
 
 export function requireSupabase(): SupabaseClient {
@@ -141,6 +150,10 @@ export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error('No se pudo cerrar la sesión. Intentá nuevamente.');
 }
+
+export const authLinkHandler = createAuthLinkHandler<Session>({
+  exchangeCodeForSession: code => requireSupabase().auth.exchangeCodeForSession(code),
+});
 
 /** Call once from the app shell and dispose the returned subscription on unmount. */
 export function observeAuthRefresh(): () => void {

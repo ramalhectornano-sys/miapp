@@ -21,7 +21,7 @@ port = 54323
 
 [auth]
 enabled = true
-site_url = "http://localhost:8081"
+site_url = "autoempleoia://auth/callback"
 additional_redirect_urls = ["autoempleoia://auth/callback"]
 jwt_expiry = 3600
 enable_signup = true

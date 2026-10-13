@@ -47,7 +47,7 @@ export default function AuthScreen({ configured, onRequestCode, onVerifyCode, on
       const requestedAt = Date.now();
       setChallenge(current => emailCodeRequested(current, email, requestedAt));
       setNow(requestedAt);
-      setFeedback({ text: 'Revisá tu correo, incluida la carpeta de spam, e ingresá el código recibido.', error: false });
+      setFeedback({ text: 'Revisá tu correo y abrí el enlace de acceso en este mismo celular. Si recibiste un código, también podés ingresarlo acá.', error: false });
     } catch { setFeedback({ text: EMAIL_REQUEST_ERROR, error: true }); }
     finally { operationPending.current = false; setBusy(false); }
   };
@@ -76,18 +76,18 @@ export default function AuthScreen({ configured, onRequestCode, onVerifyCode, on
           { icon: 'calendar-outline' as const, text: 'Organizá búsquedas con tu puesto y tu ciudad.' },
           { icon: 'shield-checkmark-outline' as const, text: 'Autorizá envíos diarios y consultá cada postulación.' },
         ].map(item => <View key={item.text} style={{ flexDirection: 'row', gap: 11, alignItems: 'center' }}><Ionicons name={item.icon} size={18} color={colors.primary} /><Text style={{ color: colors.muted, fontSize: 12, lineHeight: 21, flex: 1 }}>{item.text}</Text></View>)}</View></View>
-        <Card style={{ width: '100%', maxWidth: 440, padding: width < 500 ? 23 : 32, gap: 19 }}><View style={{ gap: 8 }}><Text style={{ color: colors.text, fontSize: 25, letterSpacing: -.7, fontWeight: '600' }}>{codeStep ? 'Revisá tu correo' : 'Entrá sin contraseña'}</Text><Text style={{ color: colors.muted, fontSize: 12, lineHeight: 20 }}>{codeStep ? `Ingresá el código que solicitaste para ${challenge.requestedEmail}.` : 'Usá tu correo para crear tu cuenta o ingresar. Te enviaremos un código de acceso.'}</Text></View>
+        <Card style={{ width: '100%', maxWidth: 440, padding: width < 500 ? 23 : 32, gap: 19 }}><View style={{ gap: 8 }}><Text style={{ color: colors.text, fontSize: 25, letterSpacing: -.7, fontWeight: '600' }}>{codeStep ? 'Revisá tu correo' : 'Entrá sin contraseña'}</Text><Text style={{ color: colors.muted, fontSize: 12, lineHeight: 20 }}>{codeStep ? `Abrí el enlace enviado a ${challenge.requestedEmail} en este mismo celular para volver a la app.` : 'Usá tu correo para crear tu cuenta o ingresar. Te enviaremos un enlace de acceso.'}</Text></View>
           {codeStep ? <>
-            <Field label="Código de acceso" value={challenge.token} onChangeText={token => setChallenge(current => ({ ...current, token }))} placeholder="Código de 6 a 8 dígitos" keyboardType="number-pad" editable={!busy} />
-            <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 18 }}>El código es de un solo uso. Si venció, solicitá uno nuevo.</Text>
+            <Field label="Código de acceso (si el correo lo incluye)" value={challenge.token} onChangeText={token => setChallenge(current => ({ ...current, token }))} placeholder="Código de 6 a 8 dígitos" keyboardType="number-pad" editable={!busy} />
+            <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 18 }}>El enlace y el código son de un solo uso. Si vencieron, solicitá un correo nuevo desde esta app.</Text>
           </> : <>
             <Field label="Correo electrónico" value={challenge.email} onChangeText={email => setChallenge(current => ({ ...current, email, token: '' }))} placeholder="vos@ejemplo.com" keyboardType="email-address" editable={!busy} />
             <Field label="Nombre completo (opcional)" value={challenge.name} onChangeText={name => setChallenge(current => ({ ...current, name }))} placeholder="Para tu nueva cuenta" editable={!busy} />
           </>}
           {feedback ? <View style={{ padding: 13, borderRadius: 10, backgroundColor: feedback.error ? `${colors.danger}12` : colors.primarySoft }}><Text accessibilityRole="alert" style={{ color: feedback.error ? colors.danger : colors.primary, fontSize: 12, lineHeight: 20 }}>{feedback.text}</Text></View> : null}
-          <Button label={codeStep ? 'Verificar e ingresar' : waitSeconds > 0 ? `Solicitar código en ${waitSeconds}s` : 'Enviar código de acceso'} onPress={() => void (codeStep ? verifyCode() : requestCode())} loading={busy} disabled={!codeStep && waitSeconds > 0} icon="arrow-forward-outline" />
+          <Button label={codeStep ? 'Verificar código e ingresar' : waitSeconds > 0 ? `Solicitar correo en ${waitSeconds}s` : 'Enviar enlace de acceso'} onPress={() => void (codeStep ? verifyCode() : requestCode())} loading={busy} disabled={!codeStep && waitSeconds > 0} icon="arrow-forward-outline" />
           {codeStep ? <View style={{ gap: 12 }}>
-            <Button label={waitSeconds > 0 ? `Reenviar código en ${waitSeconds}s` : 'Reenviar código'} variant="ghost" onPress={() => void requestCode()} disabled={busy || waitSeconds > 0} />
+            <Button label={waitSeconds > 0 ? `Reenviar correo en ${waitSeconds}s` : 'Reenviar correo'} variant="ghost" onPress={() => void requestCode()} disabled={busy || waitSeconds > 0} />
             <Pressable onPress={() => { if (operationPending.current) return; setChallenge(editEmailChallenge); setFeedback(null); }} disabled={busy} accessibilityRole="button"><Text style={{ color: colors.primary, fontSize: 12, textAlign: 'center' }}>Cambiar correo</Text></Pressable>
           </View> : null}
           {onDemo ? <>

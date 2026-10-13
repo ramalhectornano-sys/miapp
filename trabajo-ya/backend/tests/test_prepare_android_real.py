@@ -153,7 +153,7 @@ class PrepareAndroidRealTests(unittest.TestCase):
             self.assertEqual(request.full_url, public_config()["backend_url"] + "/health")
             self.assertFalse(request.has_header("Authorization"))
             self.assertNotIn("supabase", str(request.header_items()).lower())
-            self.assertEqual(kwargs["timeout"], 15)
+            self.assertEqual(kwargs["timeout"], prepare.HEALTH_PROBE_TIMEOUT_SECONDS)
             self.assertIsInstance(opener.call_args.args[0], prepare.NoRedirect)
 
     def test_redirect_and_provider_failure_are_redacted_and_do_not_write_env(self):

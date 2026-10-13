@@ -6,6 +6,10 @@ on:
     paths:
       - trabajo-ya/mobile/services.public.json
       - mobile/services.public.json
+      - trabajo-ya/mobile/app.json
+      - mobile/app.json
+      - trabajo-ya/mobile/src/**
+      - mobile/src/**
   workflow_dispatch:
 
 permissions:
@@ -106,6 +110,7 @@ jobs:
           import os
           import pathlib
           import re
+          import xml.etree.ElementTree as ET
 
           app = json.loads(pathlib.Path('app.json').read_text())['expo']
           assert app['name'] == 'Trabajo YA', 'Nombre inesperado de la app'
@@ -117,6 +122,17 @@ jobs:
           gradle = pathlib.Path('android/app/build.gradle').read_text()
           assert re.search(r'release\s*\{[\s\S]*?signingConfig\s+signingConfigs\.debug', gradle), 'Falta la firma debug de la APK de prueba'
           assert pathlib.Path('android/app/debug.keystore').is_file(), 'Falta el certificado debug de Expo'
+          android = '{http://schemas.android.com/apk/res/android}'
+          manifest = ET.parse('android/app/src/main/AndroidManifest.xml').getroot()
+          matching = []
+          for intent in manifest.findall('.//intent-filter'):
+              actions = {item.get(android + 'name') for item in intent.findall('action')}
+              categories = {item.get(android + 'name') for item in intent.findall('category')}
+              if ('android.intent.action.VIEW' in actions
+                  and {'android.intent.category.BROWSABLE', 'android.intent.category.DEFAULT'} <= categories
+                  and any(item.get(android + 'scheme') == 'autoempleoia' for item in intent.findall('data'))):
+                  matching.append(intent)
+          assert matching, 'Falta el enlace nativo autoempleoia para abrir el correo en Android'
           PY
 
       - name: Preparar Gradle y su caché

@@ -1,5 +1,5 @@
 /** Passwordless authentication boundary, independent of React Native for testing. */
-export const EMAIL_REQUEST_ERROR = 'No pudimos enviar el código. Esperá un minuto y volvé a intentarlo.';
+export const EMAIL_REQUEST_ERROR = 'No pudimos enviar el correo de acceso. Esperá un minuto y volvé a intentarlo.';
 export const EMAIL_VERIFY_ERROR = 'No pudimos verificar el código. Revisalo o solicitá uno nuevo.';
 
 export function normalizeEmail(email: string): string { return email.trim(); }
@@ -7,7 +7,7 @@ export function isValidEmail(email: string): boolean { return /^[^\s@]+@[^\s@]+\
 export function isValidEmailCode(token: string): boolean { return /^[0-9]{6,8}$/.test(token.trim()); }
 
 interface EmailAuthAdapter<Session> {
-  signInWithOtp: (credentials: { email: string; options: { shouldCreateUser: true; data?: { full_name: string } } }) => Promise<{ error: unknown }>;
+  signInWithOtp: (credentials: { email: string; options: { shouldCreateUser: true; emailRedirectTo: string; data?: { full_name: string } } }) => Promise<{ error: unknown }>;
   verifyOtp: (credentials: { email: string; token: string; type: 'email' }) => Promise<{ data: { session: Session | null }; error: unknown }>;
 }
 
@@ -20,7 +20,7 @@ export function createEmailAuth<Session>(auth: EmailAuthAdapter<Session>) {
       try {
         const { error } = await auth.signInWithOtp({
           email: normalizedEmail,
-          options: { shouldCreateUser: true, ...(name ? { data: { full_name: name } } : {}) },
+          options: { shouldCreateUser: true, emailRedirectTo: AUTH_CALLBACK_URL, ...(name ? { data: { full_name: name } } : {}) },
         });
         if (error) throw error;
       } catch { throw new Error(EMAIL_REQUEST_ERROR); }
@@ -35,3 +35,5 @@ export function createEmailAuth<Session>(auth: EmailAuthAdapter<Session>) {
     },
   };
 }
+import { AUTH_CALLBACK_URL } from './authLinks.ts';
+
