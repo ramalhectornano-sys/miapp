@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Trabajo YA",
+    "slug": "autoempleo-ia",
+    "version": "0.3.0",
+    "orientation": "portrait",
+    "scheme": "autoempleoia",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.trabajoya.autoempleoia",
+      "versionCode": 3,
+      "permissions": [
+        "INTERNET"
+      ],
+      "softwareKeyboardLayoutMode": "resize",
+      "icon": "./assets/brand/trabajo-ya-icon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-document-picker",
+        {}
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Elegí una fotografía para tu perfil profesional.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "icon": "./assets/brand/trabajo-ya-icon.png",
+    "web": {
+      "favicon": "./assets/brand/trabajo-ya-icon.png"
+    }
+  }
+}

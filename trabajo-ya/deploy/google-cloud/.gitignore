@@ -1,0 +1,4 @@
+cloud-config.json
+.deployment.json
+__pycache__/
+*.pyc

@@ -1,0 +1,10 @@
+# Build only executable backend sources. Never include local settings or CVs.
+**
+!Dockerfile
+!requirements.txt
+!app
+!app/**/*.py
+app/**/__pycache__/
+app/**/*.pyc
+app/**/.env
+app/**/.env.*
