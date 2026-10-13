@@ -1,4 +1,25 @@
-# Validación de Trabajo YA 0.3.0
+# Validación de Trabajo YA: APK demo 0.3.0 y código 0.3.1
+
+## Preparación de la versión conectada 0.3.1
+
+El usuario creó un proyecto Supabase y compartió su URL y clave pública.
+La configuración Android incorpora esos dos datos; `backend_url` permanece
+vacío porque no hay un servidor desplegado confirmado. La compilación real
+rechaza esa configuración incompleta antes de generar un APK.
+
+Se corrigió la persistencia del CV principal con la migración 006 y una RPC
+atómica. El guardado de texto conserva la foto existente. La subida de fotos
+comprueba la URL y la asociación; una respuesta perdida no borra un archivo
+que podría estar confirmado en el servidor. Se ejecutaron **148 pruebas de
+backend** (incluidas 13 del preparador Android real), **29 de despliegue** y
+**14 de transporte del servicio de datos** con Supabase sustituido.
+El instalador actualizado contiene seis migraciones y pasó `--check`.
+
+También se preparó Render Free para probar chat y datos persistentes. El
+servidor se suspende por inactividad; no ejecuta el worker ni el programador.
+La guía de activación está en `deploy/render/README.md` y la compilación
+conectada en `docs/APK_REAL.md`. No se publicó todavía un APK real nuevo,
+ni se confirmó inferencia, OTP o guardado contra ese Supabase.
 
 La imagen `images/maqueta-trabajo-ya.png` es una maqueta generada; `preview.html`
 es una representación navegable del diseño. No son capturas de una ejecución
