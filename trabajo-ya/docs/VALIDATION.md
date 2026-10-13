@@ -43,8 +43,29 @@ se añadió al código. En la misma ejecución de CI se consultaron únicamente:
 - `/rest/v1/profiles?select=user_id&limit=0`: tabla todavía no instalada.
 
 No se leyeron registros personales, no se solicitaron códigos de acceso y no
-se aplicó SQL al proyecto remoto. El siguiente paso del propietario es ejecutar
-`supabase/install-new-project.sql` una sola vez en su base nueva.
+se aplicó SQL al proyecto remoto desde estas herramientas. En la ejecución
+posterior 38446413798, `profiles` ya existía y el rol anónimo no tenía permiso de
+lectura. Esa comprobación no verifica todas las migraciones ni el registro de
+usuarios; no se volvió a ejecutar el instalador sobre la base existente.
+
+## Corrección del arranque en Render
+
+El propietario creó el servicio Render Free y realizó un despliegue del commit
+`044954f`. La construcción Docker terminó, pero el arranque falló con código 127:
+el comando compuesto de shell del Blueprint se interpretó incorrectamente.
+Se reemplazó por `/app/start.sh`, un ejecutable incluido en la imagen Docker que
+respeta `PORT` y evita registrar las URL de acceso. La configuración y la guía
+para recuperar el servicio existente se actualizaron. Todavía no se confirmó
+un despliegue Live ni una inferencia real en Render.
+
+La [ejecución 38446413798](https://github.com/ramalhectornano-sys/miapp/actions/runs/38446413798)
+aprobó sobre el commit `6f6cc72f548aa56dae8030f7bc66ce51a273a16f`:
+**149 pruebas backend**, incluyendo el arranque del script real con HTTP local;
+**construcción Docker y HTTP 200 del contenedor** con un `PORT` asignado y el
+comando `/app/start.sh`; seis migraciones y cuatro baterías SQL; TypeScript y
+32 pruebas móviles; instalador actualizado y 29 pruebas de despliegue.
+Las pruebas de arranque usan configuración de prueba y no confirman Groq,
+Gmail, inicio de sesión ni persistencia en el servidor Render del propietario.
 
 ## Servidor y APK real pendientes de activación
 
@@ -53,7 +74,7 @@ Supabase. El Blueprint incluye los datos públicos del proyecto y solicita las
 claves privadas solamente en Render. La guía está en
 [deploy/render/README.md](../deploy/render/README.md).
 
-Todavía no hay una URL de backend desplegado confirmada. `backend_url` permanece
+Render asignó una URL pública, pero todavía no hay un backend Live confirmado. `backend_url` permanece
 vacío y `prepare_android_real.py` rechaza esa configuración antes de compilar.
 El workflow `android-real.yml` fuerza el modo real y no muestra el acceso a la
 demostración. No se compiló ni publicó todavía un APK conectado 0.3.1.
