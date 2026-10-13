@@ -60,6 +60,9 @@ jobs:
 
       - name: Preparar las herramientas de Android
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
 
       - name: Instalar Android SDK 36 y herramientas de compilación
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
