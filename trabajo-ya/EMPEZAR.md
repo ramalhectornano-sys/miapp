@@ -1,23 +1,39 @@
 # Trabajo YA: lo que falta activar
 
-Para crear cuentas gratuitas y activar chat, perfil, fotos y CV desde el celular,
-seguí [Supabase Free y Render Free](deploy/render/README.md). Después se compila
-la [APK conectada](docs/APK_REAL.md); todavía no está publicada. Las búsquedas
-programadas necesitan la infraestructura adicional descrita abajo.
+**El proyecto Supabase ya existe y Render muestra el backend Live en
+https://trabajo-ya-api.onrender.com.** La configuración pública de Android está
+cargada y la **APK real 0.3.1 / 4 ya está publicada**:
+[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.1-real/Trabajo-YA-0.3.1-real.apk).
+La [compilación 38447381098](https://github.com/ramalhectornano-sys/miapp/actions/runs/38447381098)
+terminó correctamente. Los pasos de instalación y las comprobaciones pendientes
+están en [APK conectada](docs/APK_REAL.md).
 
-Para instalar y recorrer la aplicación, ya está disponible la
+Antes de ingresar, falta guardar `{{ .Token }}` en las plantillas **Magic Link**
+y **Confirm signup** de Supabase. Después falta probar en el teléfono el código OTP, el guardado
+y la recuperación de perfil, foto y CV y una respuesta real de la IA. Esas
+operaciones todavía no se comprobaron. No necesitás crear de nuevo Supabase ni
+Render. Las búsquedas programadas y los correos automáticos requieren configuración
+adicional: Render Free no aporta el worker/programador de esta app.
+
+Como referencia histórica para recorrer las pantallas, está disponible la
 [APK de demostración Trabajo YA 0.3.0](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk).
 No requiere Expo Go. Usa ejemplos identificados y no conecta IA ni envía correos;
 seguí la [guía de instalación](docs/APK_GITHUB.md).
 
 El proyecto trae el código de Android, servidor, tareas, base de datos y pruebas.
-Todavía no hay un backend publicado ni un APK compilado con tus servicios reales.
-Podés realizar los pasos siguientes desde el celular; las claves privadas se
+Los pasos siguientes se conservan para verificar el proyecto existente, preparar
+otra instalación o activar las tareas del servidor. Las claves privadas se
 cargan en tus cuentas, sin escribirlas en el código ni enviarlas por chat.
 
-## 1. Crear la base en Supabase
+## 1. Verificar Supabase o preparar una base nueva
 
-Entrar a [Supabase](https://supabase.com/dashboard) y crear un proyecto Free propio.
+En el proyecto actual, confirmar las seis migraciones, los buckets privados y
+las plantillas del código OTP. El instalador de proyecto nuevo no debe ejecutarse
+otra vez sobre una instalación existente. Consultar
+[Supabase](supabase/README.md) para aplicar solamente migraciones pendientes.
+
+Solo para otra instalación, entrar a [Supabase](https://supabase.com/dashboard)
+y crear un proyecto Free propio.
 En un **proyecto nuevo sin usuarios de la app ni instalación anterior**, abrir
 SQL Editor, copiar `supabase/install-new-project.sql` y ejecutar el archivo completo.
 Incluye las seis migraciones en una transacción y se detiene si detecta una
@@ -31,7 +47,13 @@ y límites del correo de desarrollo; para usuarios externos hace falta SMTP prop
 Guardar la URL del proyecto, la clave pública y la privada en un gestor de claves.
 La clave pública se usa en Android; la privada se usa solo en el servidor.
 
-## 2. Preparar Google Cloud desde el celular
+## 2. Preparar Google Cloud para tareas automáticas
+
+La API de pruebas actual ya está publicada en Render. Para chat, perfil, fotos
+y CV, conservar ese servicio y seguir [Render](deploy/render/README.md).
+Google Cloud es la ruta alternativa preparada para API, worker y programador;
+el servicio gratuito de Render no ejecuta por sí solo las búsquedas con el
+celular apagado. No se activaron tareas ni envíos en la instalación actual.
 
 Usar el proyecto donde ya creaste el cliente OAuth **Aplicación web**. Habilitar
 facturación con un medio de pago y configurar presupuesto de pruebas. La solución
@@ -64,8 +86,14 @@ evitan tratar un servidor que responde como prueba de búsqueda o envío.
 
 ## 3. Conectar la IA y las vacantes
 
-La configuración inicial de servidor identifica el asistente como **demo**.
-Para IA real, crear una clave en Groq y ejecutar en Cloud Shell:
+El backend Render está preparado para Groq. Una vez instalada la APK conectada,
+ingresar por código y probar el chat para confirmar una respuesta real; todavía
+no se hizo esa comprobación. Render Free no ofrece terminal y el estado de
+configuración de `/health` no acredita una inferencia.
+
+Para una instalación alternativa en Google Cloud, la configuración inicial
+identifica el asistente como **demo**. Para IA real, crear una clave en Groq y
+ejecutar en Cloud Shell:
 
 ```bash
 python3 deploy/google-cloud/cloud.py activate-ai
@@ -84,7 +112,15 @@ permiso para enviar: se autoriza dentro de la app.
 
 ## 4. Compilar Android en la nube
 
-Después de `setup`, la configuración pública está en
+La ruta actual usa GitHub Actions con los datos públicos ya cargados. La
+compilación 0.3.1 / 4 terminó y publicó la APK conectada; no hace falta una cuenta
+Expo para esa ruta. Descargarla desde el enlace de arriba e instalarla siguiendo
+[APK conectada](docs/APK_REAL.md). La APK 0.3.0 de demostración no se conecta a
+los nuevos servicios por instalarla de nuevo. Si Android rechaza la actualización
+por una firma diferente, desinstalar la demo e instalar la APK nueva.
+
+Como alternativa, para compilar con EAS después de `setup`, la configuración
+pública de Google Cloud está en
 `deploy/google-cloud/generated/mobile.env`. Desde la raíz, si todavía no tenés
 una configuración local propia, copiarla:
 
@@ -97,7 +133,7 @@ Crear/iniciar sesión en [Expo](https://expo.dev/signup), vincular el proyecto y
 cargar las mismas variables públicas en el entorno EAS **preview**.
 Seguir [ANDROID_BUILD](docs/ANDROID_BUILD.md), también desde Cloud Shell.
 
-La compilación `preview-real` produce una APK para instalar y probar. Requiere
+La compilación EAS `preview-real` produce una APK para instalar y probar. Requiere
 tu cuenta, las variables reales y el certificado de EAS. El proyecto no incluye
 todavía esa APK. Si el login o la firma piden verificación de tu cuenta, la completás vos.
 
@@ -109,11 +145,13 @@ todavía esa APK. Si el login o la firma piden verificación de tu cuenta, la co
 - Gmail OAuth por usuario, autorizaciones y comprobantes, máximo de 10 intentos
   diarios y recordatorios después de 72 horas, sujetos a vacante vigente y permiso activo.
 - Perfiles de compilación Android y controles locales/CI.
-- APK autónoma de demostración compilada, verificada y publicada en GitHub.
+- Supabase creado y API de pruebas publicada en Render.
+- Configuración pública y APK conectada 0.3.1 / 4 compilada, verificada y publicada.
+- APK autónoma anterior de demostración compilada y publicada en GitHub.
 
-Lo que requiere tu acceso: crear proyectos y cuentas, habilitar facturación,
-cargar credenciales, conectar proveedor de IA y fuente autorizada, autorizar
-Gmail y verificar la app instalada. Los resultados reales se comprueban después
-de esos pasos. Las pruebas del servidor fueron offline; la compilación y
-verificación de la APK demo se ejecutaron correctamente en GitHub Actions,
-sin pruebas todavía en un celular o emulador.
+Lo que requiere tu acceso ahora: comprobar las migraciones y el acceso OTP en
+Supabase, instalar la APK conectada y probar perfil, foto,
+CV y chat. Para automatización, preparar worker/programador, fuente autorizada,
+Gmail y consentimiento. La compilación de la APK demo se ejecutó en GitHub
+Actions; todavía no se comprobó el funcionamiento completo de la nueva
+instalación desde un celular o emulador.

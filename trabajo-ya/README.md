@@ -1,12 +1,24 @@
 # Trabajo YA
 
-**La aplicación real todavía requiere crear Supabase y desplegar el servidor.**
-El código 0.3.1 corrige el guardado de fotos y del CV principal. Seguí la
-[configuración gratuita para pruebas](deploy/render/README.md) y la
-[compilación de la APK conectada](docs/APK_REAL.md).
+**Supabase ya está creado y el backend está publicado en
+https://trabajo-ya-api.onrender.com.** La configuración pública de Android está
+completa y la **APK conectada 0.3.1 / 4 está publicada**:
+[descargar Trabajo YA para Android](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.1-real/Trabajo-YA-0.3.1-real.apk).
+La [compilación 38447381098](https://github.com/ramalhectornano-sys/miapp/actions/runs/38447381098)
+terminó correctamente y verificó el paquete y la firma de prueba. El código
+0.3.1 corrige el guardado de fotos y del CV principal. Los pasos de instalación
+y prueba están en [APK conectada](docs/APK_REAL.md).
 
-La [APK 0.3.0 publicada](docs/APK_GITHUB.md) es únicamente una demostración:
-no conecta IA ni guarda perfil, fotos o CV en el servidor.
+La [APK 0.3.0 publicada](docs/APK_GITHUB.md) es la demostración anterior:
+no conecta IA ni guarda perfil, fotos o CV en el servidor. No representa la
+nueva compilación conectada.
+
+Todavía no se verificaron un ingreso por código OTP, la persistencia de perfil,
+foto o CV desde Android ni una respuesta real del modelo. Render Free sostiene
+la API de pruebas; no se configuró allí un worker ni se activaron correos o
+búsquedas automáticas. Falta guardar `{{ .Token }}` en las plantillas **Magic Link**
+y **Confirm signup** de Supabase y comprobar el código desde la app. La creación
+de los servicios y la compilación no acreditan esas operaciones.
 
 Para activar el proyecto desde el celular, empezar por [EMPEZAR](EMPEZAR.md).
 Para conectar el modelo real, consultar [IA real con Groq](docs/IA_REAL.md).
@@ -27,16 +39,20 @@ al mismo correo cada **72 horas desde el último envío confirmado**. Hace falta
 mantener el servidor configurado y disponible.
 
 La demostración es local y está identificada. No consulta portales, no conecta
-cuentas de correo y no envía postulaciones. En modo real hacen falta tu proyecto
-Supabase, API, worker y proveedores configurados. La APK publicada es de
-demostración; todavía no se generó una APK conectada con servicios reales.
+cuentas de correo y no envía postulaciones. El modo real usa Supabase y la API;
+las tareas automáticas requieren además worker y proveedores configurados.
+La APK conectada ya está compilada; queda comprobar sus funciones con una cuenta
+real desde Android.
 
-Para ponerla en marcha en la nube, consultar
+Para preparar otra instalación de pruebas, consultar
+[Supabase Free y Render Free](deploy/render/README.md). Para ejecutar las tareas
+automáticas o usar un servidor propio, consultar
 [pruebas desde el celular con Google Cloud](deploy/google-cloud/README.md),
 [servidor propio con Docker](deploy/README.md) y
 [compilación Android](docs/ANDROID_BUILD.md). Incluyen las cuentas que hay que
 crear, el despliegue con Ollama/API/worker/HTTPS y un APK en modo real separado de
-la demostración. Esos servicios todavía no fueron conectados ni desplegados.
+la demostración. La infraestructura de worker y programador todavía no se activó
+en la instalación actual de Render.
 
 Con las variables cargadas, comprobar la configuración sin imprimir secretos:
 
@@ -91,6 +107,11 @@ explorar las pantallas sin credenciales ni backend. Los cambios de `.env` requie
 reiniciar Metro; usar `npx expo start --clear` si mantiene una configuración anterior.
 
 ## Activar Supabase y el backend
+
+Estos pasos se conservan para una instalación nueva o para desarrollo local.
+No hace falta volver a crear el Supabase ni el servicio Render actuales. Antes
+de usar la app, confirmar las seis migraciones y las plantillas OTP en el proyecto
+existente; no repetir el instalador de proyecto nuevo sobre una base instalada.
 
 1. Crear un proyecto Supabase propio, o instalar Supabase CLI/Docker y ejecutar
    desde la raíz `supabase start` y `supabase db reset`.
@@ -157,8 +178,11 @@ en variables `EXPO_PUBLIC_*`: Expo las incorpora a la aplicación.
 
 ## IA, fuentes y correo reales
 
-El backend empieza con `AI_PROVIDER=demo`: interpreta ejemplos de forma básica y
-devuelve propuestas identificadas, sin afirmar ejecuciones. Para un modelo abierto:
+La configuración de desarrollo empieza con `AI_PROVIDER=demo`: interpreta
+ejemplos de forma básica y devuelve propuestas identificadas, sin afirmar
+ejecuciones. La instalación Render está preparada para Groq; queda verificar
+una respuesta real desde el chat autenticado de la APK conectada. Para otra
+instalación con un modelo abierto local:
 
 ```bash
 ollama pull qwen2.5:7b
@@ -224,7 +248,8 @@ no se inventan envíos diarios.
 
 Consultar [backend/README.md](backend/README.md) para payloads, contratos de feeds,
 OAuth y rutas de consentimiento; [supabase/CONTRACT.md](supabase/CONTRACT.md) contiene
-el contrato SQL exacto. No se probaron proveedores externos durante esta entrega.
+el contrato SQL exacto. Todavía no se verificaron una inferencia real, una búsqueda
+laboral ni un envío externo en la instalación actual.
 
 ## Development build y compilación Android
 

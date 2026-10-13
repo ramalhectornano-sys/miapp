@@ -1,4 +1,4 @@
-# Validación de Trabajo YA: código 0.3.1 y APK demo 0.3.0
+# Validación de Trabajo YA: APK conectada 0.3.1
 
 ## Comprobaciones del código conectado 0.3.1
 
@@ -55,8 +55,10 @@ El propietario creó el servicio Render Free y realizó un despliegue del commit
 el comando compuesto de shell del Blueprint se interpretó incorrectamente.
 Se reemplazó por `/app/start.sh`, un ejecutable incluido en la imagen Docker que
 respeta `PORT` y evita registrar las URL de acceso. La configuración y la guía
-para recuperar el servicio existente se actualizaron. Todavía no se confirmó
-un despliegue Live ni una inferencia real en Render.
+para recuperar el servicio existente se actualizaron. El propietario mostró
+posteriormente el servicio **Live** con el commit corregido `6f6cc72`. Una prueba
+posterior de `/health` remoto pasó en el preparador Android; todavía no se confirmó
+una inferencia real en Render.
 
 La [ejecución 38446413798](https://github.com/ramalhectornano-sys/miapp/actions/runs/38446413798)
 aprobó sobre el commit `6f6cc72f548aa56dae8030f7bc66ce51a273a16f`:
@@ -67,17 +69,28 @@ comando `/app/start.sh`; seis migraciones y cuatro baterías SQL; TypeScript y
 Las pruebas de arranque usan configuración de prueba y no confirman Groq,
 Gmail, inicio de sesión ni persistencia en el servidor Render del propietario.
 
-## Servidor y APK real pendientes de activación
+## Servidor activo y APK conectada publicada
 
 Se preparó **Render Free** para probar el chat con Groq y los datos privados en
 Supabase. El Blueprint incluye los datos públicos del proyecto y solicita las
 claves privadas solamente en Render. La guía está en
 [deploy/render/README.md](../deploy/render/README.md).
 
-Render asignó una URL pública, pero todavía no hay un backend Live confirmado. `backend_url` permanece
-vacío y `prepare_android_real.py` rechaza esa configuración antes de compilar.
-El workflow `android-real.yml` fuerza el modo real y no muestra el acceso a la
-demostración. No se compiló ni publicó todavía un APK conectado 0.3.1.
+La URL `https://trabajo-ya-api.onrender.com` está incorporada en
+`mobile/services.public.json`. La [compilación 38447381098](https://github.com/ramalhectornano-sys/miapp/actions/runs/38447381098)
+validó la configuración pública y completó la consulta `/health` al servidor real:
+exige HTTP 200, Supabase `configured` y proveedor de IA `configured_unverified`.
+Pasaron TypeScript, 32 pruebas móviles, Expo prebuild y Gradle
+`assembleRelease`. `apksigner` verificó la firma y `aapt` confirmó nombre Trabajo
+YA, paquete `com.trabajoya.autoempleoia`, versión **0.3.1 / 4**. La
+[APK conectada descargable](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.1-real/Trabajo-YA-0.3.1-real.apk)
+está publicada como versión de prueba con firma debug. Tamaño: **51.829.057 bytes**;
+SHA-256: `85ae0acee37710efd52ded50420f2f109888d3db6825fff0f557c94643150a51`.
+Commit compilado: `4a5b40a00f92140cce7df1d44664c76175ec0abb`.
+La versión adjunta checksum, certificado público, información del paquete,
+commit y lockfile. No se ejecutó en dispositivo físico o emulador.
+El workflow `android-real.yml` fuerza el modo real y la app no ofrece entrar a
+la demostración.
 Una respuesta `/health` con IA `configured_unverified` solo informa configuración;
 no confirma una inferencia. Ver [APK_REAL.md](APK_REAL.md).
 
@@ -111,8 +124,13 @@ adaptación. Falta comprobar el icono en un lanzador Android.
 
 ## Verificación funcional pendiente
 
-No se probó en un dispositivo físico ni emulador. Una vez activados Supabase y
-el backend, verificar en la APK real: ingreso por código, guardado y recuperación
+El propietario confirmó que aún no configuró las plantillas de correo OTP de
+Supabase. Se le indicaron las plantillas Magic Link y Confirm signup con
+`{{ .Token }}`. Falta confirmar que guardó esos ajustes y que recibe/verifica
+un código desde Android.
+
+No se probó en un dispositivo físico ni emulador. Con Supabase y
+el backend creados, verificar en la APK real: ingreso por código, guardado y recuperación
 del perfil, foto y CV al reiniciar, tema persistente y una respuesta real del chat.
 El SMTP incluido de Supabase limita las pruebas a correos del equipo y a dos
 mensajes por hora; para otros usuarios hace falta configurar SMTP propio.
