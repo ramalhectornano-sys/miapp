@@ -208,7 +208,7 @@ $$;
 do $$
 declare owner_id uuid:='43333333-3333-3333-3333-333333333333';
   cv_key uuid:=gen_random_uuid(); account_key uuid:=gen_random_uuid(); search_key uuid:=gen_random_uuid();
-  root_key uuid:=gen_random_uuid(); job_key uuid:=gen_random_uuid(); claim jsonb;
+  root_key uuid:=gen_random_uuid(); job_key uuid:=gen_random_uuid(); claim jsonb; completed boolean;
   due_at timestamptz:=now()+interval '10 minutes'; next_daily timestamptz:=now()+interval '1 day';
 begin
   insert into public.resume_versions(id,user_id,name,original_filename,object_path,mime_type,size_bytes)
@@ -233,16 +233,24 @@ begin
   if public.prepare_followup_application(root_key,owner_id,search_key,(claim->>'run_id')::uuid,(claim->>'claim_token')::uuid) is not null then
     raise exception 'Preparó recordatorio antes de cumplir 72h';
   end if;
-  if not public.complete_search_run(search_key,(claim->>'claim_token')::uuid,(claim->>'run_id')::uuid,'completed',next_daily) or
-    (select next_run_at from public.job_searches where id=search_key) is distinct from due_at then
+  -- Observe the schedule only after completing the mutating function; SQL
+  -- expression evaluation does not order a scalar subquery after that call.
+  completed := public.complete_search_run(search_key,(claim->>'claim_token')::uuid,(claim->>'run_id')::uuid,'completed',next_daily);
+  if completed is distinct from true then
+    raise exception 'No completó la búsqueda para agendar el recordatorio';
+  end if;
+  if (select next_run_at from public.job_searches where id=search_key) is distinct from due_at then
     raise exception 'No agendó nueva consulta al vencer las 72h';
   end if;
   claim:=public.claim_search_now(search_key,owner_id,'test-wake-stopped');
   insert into public.job_search_matches(user_id,job_id,search_id,run_id,roles_snapshot,cities_snapshot)
     values (owner_id,job_key,search_key,(claim->>'run_id')::uuid,array['Chofer'],array['Neuquén']);
   perform public.stop_recipient_followups(owner_id,root_key);
-  if not public.complete_search_run(search_key,(claim->>'claim_token')::uuid,(claim->>'run_id')::uuid,'completed',next_daily) or
-    (select next_run_at from public.job_searches where id=search_key) is distinct from next_daily then
+  completed := public.complete_search_run(search_key,(claim->>'claim_token')::uuid,(claim->>'run_id')::uuid,'completed',next_daily);
+  if completed is distinct from true then
+    raise exception 'No completó la búsqueda con dirección detenida';
+  end if;
+  if (select next_run_at from public.job_searches where id=search_key) is distinct from next_daily then
     raise exception 'Una dirección detenida volvió a agendar wake de recordatorio';
   end if;
 end;

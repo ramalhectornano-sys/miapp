@@ -12,7 +12,7 @@ declare
   account_a uuid := gen_random_uuid(); account_a2 uuid := gen_random_uuid(); account_b uuid := gen_random_uuid();
   search_a uuid := gen_random_uuid(); job_a uuid := gen_random_uuid(); app_a uuid := gen_random_uuid();
   grant_result jsonb; consent_a uuid; new_consent uuid; result jsonb; rejected boolean;
-  search_claim jsonb; repeated_claim jsonb;
+  search_claim jsonb; repeated_claim jsonb; completed boolean;
   local_timezone text; local_midnight timestamptz; quota_app uuid;
   j uuid; a uuid; counter integer;
 begin
@@ -198,9 +198,14 @@ begin
     where id=(search_claim->>'run_id')::uuid;
   grant_result := public.grant_sending_consent(user_a,search_a,cv_a,account_a,array['authorized-feed'],now()+interval '30 days','Autorizo los envíos automáticos de esta búsqueda');
   new_consent := (grant_result->'consent'->>'id')::uuid;
-  if not public.complete_search_run(search_a,(search_claim->>'claim_token')::uuid,
-      (search_claim->>'run_id')::uuid,'completed',now()+interval '1 day') or
-     (select next_run_at from public.job_searches where id=search_a) <> now()+interval '1 day' then
+  -- A scalar subquery in the same IF can become an InitPlan evaluated before
+  -- the mutating function. Complete first, then inspect its persisted result.
+  completed := public.complete_search_run(search_a,(search_claim->>'claim_token')::uuid,
+    (search_claim->>'run_id')::uuid,'completed',now()+interval '1 day');
+  if completed is distinct from true then
+    raise exception 'No completó la búsqueda después del consentimiento';
+  end if;
+  if (select next_run_at from public.job_searches where id=search_a) is distinct from now()+interval '1 day' then
     raise exception 'Grant durante run conservó próxima fecha vencida';
   end if;
   select item into repeated_claim from public.claim_due_searches('worker-after-consent') item limit 1;
@@ -233,9 +238,14 @@ begin
 end;
 $$;
 select set_config('request.jwt.claim.sub','31111111-1111-1111-1111-111111111111',true);
-do $$ begin
-  if not public.revoke_sending_consent(current_setting('test.previous_consent')::uuid) or
-     (select auto_apply from public.job_searches where id=current_setting('test.current_search')::uuid) is distinct from true then
+do $$
+declare revoked boolean;
+begin
+  revoked := public.revoke_sending_consent(current_setting('test.previous_consent')::uuid);
+  if revoked is distinct from true then
+    raise exception 'No revocó el permiso anterior propio';
+  end if;
+  if (select auto_apply from public.job_searches where id=current_setting('test.current_search')::uuid) is distinct from true then
     raise exception 'Revocar permiso anterior desactivó permiso actual';
   end if;
   if not public.revoke_sending_consent(current_setting('test.current_consent')::uuid) then
