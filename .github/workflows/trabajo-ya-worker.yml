@@ -1,0 +1,142 @@
+name: Búsquedas programadas de Trabajo YA (pruebas)
+
+on:
+  schedule:
+    # Evita el minuto cero, que suele tener más demoras en GitHub.
+    - cron: '7-59/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trabajo-ya-worker
+  cancel-in-progress: false
+
+jobs:
+  worker:
+    # Publicar este archivo no activa búsquedas ni envíos.
+    if: github.repository == 'ramalhectornano-sys/miapp' && vars.WORKER_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: trabajo-ya-real
+          persist-credentials: false
+      - name: Encontrar el proyecto
+        run: |
+          if [[ -f trabajo-ya/backend/app/worker.py ]]; then
+            echo 'PROJECT_DIR=trabajo-ya' >> "$GITHUB_ENV"
+          else
+            echo 'PROJECT_DIR=.' >> "$GITHUB_ENV"
+          fi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependencias del servidor
+        run: python -m pip install -r "$PROJECT_DIR/backend/requirements.txt"
+      - name: Comprobar configuración privada y ejecutar un lote real
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_PROVIDER: openai_compatible
+          AI_BASE_URL: ${{ vars.AI_BASE_URL || 'https://api.groq.com/openai/v1' }}
+          AI_MODEL: ${{ vars.AI_MODEL || 'openai/gpt-oss-20b' }}
+          WEB_SEARCH_PROVIDER: ${{ vars.WEB_SEARCH_PROVIDER }}
+          WEB_SEARCH_API_KEY: ${{ secrets.WEB_SEARCH_API_KEY }}
+          WEB_SEARCH_MAX_QUERIES: ${{ vars.WEB_SEARCH_MAX_QUERIES || '2' }}
+          AUTHORIZED_JOB_FEEDS: ${{ vars.AUTHORIZED_JOB_FEEDS || '[]' }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TOKEN_ENCRYPTION_KEY: ${{ secrets.TOKEN_ENCRYPTION_KEY }}
+          MAIL_SEND_ENABLED: ${{ vars.MAIL_SEND_ENABLED || 'false' }}
+          DEFAULT_TIMEZONE: ${{ vars.DEFAULT_TIMEZONE || 'America/Argentina/Buenos_Aires' }}
+          # Cada búsqueda tiene su propio límite de 15 minutos. Un lote de uno
+          # cabe dentro del tiempo total del job, incluyendo la instalación.
+          WORKER_BATCH_SIZE: '1'
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from urllib.parse import urlparse
+          from cryptography.fernet import Fernet
+
+          def fail(message):
+              raise SystemExit(message)
+
+          # Los únicos valores leídos del archivo público son URL y clave
+          # publicable de Supabase y URL del backend; no contienen secretos.
+          config = json.loads((Path(os.environ['PROJECT_DIR']) / 'mobile/services.public.json').read_text())
+          base = config.get('supabase_url', '').rstrip('/')
+          public_key = config.get('supabase_public_key', '')
+          backend = config.get('backend_url', '').rstrip('/')
+          if not base.startswith('https://') or not public_key or not backend.startswith('https://'):
+              fail('Falta la configuración pública real de Supabase o del backend.')
+          for name in ('SUPABASE_SERVICE_ROLE_KEY', 'AI_API_KEY'):
+              if not os.environ.get(name):
+                  fail('Falta el secreto ' + name + '; no se inició el worker.')
+          if os.environ['SUPABASE_SERVICE_ROLE_KEY'] == public_key:
+              fail('SUPABASE_SERVICE_ROLE_KEY debe ser privada; no sirve la clave publicable.')
+
+          try:
+              feeds = json.loads(os.environ['AUTHORIZED_JOB_FEEDS'])
+          except ValueError:
+              fail('AUTHORIZED_JOB_FEEDS debe ser JSON válido.')
+          if not isinstance(feeds, list) or len(feeds) > 20:
+              fail('AUTHORIZED_JOB_FEEDS debe ser una lista de hasta 20 integraciones.')
+          for feed in feeds:
+              if not isinstance(feed, dict) or not feed.get('id') or feed.get('authorized') is not True:
+                  fail('Hay una fuente sin identificador o autorización explícita.')
+              parsed = urlparse(feed.get('url', ''))
+              if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
+                  fail('Una fuente no tiene una URL HTTPS pública válida.')
+
+          provider = os.environ.get('WEB_SEARCH_PROVIDER', '').strip()
+          if provider and provider != 'tavily':
+              fail('WEB_SEARCH_PROVIDER debe ser tavily o quedar vacío.')
+          if provider == 'tavily' and not os.environ.get('WEB_SEARCH_API_KEY'):
+              fail('Falta el secreto WEB_SEARCH_API_KEY; no se inició el worker.')
+          if not feeds and provider != 'tavily':
+              fail('No hay fuentes autorizadas ni proveedor de búsqueda configurados. No se ejecutó ninguna búsqueda.')
+
+          mail = os.environ.get('MAIL_SEND_ENABLED', 'false')
+          if mail not in ('true', 'false'):
+              fail('MAIL_SEND_ENABLED debe ser true o false.')
+          if mail == 'true':
+              for name in ('GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'TOKEN_ENCRYPTION_KEY'):
+                  if not os.environ.get(name):
+                      fail('Falta ' + name + '; no se inició el worker con envíos habilitados.')
+              try:
+                  Fernet(os.environ['TOKEN_ENCRYPTION_KEY'].encode('ascii'))
+              except (ValueError, TypeError, UnicodeError):
+                  fail('TOKEN_ENCRYPTION_KEY no tiene formato Fernet válido.')
+
+          # No se imprimen valores privados ni se escriben secretos a archivos.
+          public_env = {
+              'SUPABASE_URL': base,
+              'SUPABASE_ANON_KEY': public_key,
+              'GOOGLE_REDIRECT_URI': backend + '/api/mail/google/callback',
+          }
+          with open(os.environ['GITHUB_ENV'], 'a') as target:
+              for name, value in public_env.items():
+                  if '\n' in value or '\r' in value:
+                      fail('La configuración pública contiene un valor inválido.')
+                  target.write(name + '=' + value + '\n')
+          # GITHUB_ENV es visible a pasos posteriores, no a este proceso.
+          os.environ.update(public_env)
+          print('Configuración comprobada sin mostrar claves. Se consultarán sólo tareas pendientes.')
+          os.chdir(Path(os.environ['PROJECT_DIR']) / 'backend')
+          os.execvp('python', ['python', '-m', 'app.worker', '--once'])
+          PY
+      - name: Registrar el alcance de la prueba
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'TEXT'
+          Este job consulta tareas pendientes del servidor; no depende del celular.
+          El estado exitoso del job no acredita una vacante encontrada ni un correo enviado.
+          Consultá Búsquedas y Mis postulaciones: un envío exige confirmación de Gmail.
+          No se reintenta automáticamente ningún envío reservado o de resultado incierto.
+          GitHub Actions es una opción de prueba con demoras posibles, sin horario garantizado.
+          TEXT
