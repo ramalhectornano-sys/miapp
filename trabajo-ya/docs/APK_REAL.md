@@ -2,10 +2,10 @@
 
 La APK de demostración publicada no autentica usuarios ni guarda sus datos en un servidor. La nueva ruta de compilación usa **`EXPO_PUBLIC_DEMO_MODE=false` y `TRABAJO_YA_BUILD_MODE=real`**, requiere servicios desplegados y falla si falta la configuración. No cambia automáticamente a una demo para completar una compilación.
 
-**Estado actual: APK real 0.3.3 publicada para pruebas.** [Descargar Trabajo-YA-0.3.3-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.3-real/Trabajo-YA-0.3.3-real.apk) o abrir la [versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.3.3-real). La [ejecución de GitHub Actions 38568445689](https://github.com/ramalhectornano-sys/miapp/actions/runs/38568445689) terminó correctamente y verificó la firma con `apksigner` y los datos del paquete con `aapt`: **Trabajo YA**, **`com.trabajoya.autoempleoia`**, versión **0.3.3**, `versionCode` **6**. La APK ocupa **51.835.001 bytes** y su SHA-256 es:
+**Estado actual: APK real 0.4.0 publicada para pruebas.** [Descargar Trabajo-YA-0.4.0-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.0-real/Trabajo-YA-0.4.0-real.apk) o abrir la [versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.4.0-real). La [ejecución de GitHub Actions 38579659455](https://github.com/ramalhectornano-sys/miapp/actions/runs/38579659455) terminó correctamente y verificó la firma con `apksigner` y los datos del paquete con `aapt`: **Trabajo YA**, **`com.trabajoya.autoempleoia`**, versión **0.4.0**, `versionCode` **7**. La APK ocupa **51.844.897 bytes** y su SHA-256 es:
 
 ```text
-db706fdf71cc1c00aa38e69e5f5c8ab2eeba37f29d358f54ef0b47668603b602
+ce7ef7c50ee7981b6f373db54ccbf330aa78306c052901b5d045335b81018299
 ```
 
 El backend está publicado en **https://trabajo-ya-api.onrender.com** y el proyecto Supabase ya existe. El endpoint de salud de Supabase Auth respondió HTTP 200; también se comprobó que la tabla de perfiles existe y que el acceso anónimo está protegido. La APK incorpora la configuración pública de esos servicios y el modo real. Todavía no se probó en un teléfono físico ni se confirmó el funcionamiento completo de las integraciones.
@@ -13,6 +13,8 @@ El backend está publicado en **https://trabajo-ya-api.onrender.com** y el proye
 Queda guardar la configuración de redirección y comprobar el ingreso por enlace en Supabase, confirmar la aplicación de las seis migraciones remotas, recibir y verificar un código OTP, guardar y recuperar datos desde Android y obtener una respuesta real del proveedor de IA. Crear los servicios y comprobar `/health` no acredita esas operaciones. Para chat, perfil, fotos y CV no hace falta conectar Gmail todavía. Render Free permite estas pruebas de la API; las tareas automáticas requieren un worker/programador separado, como la [ruta de Google Cloud](../deploy/google-cloud/README.md). Ni esta compilación ni el despliegue de Render activan envíos automáticos.
 
 La entrega 0.3.3 incorpora los cambios de persistencia del chat de la [PR2](https://github.com/ramalhectornano-sys/miapp/pull/2), integrada en `trabajo-ya-real`. Conserva paquete, esquema de autenticación y certificado de prueba. Instalá la APK como actualización sin desinstalar. Para aplicar la corrección del chat, desplegá el último commit del backend en **Render → trabajo-ya-api → Manual Deploy → Deploy latest commit** y esperá **Live**. La compilación de Android no despliega Render ni habilita Gmail o tareas automáticas.
+
+La actualización 0.4.0 agrega Tavily, extracción de vacantes con evidencia y **Ver ofertas encontradas**. Seguir [BUSQUEDA_WEB](BUSQUEDA_WEB.md) para activarla en Render y [WORKER_GITHUB](WORKER_GITHUB.md) para las tareas de pruebas. País, provincia y radio en kilómetros todavía están pendientes: ver [estado geográfico](ESTADO_UBICACIONES_Y_KM.md).
 
 Los pasos siguientes se conservan para preparar otra instalación o repetir la compilación. Para la configuración actual no hace falta volver a crear los servicios ni reemplazar los datos públicos ya cargados.
 
@@ -50,7 +52,7 @@ La clave pública de Supabase forma parte de cualquier app que use Supabase; el 
 7. Esperá a que la ejecución complete la compilación, verifique la firma y publique la prerelease. Recién entonces habrá una APK nueva. Abrí **Releases** y descargá el archivo `Trabajo-YA-<versión>-real.apk`. Como alternativa, descargá el artefacto `Trabajo-YA-<versión>-real` desde esa ejecución de Actions y extraé el ZIP.
 8. Abrí la APK desde Archivos y completá la instalación en Android. No requiere Expo Go ni un servidor Metro.
 
-La versión y `versionCode` se obtienen de `mobile/app.json`; la revisión publicada es **0.3.3 / 6**. El archivo APK, nombre de artefacto y tag se generan a partir de esa versión; no hay un nombre fijo en el workflow. Una versión publicada no se reemplaza automáticamente: para una siguiente entrega hay que incrementar `version` y `android.versionCode`.
+La versión y `versionCode` se obtienen de `mobile/app.json`; la revisión publicada es **0.4.0 / 7**. El archivo APK, nombre de artefacto y tag se generan a partir de esa versión; no hay un nombre fijo en el workflow. Una versión publicada no se reemplaza automáticamente: para una siguiente entrega hay que incrementar `version` y `android.versionCode`.
 
 ## Qué comprueba la compilación
 

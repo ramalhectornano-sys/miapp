@@ -2,9 +2,9 @@
 
 **El proyecto Supabase ya existe y Render muestra el backend Live en
 https://trabajo-ya-api.onrender.com.** La configuración pública de Android está
-cargada y la **APK real 0.3.3 / 6 ya está publicada**:
-[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.3-real/Trabajo-YA-0.3.3-real.apk).
-La [compilación 38568445689](https://github.com/ramalhectornano-sys/miapp/actions/runs/38568445689)
+cargada y la **APK real 0.4.0 / 7 ya está publicada**:
+[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.0-real/Trabajo-YA-0.4.0-real.apk).
+La [compilación 38579659455](https://github.com/ramalhectornano-sys/miapp/actions/runs/38579659455)
 terminó correctamente. Los pasos de instalación y las comprobaciones pendientes
 están en [APK conectada](docs/APK_REAL.md).
 
@@ -118,7 +118,7 @@ permiso para enviar: se autoriza dentro de la app.
 ## 4. Compilar Android en la nube
 
 La ruta actual usa GitHub Actions con los datos públicos ya cargados. La
-compilación 0.3.3 / 6 terminó y publicó la APK conectada; no hace falta una cuenta
+compilación 0.4.0 / 7 terminó y publicó la APK conectada; no hace falta una cuenta
 Expo para esa ruta. Descargarla desde el enlace de arriba e instalarla siguiendo
 [APK conectada](docs/APK_REAL.md). La APK 0.3.0 de demostración no se conecta a
 los nuevos servicios por instalarla de nuevo. Si Android rechaza la actualización
@@ -151,7 +151,7 @@ todavía esa APK. Si el login o la firma piden verificación de tu cuenta, la co
   diarios y recordatorios después de 72 horas, sujetos a vacante vigente y permiso activo.
 - Perfiles de compilación Android y controles locales/CI.
 - Supabase creado y API de pruebas publicada en Render.
-- Configuración pública y APK conectada 0.3.3 / 6 compilada, verificada y publicada.
+- Configuración pública y APK conectada 0.4.0 / 7 compilada, verificada y publicada.
 - APK autónoma anterior de demostración compilada y publicada en GitHub.
 
 Lo que requiere tu acceso ahora: comprobar las migraciones y el acceso OTP en

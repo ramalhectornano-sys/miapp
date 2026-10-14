@@ -1,5 +1,34 @@
 # Validación de Trabajo YA
 
+## Búsqueda web y Android 0.4.0
+
+Se añadieron consultas Tavily por puesto y ciudad, extracción con citas de IA,
+registro de enlaces por usuario, revisión manual y worker de pruebas separado.
+Los hallazgos web no verifican destinatarios y no habilitan correo automático.
+No se implementaron país/provincia/identificadores geográficos ni kilómetros.
+El [estado de los requisitos geográficos](ESTADO_UBICACIONES_Y_KM.md) distingue
+lo implementado, lo pendiente y las comprobaciones reales que aún faltan.
+
+La [verificación 38579659524](https://github.com/ramalhectornano-sys/miapp/actions/runs/38579659524)
+aprobó **221 pruebas backend**, **44 móviles**, TypeScript, **29 cloud**,
+seis migraciones y pruebas SQL, y arranque del contenedor. La integración
+Tavily → IA → base → ofertas se prueba con MockTransport; esos comprobantes no
+son consultas a Internet ni escrituras reales en la base del usuario.
+El usuario confirmó Gmail conectado y mostró los nombres de variables Tavily
+en Render; los valores permanecen ocultos y no se verificó una consulta real.
+
+La [compilación 38579659455](https://github.com/ramalhectornano-sys/miapp/actions/runs/38579659455)
+publicó [Trabajo-YA-0.4.0-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.0-real/Trabajo-YA-0.4.0-real.apk) con `versionCode=7`,
+`demo=false`, paquete y enlace nativo conservados. `apksigner` y `aapt`
+verificaron la APK. El comprobante del certificado coincide con0.3.3.
+APK: **51844897 bytes**. SHA-256: `ce7ef7c50ee7981b6f373db54ccbf330aa78306c052901b5d045335b81018299`.
+Commit compilado: `aefe282ac4b564d507ea78025dbf502aec7f0a3c`.
+
+El worker se publicó en la rama predeterminada main, commit
+`53cf7db50ffd0532fad3d5ad4b9540997f7e1545`, además de trabajo-ya-real. Está apagado por
+defecto y requiere secretos, variables y activación expresa; no se ejecutó
+una tarea real ni se envió un correo durante estas verificaciones.
+
 ## Entrega Android 0.3.3 e integración de PR2
 
 La [PR2](https://github.com/ramalhectornano-sys/miapp/pull/2) se integró conservando
