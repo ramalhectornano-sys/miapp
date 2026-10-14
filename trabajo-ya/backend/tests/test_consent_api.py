@@ -40,6 +40,48 @@ class ConsentApiTests(unittest.IsolatedAsyncioTestCase):
         del payload["repeat_every_days"]
         self.assertEqual(ConsentRequest(**payload).repeat_every_days, 0)
 
+    async def exercise_source_consent(self, source_id, feeds=None):
+        writes = []
+
+        def supabase(request):
+            if request.url.path == "/auth/v1/user":
+                return httpx.Response(200, json={"id": USER_ID})
+            if request.method == "GET":
+                return httpx.Response(200, json=[{"id": CONNECTION_ID, "provider": "google", "status": "connected",
+                    "scopes": ["https://www.googleapis.com/auth/gmail.send"]}])
+            writes.append(json.loads(request.content))
+            return httpx.Response(200, json={"consent": {"id": "consent", "repeat_enabled": False},
+                "search": {"id": SEARCH_ID, "auto_apply": True}})
+
+        settings = Settings(supabase_url="https://test.supabase.co", supabase_anon_key="public",
+            supabase_service_role_key="server-secret", web_search_provider="tavily", web_search_api_key="test-search-key",
+            authorized_feeds=feeds or [])
+        payload = self.consent_payload()
+        payload["allowed_sources"] = [source_id]
+        async with httpx.AsyncClient(transport=httpx.MockTransport(supabase)) as upstream:
+            app = create_app(settings, upstream)
+            async with app.router.lifespan_context(app):
+                async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+                    response = await client.post("/api/mail/consents", headers={"Authorization": "Bearer user-session"},
+                        json=payload)
+        return response, writes
+
+    async def test_official_publisher_channel_can_be_authorized_without_enabling_mail(self):
+        response, writes = await self.exercise_source_consent("verified:greenhouse")
+        self.assertEqual(response.status_code, 201, response.text)
+        self.assertEqual(writes[0]["p_authorized_sources"], ["verified:greenhouse"])
+        self.assertIn("envíos habilitados", response.json()["message"])
+
+    async def test_web_snippets_cannot_be_authorized_as_verified_recipients(self):
+        response, writes = await self.exercise_source_consent("web:tavily")
+        self.assertEqual(response.status_code, 409)
+        self.assertFalse(writes)
+
+    async def test_non_attested_json_feed_cannot_bypass_the_disabled_source_choice(self):
+        response, writes = await self.exercise_source_consent("partner", [{"id": "partner", "authorized": True}])
+        self.assertEqual(response.status_code, 409)
+        self.assertFalse(writes)
+
     async def test_repeat_policy_passes_explicit_choice_to_service_rpc(self):
         writes = []
 
@@ -54,7 +96,8 @@ class ConsentApiTests(unittest.IsolatedAsyncioTestCase):
                 "search": {"id": SEARCH_ID, "auto_apply": True}})
 
         settings = Settings(supabase_url="https://test.supabase.co", supabase_anon_key="public",
-            supabase_service_role_key="server-secret", authorized_feeds=[{"id": "partner", "authorized": True}])
+            supabase_service_role_key="server-secret", authorized_feeds=[{"id": "partner", "authorized": True,
+                "recipient_verification": "source_attestation"}])
         async with httpx.AsyncClient(transport=httpx.MockTransport(supabase)) as upstream:
             app = create_app(settings, upstream)
             async with app.router.lifespan_context(app):
@@ -135,7 +178,8 @@ class ConsentApiTests(unittest.IsolatedAsyncioTestCase):
                 "search": {"id": SEARCH_ID, "auto_apply": True}})
 
         settings = Settings(supabase_url="https://test.supabase.co", supabase_anon_key="public",
-            supabase_service_role_key="server-secret", authorized_feeds=[{"id": "partner", "authorized": True}])
+            supabase_service_role_key="server-secret", authorized_feeds=[{"id": "partner", "authorized": True,
+                "recipient_verification": "source_attestation"}])
         async with httpx.AsyncClient(transport=httpx.MockTransport(supabase)) as upstream:
             app = create_app(settings, upstream)
             async with app.router.lifespan_context(app):

@@ -139,12 +139,12 @@ async def _query(client: httpx.AsyncClient, key: str, query: str, private_values
         raise HTTPException(502, SEARCH_FAILURE) from None
 
 
-async def discover_web_jobs(settings: Settings, client: httpx.AsyncClient, search: dict,
+async def discover_web_results(settings: Settings, client: httpx.AsyncClient, search: dict,
         source_id: str = "web:tavily") -> tuple[list[dict], list[str]]:
-    """Return evidence-backed discoveries and safe warnings about partial work.
+    """Return bounded discoveries once for independently verified integrations.
 
     Credentials and provider failures never reach the saved evidence. Successful
-    empty results are valid; failed provider requests or extraction are not.
+    empty results are valid; failed provider requests are not.
     """
     if getattr(settings, "web_search_provider", "disabled") != "tavily":
         raise HTTPException(503, "No hay un buscador web real configurado en el servidor.")
@@ -183,8 +183,14 @@ async def discover_web_jobs(settings: Settings, client: httpx.AsyncClient, searc
                     break
         if len(results) == MAX_RESULTS:
             break
+    return results, failures
+
+
+async def extract_web_jobs(settings: Settings, client: httpx.AsyncClient, search: dict,
+        results: list[dict], source_id: str = "web:tavily") -> list[dict]:
+    """Extract manual-review jobs; snippets never become recipient proof."""
     if not results:
-        return [], failures
+        return []
     jobs = await extract_job_evidence(settings, client, search, results, source_id)
     metadata_by_url = {result["url"]: result["web_search"] for result in results}
     for job in jobs:
@@ -196,4 +202,12 @@ async def discover_web_jobs(settings: Settings, client: httpx.AsyncClient, searc
         job.setdefault("payload", {})["requires_manual_verification"] = True
         job["payload"]["requires_manual_review"] = True
         job["payload"]["web_search"] = metadata_by_url.get(job.get("url"), {})
+    return jobs
+
+
+async def discover_web_jobs(settings: Settings, client: httpx.AsyncClient, search: dict,
+        source_id: str = "web:tavily") -> tuple[list[dict], list[str]]:
+    """Compatible manual-discovery entry point, including IA failure semantics."""
+    results, failures = await discover_web_results(settings, client, search, source_id)
+    jobs = await extract_web_jobs(settings, client, search, results, source_id)
     return jobs, failures

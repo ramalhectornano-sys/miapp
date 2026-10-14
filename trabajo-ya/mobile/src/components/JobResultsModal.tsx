@@ -94,12 +94,18 @@ export default function JobResultsModal({ results, onClose }: Props) {
                 <Text style={[styles.company, { color: colors.primary }]}>{job.company || 'Empresa no informada'}</Text>
                 <Text style={[styles.jobTitle, { color: colors.text }]}>{job.title || 'Puesto no informado'}</Text>
                 <Text style={[styles.description, { color: colors.text }]}>Ciudad: {job.city || 'No informada'}</Text>
-                <Text style={[styles.detail, { color: colors.muted }]}>Origen: {job.source || 'No informado'}</Text>
+                <Text style={[styles.detail, { color: colors.muted }]}>Origen: {job.source === 'verified:greenhouse' ? 'API pública de Greenhouse' : job.source === 'web:tavily' ? 'Búsqueda en Internet' : job.source || 'No informado'}</Text>
                 <Text style={[styles.detail, { color: colors.muted }]}>Fecha de consulta: {observationDate(job.observed_at)}</Text>
                 <Text style={[styles.description, { color: colors.muted }]}>Coincidencia por puesto y ciudad. Revisá requisitos y vigencia de la oferta antes de postularte.</Text>
                 {manual ? <View style={[styles.notice, { backgroundColor: colors.surfaceAlt }]}>
                   <Badge label="Revisión manual" tone="info" icon="eye-outline" />
                   <Text style={[styles.description, { color: colors.muted }]}>Hallazgo para revisión manual. Este enlace no confirma el envío de CV ni verifica correo.</Text>
+                </View> : null}
+                {!manual && job.recipient_verified && job.recipient_email ? <View style={[styles.notice, { backgroundColor: colors.primarySoft }]}>
+                  <Badge label="Canal para CV comprobado al consultar" tone="success" icon="shield-checkmark-outline" />
+                  <Text style={[styles.description, { color: colors.text }]}>{job.recipient_email}</Text>
+                  {job.evidence?.email ? <Text style={[styles.description, { color: colors.muted }]}>{job.evidence.email}</Text> : null}
+                  <Text style={[styles.description, { color: colors.muted }]}>La oferta publicó este correo para recibir CV. Se vuelve a comprobar antes de enviar. Un envío solo se confirma en Mis postulaciones con un comprobante de Gmail.</Text>
                 </View> : null}
                 {feedback?.id === job.id ? <Text accessibilityRole="alert" style={[styles.description, { color: colors.danger }]}>{feedback.text}</Text> : null}
                 {safeUrl ? <Button label="Ver oferta" icon="open-outline" variant="secondary" onPress={() => void openOffer(job)} loading={openingId === job.id} disabled={!!openingId} /> : <Text style={[styles.detail, { color: colors.muted }]}>Enlace público no disponible.</Text>}

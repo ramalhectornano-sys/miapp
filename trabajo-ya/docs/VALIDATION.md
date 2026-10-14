@@ -1,5 +1,25 @@
 # Validación de Trabajo YA
 
+## Correos verificados y diagnóstico de permisos 0.4.1
+
+El código agrega consulta independiente a la API pública de Greenhouse, evidencia
+literal de un canal para recibir CV, rechazo de publicaciones retiradas o
+vencidas, y nueva verificación antes de contactar Gmail. Los fragmentos de
+Tavily mantienen revisión manual. Se reutilizan las consultas del buscador;
+no se duplica el gasto para la comprobación oficial.
+
+El modal muestra junto al botón el requisito faltante y distingue guardar un
+permiso de ejecutar correos. La captura recibida demuestra Gmail y CV elegidos,
+pero también muestra el servicio de envíos apagado y ninguna fuente apta.
+La integración nueva requiere desplegar el backend y completar una prueba real
+antes de activar la operación diaria. No se cambió la base de datos, el paquete,
+el esquema de ingreso ni los límites de 10 intentos y 72 horas.
+
+Las nuevas pruebas usan HTTP interceptado: no consultan ofertas reales, no
+utilizan claves privadas del usuario y no envían mensajes. La compilación de
+0.4.1 y su verificación completa todavía están pendientes en esta revisión.
+
+
 ## Búsqueda web y Android 0.4.0
 
 Se añadieron consultas Tavily por puesto y ciudad, extracción con citas de IA,

@@ -1,39 +1,38 @@
 # Trabajo YA
 
-**Supabase ya está creado y el backend está publicado en
-https://trabajo-ya-api.onrender.com.** La configuración pública de Android está
-completa y la **APK conectada 0.4.0 / 7 está publicada**:
-[descargar Trabajo YA para Android](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.0-real/Trabajo-YA-0.4.0-real.apk).
-La [compilación 38579659455](https://github.com/ramalhectornano-sys/miapp/actions/runs/38579659455)
-terminó correctamente y verificó el paquete y la firma de prueba. El código
-0.3.2 añade el regreso por enlace de autenticación y conserva las correcciones de foto y CV principal. Los pasos de instalación
-y prueba están en [APK conectada](docs/APK_REAL.md).
+El proyecto usa el Supabase existente y el backend **https://trabajo-ya-api.onrender.com**.
+La APK conectada **0.4.0 / 7** está publicada para pruebas:
+[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.0-real/Trabajo-YA-0.4.0-real.apk).
+La actualización **0.4.1 / 8** está preparada en el código; la descarga nueva se
+publica cuando finaliza y se verifica su compilación.
 
-Se corrigió un error del backend al guardar el chat: PostgREST rechazaba el lote
-porque los dos mensajes tenían campos distintos. Para aplicar la corrección,
-en Render elegí **Manual Deploy → Deploy latest commit** y esperá **Live**;
-podés instalar la APK 0.4.0 como actualización de la anterior. Gmail y los envíos automáticos requieren completar
-la configuración descrita en [solución de los tres avisos](docs/SOLUCION_ERRORES.md).
+Las capturas del usuario muestran su CV elegido y Gmail conectado. También
+muestran envíos desactivados y la fuente web sin permiso para correo: esas
+condiciones impedían autorizar y ejecutar la automatización. Se añadió una
+integración independiente con la API pública de Greenhouse, que admite correo
+solo cuando una oferta vigente publica expresamente ese canal para recibir CV.
+Las ofertas de otros portales y las que requieren formularios quedan para
+revisión. No garantiza vacantes aptas en una ciudad ni recepción en el buzón.
+Ver [activación de correos](docs/ACTIVAR_CORREOS.md).
 
-La [APK 0.3.0 publicada](docs/APK_GITHUB.md) es la demostración anterior:
-no conecta IA ni guarda perfil, fotos o CV en el servidor. No representa la
-nueva compilación conectada.
+La actualización necesita **Render → Manual Deploy → Deploy latest commit**.
+Compilar Android no despliega ese backend ni activa `MAIL_SEND_ENABLED`, el
+programador o permisos de cada búsqueda. Las
+[búsquedas web](docs/BUSQUEDA_WEB.md) y el
+[worker de pruebas](docs/WORKER_GITHUB.md) tienen pasos separados. País, provincia
+y radio en kilómetros siguen [pendientes](docs/ESTADO_UBICACIONES_Y_KM.md).
 
-Todavía no se verificaron un ingreso por código OTP, la persistencia de perfil,
-foto o CV desde Android ni una respuesta real del modelo. Render Free sostiene
-la API de pruebas; no se configuró allí un worker ni se activaron correos o
-búsquedas automáticas. La actualización 0.3.2 añade ingreso por enlace PKCE,
-además del código opcional. Configurar Site URL y Redirect URLs con
-`autoempleoia://auth/callback` y comprobar un correo nuevo desde esa APK.
-SMTP propio es necesario para editar las plantillas Free o usar otros
-remitentes/destinatarios, no para el enlace predeterminado del equipo.
-Ver [acceso sin contraseña](docs/AUTH_SETUP.md). La creación
-de los servicios y la compilación no acreditan esas operaciones.
+Las pruebas del código usan proveedores interceptados. No acreditan una consulta
+real de Tavily, respuesta real del modelo, tarea programada o entrega de Gmail
+en la cuenta del usuario. En **Mis postulaciones** solo se muestra enviado con
+confirmación del proveedor. La guía de la
+[APK conectada](docs/APK_REAL.md) describe instalación y pruebas.
 
-Para activar el proyecto desde el celular, empezar por [EMPEZAR](EMPEZAR.md).
-Para conectar el modelo real, consultar [IA real con Groq](docs/IA_REAL.md).
-
-La versión 0.4 incorpora búsqueda web mediante Tavily, extracción de vacantes con evidencia y **Ver ofertas encontradas**. Requiere cargar la clave privada en Render y desplegar el backend actualizado. La [guía de búsqueda web](docs/BUSQUEDA_WEB.md) y el [worker de pruebas](docs/WORKER_GITHUB.md) explican cómo activarla. Los resultados de un buscador se revisan antes de postularse; no verifican por sí solos destinatarios para correo automático.
+Para preparar otra instalación desde el celular, ver [EMPEZAR](EMPEZAR.md),
+[IA real con Groq](docs/IA_REAL.md) y
+[acceso sin contraseña](docs/AUTH_SETUP.md). El esquema de redirección sigue siendo
+`autoempleoia://auth/callback`; no hay que recrear servicios o claves ya válidos.
+La [APK 0.3.0](docs/APK_GITHUB.md) es la demostración anterior.
 
 Primera versión de una aplicación Android en español para preparar el perfil
 profesional, conversar con un asistente y programar búsquedas laborales desde el

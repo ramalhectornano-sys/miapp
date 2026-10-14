@@ -214,6 +214,12 @@ async def send_application(db: Database, user: User, application_id: str, *, man
     try:
         job = await db.owned("jobs", claimed["job_id"], user, service=True)
         verified_recipient(claimed, job)
+        if job.get("source") == "verified:greenhouse":
+            from .ai import normalize
+            if any(not isinstance(claimed.get(saved), str) or not isinstance(job.get(current), str)
+                    or normalize(claimed[saved]).strip() != normalize(job[current]).strip()
+                    for saved, current in (("company", "company"), ("job_title", "title"))):
+                raise HTTPException(409, "Cambió la empresa o el puesto. Revisá el mensaje antes de enviar.")
         connection = await db.owned("email_connections", claimed["email_connection_id"], user, service=True)
         if connection.get("provider") != "google" or connection.get("status") != "connected":
             raise HTTPException(409, "Esta conexión de correo no puede enviar mensajes.")
@@ -231,6 +237,15 @@ async def send_application(db: Database, user: User, application_id: str, *, man
         subtype = "pdf" if resume["mime_type"] == "application/pdf" else "vnd.openxmlformats-officedocument.wordprocessingml.document"
         message.add_attachment(attachment, maintype="application", subtype=subtype, filename=resume["original_filename"])
         raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        if job.get("source") == "verified:greenhouse":
+            # A stored discovery is not enough: confirm the publisher still
+            # advertises this vacancy and exact email channel immediately
+            # before contacting Gmail, including for every 72-hour follow-up.
+            from .greenhouse import SOURCE_ID, revalidate_job
+            if not any(source.get("id") == SOURCE_ID and source.get("kind") == "greenhouse_verified"
+                    and source.get("authorized") for source in db.settings.job_sources):
+                raise HTTPException(409, "La fuente de esta oferta ya no está habilitada.")
+            await revalidate_job(db.client, job)
     except asyncio.CancelledError:
         await record_cancelled_attempt(db, attempt_params, delivery_uncertain=False)
         raise

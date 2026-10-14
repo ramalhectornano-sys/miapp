@@ -21,7 +21,7 @@ En el servicio existente **trabajo-ya-api → Environment** configurar:
 
 Conservar Supabase, Groq y Google tal como están configurados. Elegir
 **Save, rebuild, and deploy** o **Manual Deploy → Deploy latest commit** y esperar
-**Live**. El backend de esta actualización identifica su versión como **0.4.0**
+**Live**. El backend de esta actualización identifica su versión como **0.4.1**
 en `https://trabajo-ya-api.onrender.com/health`. Un estado
 `web_search: configured_unverified` confirma configuración, no una consulta.
 
@@ -38,7 +38,7 @@ del usuario. La IA recibe fragmentos de resultados, no permisos de envío. Debe
 citar empresa, puesto, ciudad y contratación explícita; valores inventados,
 anuncios cerrados, fechas vencidas y enlaces sustituidos se descartan. La ciudad
 no se deduce de la consulta si no figura en el anuncio. Los enlaces se abren
-solo al tocar **Ver oferta**. Esta ruta no visita automáticamente los portales.
+solo al tocar **Ver oferta**. Esta ruta no visita automáticamente las páginas de los portales. La integración independiente de Greenhouse consulta únicamente su API pública para los enlaces oficiales reconocidos.
 
 Las consultas y los resultados están acotados. Con listas extensas de puestos
 y ciudades, una ejecución puede cubrir solo parte de las combinaciones y lo
@@ -48,11 +48,9 @@ consultar todos los portales ni encontrar toda vacante existente.
 ## Correos y revisión
 
 Un resultado web es un hallazgo para revisar: no verifica que el correo exista,
-que pertenezca a la empresa, que la oferta siga abierta o que admita envíos
-automáticos. Conserva `recipient_verified=false` y no habilita consentimiento
+que pertenezca a la empresa, que la oferta siga abierta o que publique un canal para recibir CV. Conserva `recipient_verified=false` y no habilita consentimiento
 automático. Se puede abrir el anuncio original y seguir su proceso de postulación.
-Las postulaciones por correo del sistema siguen requiriendo una integración que
-verifique destinatario y vigencia, Gmail vinculado y autorización específica.
+La fuente independiente **Ofertas verificadas de Greenhouse** comprueba anuncios publicados mediante su API pública y exige un canal explícito para enviar CV; se vuelve a consultar antes de cada envío. No cubre todos los portales ni garantiza vacantes aptas en tu ciudad. Las postulaciones por correo requieren además Gmail vinculado y autorización específica. Ver [activación y prueba de correos](ACTIVAR_CORREOS.md).
 Se conservan el máximo global de 10 intentos diarios y las 72 horas entre
 recordatorios autorizados; ningún envío se confirma sin comprobante de Gmail.
 

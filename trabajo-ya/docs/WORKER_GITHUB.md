@@ -93,8 +93,7 @@ Testing externo, Google puede vencer refresh tokens a los siete días; reconect�
 si ocurre durante las pruebas.
 
 1. Completá los secretos de Gmail y el ID público del cliente web en GitHub.
-2. Comprobá con una vacante/destinatario propios y autorizados el envío manual
-   y su confirmación real en **Mis postulaciones**.
+2. Mantené desactivadas las autorizaciones automáticas para una prueba controlada con una integración y destinatario propios y autorizados. Habilitá temporalmente `MAIL_SEND_ENABLED=true` solo en Render y desplegá para permitir ese envío manual expresamente aprobado. Comprobá su confirmación real en **Mis postulaciones**. No envíes ensayos a empresas.
 3. Configurá `MAIL_SEND_ENABLED=true` en Render y en Variables de GitHub cuando
    estén listas las dependencias. Desplegá Render después de cambiar su variable.
 4. En la app autorizá cada búsqueda: CV, cuenta, fuentes, vencimiento y, si se
@@ -102,9 +101,7 @@ si ocurre durante las pruebas.
 5. Verificá en **Mis postulaciones** una confirmación de Gmail. Un job verde,
    un borrador preparado o una respuesta de la IA no equivalen a un envío.
 
-Las ofertas obtenidas con Tavily se preparan para revisión manual: encontrar una
-dirección en una página no acredita su verificación y esta integración no habilita
-envíos automáticos. La automatización de correo requiere una fuente autorizada
+Los fragmentos obtenidos con Tavily se preparan para revisión manual. La integración independiente **Ofertas verificadas de Greenhouse** puede comprobar los enlaces oficiales mediante su API pública, solo si la oferta publica expresamente un correo para recibir CV. Los otros enlaces siguen para revisión; no se certifican porque aparezcan en el buscador. Ver [activación de correos](ACTIVAR_CORREOS.md). La automatización de correo requiere una fuente autorizada
 que certifique el destinatario según el contrato del backend. No se envía a un
 correo inventado. Los envíos aptos conservan el máximo de **10 intentos al día por
 usuario**, y los recordatorios autorizados esperan **72 horas completas**.

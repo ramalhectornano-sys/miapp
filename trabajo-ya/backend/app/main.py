@@ -160,6 +160,9 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
             seen.add(job["id"])
             payload = job.get("payload") if isinstance(job.get("payload"), dict) else {}
             evidence = payload.get("evidence") if isinstance(payload.get("evidence"), dict) else {}
+            publisher = payload.get("greenhouse")
+            if job.get("source") == "verified:greenhouse" and isinstance(publisher, dict) and isinstance(publisher.get("email_quote"), str):
+                evidence = {**evidence, "email": publisher["email_quote"]}
             requires_review = bool(payload.get("requires_manual_review")) or job.get("source") == "web:tavily"
             results.append({key: job.get(key) for key in ("id", "company", "title", "city", "url", "source")})
             results[-1].update({"observed_at": match.get("observed_at"), "requires_manual_review": requires_review,
@@ -271,7 +274,8 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
             raise HTTPException(409, "Conectá tu correo antes de autorizar envíos.")
         if mail.SCOPES[0] not in connection.get("scopes", []):
             raise HTTPException(409, "Volvé a conectar Gmail y habilitá el permiso de envío.")
-        allowed = {source["id"] for source in settings.job_sources if source.get("kind") != "web_search"}
+        allowed = {source["id"] for source in settings.job_sources
+            if public_source(source)["supports_automatic_email"]}
         if not set(body.allowed_sources).issubset(allowed):
             raise HTTPException(409, "Solo se pueden autorizar fuentes permitidas para correo. Los resultados del buscador web requieren revisión y no verifican destinatarios.")
         result = await db.rpc("grant_sending_consent", {"p_user_id": user.id,

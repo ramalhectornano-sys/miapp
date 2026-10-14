@@ -23,6 +23,14 @@ interface Integrations {
 }
 const expiryDefault = () => new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
 
+function expirationProblem(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Ingresá el vencimiento con formato AAAA-MM-DD.';
+  const date = new Date(`${value}T23:59:59.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) return 'Ingresá una fecha de vencimiento válida.';
+  if (date.getTime() <= Date.now() || date.getTime() > Date.now() + 90 * 86400000) return 'El vencimiento debe estar en el futuro y dentro de los próximos 90 días.';
+  return null;
+}
+
 function Choice({ selected, label, detail, disabled, multiple, onPress }: { selected: boolean; label: string; detail?: string; disabled?: boolean; multiple?: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   return <Pressable accessibilityRole={multiple ? 'checkbox' : 'radio'} accessibilityState={{ checked: selected, disabled }} accessibilityLabel={label} disabled={disabled} onPress={onPress} style={[styles.choice, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primarySoft : colors.bg, opacity: disabled ? .6 : 1 }]}>
@@ -56,6 +64,13 @@ export default function ConsentModal({ search, resumes, demo, onClose, onChanged
   const eligibleResumes = resumes.filter(resume => isDemo || !resume.demo);
   const repeatEveryDays = repeat ? 3 : 0;
   const authorizationText = sendingAuthorizationText(repeatEveryDays);
+  const missingRequirement = isDemo ? 'La demostración no permite guardar autorizaciones reales.'
+    : loading ? 'Consultando el CV, el correo y las fuentes disponibles…'
+    : !eligibleResumes.some(resume => resume.id === resumeId) ? 'Seleccioná un currículum cargado en Mi perfil.'
+    : !connected.some(account => account.id === connectionId) ? 'Seleccioná una cuenta de correo conectada desde Mi perfil.'
+    : !emailSources.length ? 'Falta una fuente con ofertas y correos verificados. La búsqueda en Internet sola no habilita envíos.'
+    : !sourceIds.length || sourceIds.some(id => !emailSources.some(source => source.id === id)) ? 'Elegí al menos una fuente habilitada para postulaciones por correo.'
+    : expirationProblem(expiry) || (!consent ? 'Revisá los datos y marcá la autorización expresa antes de guardar.' : null);
 
   const load = async (version: number) => {
     setLoading(true);
@@ -89,10 +104,9 @@ export default function ConsentModal({ search, resumes, demo, onClose, onChanged
     if (!connected.some(account => account.id === connectionId)) { setFeedback({ text: 'Elegí una cuenta de correo conectada.', error: true }); return; }
     if (!sourceIds.length || sourceIds.some(id => !emailSources.some(source => source.id === id))) { setFeedback({ text: 'Elegí al menos una fuente habilitada para postulaciones por correo. Los enlaces de búsquedas web requieren revisión manual.', error: true }); return; }
     if (!consent) { setFeedback({ text: 'Marcá la autorización expresa antes de continuar.', error: true }); return; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiry)) { setFeedback({ text: 'Ingresá el vencimiento con formato AAAA-MM-DD.', error: true }); return; }
+    const expiryProblem = expirationProblem(expiry);
+    if (expiryProblem) { setFeedback({ text: expiryProblem, error: true }); return; }
     const date = new Date(`${expiry}T23:59:59.000Z`);
-    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== expiry) { setFeedback({ text: 'Ingresá una fecha de vencimiento válida.', error: true }); return; }
-    if (date.getTime() <= Date.now() || date.getTime() > Date.now() + 90 * 86400000) { setFeedback({ text: 'El vencimiento debe estar en el futuro y dentro de los próximos 90 días.', error: true }); return; }
     busyLock.current = true; setWorking('grant');
     try {
       const result = await grantSendingConsent({ search_id: search.id, resume_id: resumeId, email_connection_id: connectionId, allowed_sources: sourceIds, expires_at: date.toISOString(), repeat_every_days: repeatEveryDays });
@@ -121,10 +135,10 @@ export default function ConsentModal({ search, resumes, demo, onClose, onChanged
   return <Modal visible={!!search} transparent animationType="fade" onRequestClose={close}>
     <View style={styles.overlay}><View style={[styles.modal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.header}><View style={{ flex: 1, gap: 7 }}><Text style={{ color: colors.muted, fontSize: 9, letterSpacing: 1.4 }}>PERMISOS DE ESTA BÚSQUEDA</Text><Text style={{ color: colors.text, fontSize: 22, letterSpacing: -.5, fontWeight: '600' }}>Envíos automáticos</Text><Text style={{ color: colors.muted, fontSize: 12, lineHeight: 20 }}>{search?.name}</Text></View><IconButton icon="close-outline" accessibilityLabel="Cerrar permisos de envío" onPress={close} disabled={!!working} /></View>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={[styles.summary, { backgroundColor: colors.primarySoft }]}><Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} /><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: 13, lineHeight: 20, fontWeight: '600' }}>Máximo 10 correos diarios en total</Text><Text style={{ color: colors.muted, fontSize: 11, lineHeight: 19, marginTop: 6 }}>El límite es compartido por todas tus búsquedas y los envíos manuales. Incluye las nuevas postulaciones y los reenvíos; se envían menos si no hay suficientes vacantes aptas. En cada ejecución se atienden primero las nuevas oportunidades.</Text></View></View>
         <Text style={{ color: colors.muted, fontSize: 10, lineHeight: 18 }}>{search?.frequency === 'daily' ? 'Todos los días' : 'Días elegidos'} · {search?.schedule_time.slice(0, 5)} · {search?.timezone}. {integrations.mail_policy ? `El día del límite usa ${integrations.mail_policy.timezone}, para toda tu cuenta.` : 'La zona horaria del límite se consulta al servidor al cargar tus permisos.'}</Text>
-        {!isDemo && integrations.sending_enabled === false ? <View style={[styles.feedback, { backgroundColor: `${colors.warning}12` }]}><Text style={{ color: colors.warning, fontSize: 12, lineHeight: 20 }}>El servicio de correo todavía tiene los envíos desactivados. Guardar la autorización no confirma una ejecución. Para operar necesita envíos habilitados, fuentes conectadas y tareas activas del servidor.</Text></View> : null}
+        {!isDemo && integrations.sending_enabled === false ? <View style={[styles.feedback, { backgroundColor: `${colors.warning}12` }]}><Text style={{ color: colors.warning, fontSize: 12, lineHeight: 20 }}>Los envíos están desactivados. Podés guardar el permiso cuando completes los requisitos, pero todavía no se enviarán correos. El administrador debe habilitar el servicio después de comprobar un envío de prueba y las tareas programadas.</Text></View> : null}
         {isDemo ? <View style={[styles.feedback, { backgroundColor: `${colors.warning}12` }]}><Text style={{ color: colors.warning, fontSize: 12, lineHeight: 20 }}>Modo demostración. No se conceden permisos reales, no se buscan vacantes y no se envían correos.</Text></View> : null}
         {feedback ? <View style={[styles.feedback, { backgroundColor: feedback.error ? `${colors.danger}12` : colors.primarySoft }]}><Text accessibilityRole="alert" style={{ color: feedback.error ? colors.danger : colors.primary, fontSize: 12, lineHeight: 20 }}>{feedback.text}</Text></View> : null}
         {registered ? <View style={{ gap: 15 }}><Badge label={loading ? 'Consultando autorización' : sendingPermissionLabel(permissionState)} tone={permissionState === 'active' ? 'success' : 'warning'} icon="shield-checkmark-outline" />
@@ -136,7 +150,8 @@ export default function ConsentModal({ search, resumes, demo, onClose, onChanged
           {loading ? <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.muted, fontSize: 11 }}>Consultando conexiones autorizadas…</Text></View> : connected.map(account => <Choice key={account.id} label={account.email} selected={connectionId === account.id} onPress={() => { setConnectionId(account.id); setConsent(false); }} disabled={!!working} />)}
           {!loading && !connected.length ? <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 20 }}>Conectá tu correo de forma segura desde Mi perfil antes de autorizar envíos.</Text> : null}
           <Text style={[styles.label, { color: colors.text }]}>Fuentes autorizadas</Text>
-          {integrations.sources.map(source => <Choice key={source.id} label={source.name} detail={[source.description, source.supports_automatic_email === true ? 'Disponible para autorizar postulaciones por correo a destinatarios verificados.' : 'Solo revisión manual. Esta fuente no habilita envíos automáticos.'].filter(Boolean).join(' ')} selected={source.supports_automatic_email === true && sourceIds.includes(source.id)} multiple disabled={!!working || source.supports_automatic_email !== true} onPress={() => { setSourceIds(current => current.includes(source.id) ? current.filter(id => id !== source.id) : [...current, source.id]); setConsent(false); }} />)}
+          {integrations.sources.map(source => <Choice key={source.id} label={source.name} detail={[source.description, source.supports_automatic_email === true ? 'Autoriza únicamente las ofertas verificadas de esta fuente con un correo publicado para recibir CV. Las ofertas que requieren un formulario quedan para revisión manual.' : 'Solo revisión manual. Esta fuente no habilita envíos automáticos.'].filter(Boolean).join(' ')} selected={source.supports_automatic_email === true && sourceIds.includes(source.id)} multiple disabled={!!working || source.supports_automatic_email !== true} onPress={() => { setSourceIds(current => current.includes(source.id) ? current.filter(id => id !== source.id) : [...current, source.id]); setConsent(false); }} />)}
+          {emailSources.length > 0 ? <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 19 }}>Seleccionar una fuente no inicia una búsqueda ni envía correos. Puede no haber vacantes aptas en tu zona.</Text> : null}
           {!loading && !integrations.sources.length ? <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 20 }}>Todavía no hay fuentes autorizadas disponibles. El permiso no puede activarse hasta que haya una integración habilitada.</Text> : null}
           {!loading && integrations.sources.length > 0 && !emailSources.length ? <Text style={{ color: colors.warning, fontSize: 12, lineHeight: 20 }}>Las fuentes conectadas permiten encontrar enlaces para revisar. Todavía no hay una fuente habilitada para autorizar postulaciones por correo.</Text> : null}
           {integrations.sources.some(source => source.supports_automatic_email === false) ? <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 19 }}>Las búsquedas web muestran enlaces reales a ofertas para revisión manual. Un resultado del buscador no confirma que la vacante siga vigente ni verifica una dirección de correo.</Text> : null}
@@ -145,11 +160,15 @@ export default function ConsentModal({ search, resumes, demo, onClose, onChanged
           <Field label="Vencimiento · AAAA-MM-DD" value={expiry} onChangeText={value => { setExpiry(value); setConsent(false); }} placeholder="2026-11-12" editable={!isDemo && !working} style={{ flex: 0 }} />
           <Text style={{ color: colors.muted, fontSize: 10, lineHeight: 18 }}>Vence a las 23:59 UTC de la fecha elegida, dentro de los próximos 90 días. Podés revocar el permiso cuando quieras.</Text>
           <Choice label={authorizationText} detail={`Confirmo el CV, la cuenta, las fuentes, el máximo total de 10 correos diarios, ${repeat ? 'los reenvíos cada 3 días' : 'que no habrá reenvíos automáticos'} y el vencimiento indicados arriba.`} selected={consent} multiple disabled={isDemo || !!working || loading} onPress={() => setConsent(value => !value)} />
-          <Button label={isDemo ? 'Autorización deshabilitada en demo' : 'Confirmar autorización'} icon="shield-checkmark-outline" onPress={() => void grant()} disabled={isDemo || !!working || loading || !consent || !eligibleResumes.length || !connected.length || !emailSources.length || !sourceIds.length} loading={working === 'grant'} />
         </>}
       </ScrollView>
+      {!registered ? <View style={[styles.footer, { borderTopColor: colors.border }]}>
+        <Text accessibilityRole={missingRequirement && !loading ? 'alert' : undefined} style={{ color: missingRequirement && !loading ? colors.warning : colors.muted, fontSize: 11, lineHeight: 18 }}>{missingRequirement || 'Todo listo para guardar el permiso. Guardarlo no confirma una búsqueda ni un envío.'}</Text>
+        {!isDemo && !loading && integrations.sending_enabled === false ? <Text style={{ color: colors.warning, fontSize: 10, lineHeight: 17 }}>El servicio de correo sigue desactivado, aunque guardes la autorización.</Text> : null}
+        <Button label={isDemo ? 'Autorización deshabilitada en demo' : 'Guardar autorización'} icon="shield-checkmark-outline" onPress={() => void grant()} disabled={!!working || !!missingRequirement} loading={working === 'grant'} />
+      </View> : null}
     </View></View>
   </Modal>;
 }
 
-const styles = StyleSheet.create({ overlay: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(8, 19, 32, .65)', padding: 20 }, modal: { width: '100%', maxWidth: 620, maxHeight: '90%', borderRadius: 22, borderWidth: 1, overflow: 'hidden' }, header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 23, paddingTop: 23, paddingBottom: 16 }, content: { paddingHorizontal: 23, paddingBottom: 25, gap: 11 }, summary: { flexDirection: 'row', gap: 12, padding: 16, borderRadius: 12, marginBottom: 8 }, feedback: { padding: 14, borderRadius: 11, marginBottom: 7 }, label: { fontSize: 12, fontWeight: '600', marginTop: 14, marginBottom: 2 }, choice: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, borderWidth: 1, borderRadius: 11, padding: 13 }, loading: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 } });
+const styles = StyleSheet.create({ overlay: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(8, 19, 32, .65)', padding: 20 }, modal: { width: '100%', maxWidth: 620, maxHeight: '90%', borderRadius: 22, borderWidth: 1, overflow: 'hidden' }, header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 23, paddingTop: 23, paddingBottom: 16 }, scroll: { flexShrink: 1 }, content: { paddingHorizontal: 23, paddingBottom: 25, gap: 11 }, footer: { borderTopWidth: 1, paddingHorizontal: 23, paddingVertical: 15, gap: 8 }, summary: { flexDirection: 'row', gap: 12, padding: 16, borderRadius: 12, marginBottom: 8 }, feedback: { padding: 14, borderRadius: 11, marginBottom: 7 }, label: { fontSize: 12, fontWeight: '600', marginTop: 14, marginBottom: 2 }, choice: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, borderWidth: 1, borderRadius: 11, padding: 13 }, loading: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 } });

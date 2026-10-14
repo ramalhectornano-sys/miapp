@@ -12,13 +12,53 @@ from fastapi import HTTPException
 
 from ..db import Database, User
 from .ai import normalize
+from .source_registry import GREENHOUSE_SOURCE_ID, WEB_SOURCE_ID
+
+
+def greenhouse_evidence(raw: dict, source: dict, email: str) -> dict | None:
+    """Keep only the official adapter's bounded, self-consistent proof."""
+    if source.get("id") != GREENHOUSE_SOURCE_ID or source.get("kind") != "greenhouse_verified":
+        return None
+    payload = raw.get("payload")
+    if (not isinstance(payload, dict) or payload.get("integration_id") != GREENHOUSE_SOURCE_ID
+            or payload.get("verification_method") != "publisher_api_explicit_email"):
+        return None
+    evidence = payload.get("greenhouse")
+    if not isinstance(evidence, dict):
+        return None
+    board, job_id = evidence.get("board"), evidence.get("job_id")
+    if not isinstance(board, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,99}", board):
+        return None
+    if type(job_id) not in {str, int} or not re.fullmatch(r"[1-9][0-9]{0,18}", str(job_id)):
+        return None
+    from .greenhouse import parse_job_url
+    identity = parse_job_url(raw.get("url"))
+    if (not identity or identity[:2] != (board, int(job_id))
+            or raw.get("id") != f"{board}:{job_id}"):
+        return None
+    endpoint = f"https://boards-api.greenhouse.io/v1/boards/{board}/jobs/{job_id}"
+    quote, fetched_at = evidence.get("email_quote"), evidence.get("fetched_at")
+    if evidence.get("endpoint") != endpoint or not isinstance(quote, str) or not 1 <= len(quote) <= 2000:
+        return None
+    if not email or email not in quote.casefold() or not isinstance(fetched_at, str):
+        return None
+    try:
+        if datetime.fromisoformat(fetched_at.replace("Z", "+00:00")).tzinfo is None:
+            return None
+    except ValueError:
+        return None
+    return {key: evidence[key] for key in (
+        "board", "job_id", "endpoint", "email_quote", "fetched_at", "valid_until") if key in evidence}
 
 
 def fingerprint(job: dict) -> str:
     # URL when supplied is the source's stable canonical vacancy URL.
     identity = [normalize(str(job.get(key, ""))).strip() for key in ("company", "title", "city")]
     if job.get("url"):
-        identity.append(job["url"].split("?")[0].rstrip("/"))
+        from .greenhouse import parse_job_url
+        publisher = parse_job_url(job["url"])
+        identity.append(f"greenhouse:{publisher[0]}:{publisher[1]}" if publisher
+            else job["url"].split("?")[0].rstrip("/"))
     return hashlib.sha256("\x1f".join(identity).encode()).hexdigest()
 
 
@@ -70,8 +110,12 @@ def normalize_job(raw: dict, source: dict, user_id: str) -> dict:
     # Web discoveries and legitimate feeds may explicitly provide null when
     # applications belong on a portal. Keep those jobs for manual review.
     email = "" if raw.get("recipient_email") is None else text("recipient_email", 254).casefold()
-    verified = bool(source.get("kind") != "web_search" and email and re.fullmatch(r"[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+", email)
+    publisher_evidence = greenhouse_evidence(raw, source, email)
+    verified = bool(source.get("kind") != "web_search" and source.get("id") != WEB_SOURCE_ID
+        and email and re.fullmatch(r"[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+", email)
         and raw.get("recipient_verified") is True and source.get("recipient_verification") == "source_attestation")
+    if source.get("kind") == "greenhouse_verified" or source.get("id") == GREENHOUSE_SOURCE_ID:
+        verified = verified and publisher_evidence is not None
     row = {"user_id": user_id, "source": source["id"], "external_id": str(raw["id"])[:200] if raw.get("id") is not None else None,
         "company": text("company", 200, True), "title": text("title", 200, True), "city": text("city", 160, True),
         "url": text("url", 2000) or None, "recipient_email": email or None,
@@ -81,12 +125,19 @@ def normalize_job(raw: dict, source: dict, user_id: str) -> dict:
         "payload": {"integration_id": source["id"], "verification_method": "source_attestation" if verified else None}}
     if row["url"] and urlparse(row["url"]).scheme != "https":
         raise ValueError("Las vacantes deben usar URL HTTPS.")
-    if source.get("kind") == "web_search":
+    if source.get("kind") == "web_search" or source.get("id") == WEB_SOURCE_ID:
         payload = raw.get("payload") if isinstance(raw.get("payload"), dict) else {}
         row["payload"].update({key: payload[key] for key in (
             "evidence", "discovery_origin", "source_id", "observed_at", "validity", "web_search") if key in payload})
         row["payload"]["requires_manual_review"] = True
         row["payload"]["validity_confirmed"] = False
+    elif source.get("kind") == "greenhouse_verified":
+        row["payload"]["requires_manual_review"] = not verified
+        row["payload"]["validity_confirmed"] = verified
+        if publisher_evidence is not None:
+            row["payload"]["greenhouse"] = publisher_evidence
+        if verified:
+            row["payload"]["verification_method"] = "publisher_api_explicit_email"
     row["fingerprint"] = fingerprint(row)
     return row
 
@@ -96,13 +147,38 @@ async def find_jobs(db: Database, search: dict) -> tuple[list[dict], list[str]]:
     if not sources:
         raise HTTPException(503, "No hay fuentes reales autorizadas configuradas. No se ejecutó ninguna búsqueda.")
     matches, failures, completed_sources = [], [], 0
+    shared_discovery = any(source.get("kind") == "greenhouse_verified" for source in sources[:20])
+    discoveries, discovery_error = None, None
+
+    async def shared_results():
+        nonlocal discoveries, discovery_error
+        if discovery_error is not None:
+            raise discovery_error
+        if discoveries is None:
+            from .web_search import discover_web_results
+            try:
+                discoveries, partial_failures = await discover_web_results(db.settings, db.client, search)
+                failures.extend(partial_failures)
+            except (KeyError, ValueError, httpx.HTTPError, HTTPException) as error:
+                discovery_error = error
+                raise
+        return discoveries
+
     for source in sources[:20]:
         try:
             if not source.get("id") or not source.get("authorized"):
                 raise ValueError("La fuente no tiene autorización declarada.")
             if source.get("kind") == "web_search":
-                from .web_search import discover_web_jobs
-                rows, partial_failures = await discover_web_jobs(db.settings, db.client, search, source["id"])
+                if shared_discovery:
+                    from .web_search import extract_web_jobs
+                    rows = await extract_web_jobs(db.settings, db.client, search, await shared_results(), source["id"])
+                else:
+                    from .web_search import discover_web_jobs
+                    rows, partial_failures = await discover_web_jobs(db.settings, db.client, search, source["id"])
+                    failures.extend(partial_failures)
+            elif source.get("kind") == "greenhouse_verified":
+                from .greenhouse import verify_discoveries
+                rows, partial_failures = await verify_discoveries(db.client, await shared_results(), search)
                 failures.extend(partial_failures)
             else:
                 rows = await read_json_feed(db, source)
@@ -356,6 +432,10 @@ async def execute_claim(db: Database, search: dict):
                 if not observations:
                     continue
                 matched_job_ids.add(job["id"])
+                if job.get("source") == GREENHOUSE_SOURCE_ID:
+                    from .job_draft_verification import refresh_greenhouse_draft
+                    await assert_claim(db, search)
+                    await refresh_greenhouse_draft(db, search, user, job)
                 resume_id = search.get("preferred_resume_id")
                 if not resume_id or job["id"] in applied_jobs:
                     continue
