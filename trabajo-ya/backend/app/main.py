@@ -59,6 +59,8 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
     @app.post("/api/chat", response_model=ChatResponse)
     async def chat(request: Request, body: ChatRequest, user: User = Depends(require_user)):
         response = await ai.chat(settings, request.app.state.http, body)
+        # PostgREST bulk inserts require identical keys in every object. Keep
+        # both turns in one insert so a failed write cannot save half a chat.
         await request.app.state.db.insert("chat_messages", [
             {"user_id": user.id, "role": "user", "content": body.message, "metadata": {}},
             {"user_id": user.id, "role": "assistant", "content": response.reply, "metadata": response.model_dump(mode="json")}])
