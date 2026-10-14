@@ -37,3 +37,5 @@ services:
         value: '[]'
       - key: MAIL_SEND_ENABLED
         value: 'false'
+      - key: GOOGLE_REDIRECT_URI
+        value: https://trabajo-ya-api.onrender.com/api/mail/google/callback

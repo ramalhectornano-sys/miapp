@@ -18,6 +18,8 @@ from .services.feeds import execute_claim
 from .services.resumes import extract_resume
 from .services.schedule import next_occurrence, proposal_row
 
+BACKEND_VERSION = "0.3.1"
+
 
 def create_app(settings: Settings | None = None, client: httpx.AsyncClient | None = None):
     settings = settings or Settings.from_env()
@@ -31,7 +33,7 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
         if owned_client:
             await app.state.http.aclose()
 
-    app = FastAPI(title="Trabajo YA", version="0.3.0", lifespan=lifespan,
+    app = FastAPI(title="Trabajo YA", version=BACKEND_VERSION, lifespan=lifespan,
         description="Asistente laboral. Ninguna integración se simula como una operación real.")
     app.state.settings = settings
     if settings.cors_origins:
@@ -46,7 +48,7 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
 
     @app.get("/health")
     async def health():
-        return {"status": "ok", "version": "0.3.0", "integrations": {
+        return {"status": "ok", "version": app.version, "integrations": {
             "supabase": "configured" if settings.auth_ready else "not_configured",
             "ai": "demo" if settings.ai_provider == "demo" else "configured_unverified",
             "job_sources": "configured_unverified" if settings.authorized_feeds else "not_configured",
@@ -58,7 +60,7 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
     async def chat(request: Request, body: ChatRequest, user: User = Depends(require_user)):
         response = await ai.chat(settings, request.app.state.http, body)
         await request.app.state.db.insert("chat_messages", [
-            {"user_id": user.id, "role": "user", "content": body.message},
+            {"user_id": user.id, "role": "user", "content": body.message, "metadata": {}},
             {"user_id": user.id, "role": "assistant", "content": response.reply, "metadata": response.model_dump(mode="json")}])
         return response
 

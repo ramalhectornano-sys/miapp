@@ -9,6 +9,12 @@ terminó correctamente y verificó el paquete y la firma de prueba. El código
 0.3.2 añade el regreso por enlace de autenticación y conserva las correcciones de foto y CV principal. Los pasos de instalación
 y prueba están en [APK conectada](docs/APK_REAL.md).
 
+Se corrigió un error del backend al guardar el chat: PostgREST rechazaba el lote
+porque los dos mensajes tenían campos distintos. Para aplicar la corrección,
+en Render elegí **Manual Deploy → Deploy latest commit** y esperá **Live**;
+podés conservar la APK 0.3.2. Gmail y los envíos automáticos requieren completar
+la configuración descrita en [solución de los tres avisos](docs/SOLUCION_ERRORES.md).
+
 La [APK 0.3.0 publicada](docs/APK_GITHUB.md) es la demostración anterior:
 no conecta IA ni guarda perfil, fotos o CV en el servidor. No representa la
 nueva compilación conectada.

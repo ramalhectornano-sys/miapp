@@ -1,4 +1,23 @@
-# Validación de Trabajo YA: autenticación Android 0.3.2
+# Validación de Trabajo YA
+
+## Corrección de guardado del chat (backend 0.3.1)
+
+Se identificó un defecto reproducible en `/api/chat`: el insert masivo de
+`chat_messages` enviaba una fila sin `metadata` y otra con ese campo. PostgREST
+rechaza claves distintas con PGRST102. Ahora ambas filas incluyen `metadata`.
+La prueba de regresión usa un transporte que aplica esa regla y verifica la
+respuesta y los dos mensajes persistidos. Se diferencian errores de sesión,
+acceso del servidor y esquema pendiente sin devolver diagnósticos privados.
+Los logs incluyen solo método, recurso conocido, estado HTTP y códigos permitidos.
+
+Las **19 pruebas enfocadas** de chat, errores y claves Supabase pasan localmente.
+Se utilizan proveedores simulados únicamente en pruebas; no acreditan una
+respuesta remota de IA o escritura en la base del usuario. El servicio gratuito
+tiene Auto-Deploy apagado: el propietario debe ejecutar **Manual Deploy → Deploy
+latest commit** en Render. `/health` debe mostrar backend 0.3.1 después del despliegue.
+La corrección no requiere una APK nueva ni una migración SQL. La APK publicada
+permanece en 0.3.2. La [guía de los avisos](SOLUCION_ERRORES.md) documenta lo
+pendiente de Gmail, fuentes autorizadas y worker; no se activaron envíos.
 
 ## Corrección de enlaces de autenticación 0.3.2
 

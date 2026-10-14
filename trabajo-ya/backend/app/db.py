@@ -1,10 +1,61 @@
 """Small PostgREST client. User queries always keep the bearer token for RLS."""
 from dataclasses import dataclass
+import logging
 from typing import Any
 import httpx
 from fastapi import HTTPException
 
 from .config import Settings
+
+
+logger = logging.getLogger(__name__)
+SAFE_ERROR_CODES = frozenset({"PGRST102", "PGRST202", "PGRST204", "PGRST205", "PGRST301", "PGRST302",
+    "42501", "42P01", "23503", "23505", "23514"})
+SAFE_REST_PATHS = frozenset(f"/rest/v1/{name}" for name in (
+    "profiles", "work_experiences", "professional_references", "credentials", "resume_versions",
+    "email_connections", "job_searches", "sending_consents", "job_search_runs", "jobs", "applications",
+    "chat_messages", "job_search_matches", "recipient_suppressions")) | frozenset(f"/rest/v1/rpc/{name}" for name in (
+    "claim_due_searches", "claim_search_now", "grant_sending_consent", "revoke_sending_consent",
+    "stop_recipient_followups", "assert_search_claim", "complete_search_run", "create_initial_application",
+    "prepare_automatic_application", "prepare_followup_application", "claim_application_send",
+    "consume_oauth_state", "get_email_secret", "store_email_secret", "store_oauth_state"))
+
+
+def diagnostic_path(path: str) -> str:
+    """Log resource types only, never object filenames, IDs or query strings."""
+    if path in SAFE_REST_PATHS:
+        return path
+    if path.startswith("/storage/v1/"):
+        return "/storage/v1/[resource]"
+    if path.startswith("/auth/v1/"):
+        return "/auth/v1/[resource]"
+    return "[resource]"
+
+
+def safe_error_code(response: httpx.Response) -> str:
+    try:
+        payload = response.json()
+    except ValueError:
+        return "UNKNOWN"
+    code = payload.get("code") if isinstance(payload, dict) else None
+    return code if isinstance(code, str) and code in SAFE_ERROR_CODES else "UNKNOWN"
+
+
+def database_failure(response: httpx.Response, user: "User | None") -> HTTPException:
+    """Classify known failures without exposing upstream SQL or private data."""
+    code = safe_error_code(response)
+    if response.status_code == 401:
+        return HTTPException(401, "Tu sesión venció o ya no es válida. Volvé a ingresar.") if user else HTTPException(
+            503, "El servidor no tiene acceso autorizado a los datos. Revisá la configuración de Supabase en el servidor.")
+    if code in {"PGRST202", "PGRST204", "PGRST205", "42P01"}:
+        return HTTPException(503, "La base de datos necesita actualizarse para completar esta operación.")
+    if code == "42501" or response.status_code == 403:
+        return HTTPException(403, "No tenés permiso para completar esta operación.") if user else HTTPException(
+            503, "El servidor no tiene permisos para completar esta operación. Revisá su acceso a Supabase.")
+    if code == "PGRST102":
+        return HTTPException(502, "El servicio necesita una actualización para guardar estos datos.")
+    status = 404 if response.status_code == 404 else 409 if response.status_code == 409 else 502
+    return HTTPException(status, "No se pudo completar la operación de datos.")
 
 
 @dataclass(frozen=True)
@@ -35,11 +86,14 @@ class Database:
             response = await self.client.request(method, f"{self.settings.supabase_url}{path}",
                 headers={**self.headers(user), **(headers or {})}, params=params, json=json)
         except httpx.RequestError:
+            logger.warning("Supabase request failed method=%s path=%s code=NETWORK",
+                method if method in {"GET", "POST", "PATCH", "DELETE"} else "UNKNOWN", diagnostic_path(path))
             raise HTTPException(502, "No se pudo contactar al almacenamiento. Intentá nuevamente.")
         if response.status_code >= 400:
-            # Never forward PostgREST diagnostics or SQL details containing personal data.
-            status = 404 if response.status_code == 404 else 409 if response.status_code == 409 else 502
-            raise HTTPException(status, "No se pudo completar la operación de datos.")
+            logger.warning("Supabase request rejected method=%s path=%s status=%s code=%s",
+                method if method in {"GET", "POST", "PATCH", "DELETE"} else "UNKNOWN",
+                diagnostic_path(path), response.status_code, safe_error_code(response))
+            raise database_failure(response, user)
         return response.json() if response.content else None
 
     async def select(self, table, user, *, params=None):

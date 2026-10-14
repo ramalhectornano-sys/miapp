@@ -131,7 +131,7 @@ class SupabaseKeyTests(unittest.IsolatedAsyncioTestCase):
         async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
             with self.assertRaises(HTTPException) as error:
                 await Database(self.settings(), client).rpc("claim_due_searches", {})
-        self.assertEqual(error.exception.status_code, 502)
+        self.assertEqual(error.exception.status_code, 503)
         self.assertNotIn("PRIVATE", str(error.exception.detail))
         self.assertNotIn(SECRET, str(error.exception.detail))
 
