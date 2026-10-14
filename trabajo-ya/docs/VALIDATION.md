@@ -1,5 +1,32 @@
 # Validación de Trabajo YA
 
+## Entrega Android 0.3.3 e integración de PR2
+
+La [PR2](https://github.com/ramalhectornano-sys/miapp/pull/2) se integró conservando
+la corrección del chat y el diagnóstico de permisos del servidor. Su prueba
+verifica respuesta del proveedor, guardado de los dos mensajes en un solo lote,
+lectura del historial, sesión inválida, error del proveedor y error de escritura.
+Los transportes son simulados únicamente en las pruebas.
+
+La [verificación 38568445782](https://github.com/ramalhectornano-sys/miapp/actions/runs/38568445782)
+aprobó **161 pruebas backend**, **44 móviles**, TypeScript, **29 de despliegue**,
+las seis migraciones y el arranque del contenedor. Supabase Auth respondió
+HTTP200 y la lectura anónima de perfiles sigue bloqueada; no se leyeron datos.
+
+La [compilación 38568445689](https://github.com/ramalhectornano-sys/miapp/actions/runs/38568445689)
+publicó [Trabajo-YA-0.3.3-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.3-real/Trabajo-YA-0.3.3-real.apk)
+con `versionCode=6`, `demo=false`, paquete `com.trabajoya.autoempleoia` y esquema
+`autoempleoia`. `apksigner` y `aapt` verificaron la APK antes de publicar.
+El digest del comprobante de certificado coincide con el de 0.3.2; se conserva
+la firma de prueba. APK: **51835001 bytes**; SHA-256
+`db706fdf71cc1c00aa38e69e5f5c8ab2eeba37f29d358f54ef0b47668603b602`.
+Commit compilado: `4a9623b732918a1bf43592c10d971d7ce7addd22`.
+
+La APK se instala como actualización. La corrección de persistencia también
+necesita el despliegue de ese backend en Render. No se confirmó un chat, OAuth
+Gmail, búsqueda o envío real con una cuenta del usuario mediante estas pruebas;
+las dependencias externas pendientes siguen en [SOLUCION_ERRORES](SOLUCION_ERRORES.md).
+
 ## Corrección de guardado del chat (backend 0.3.1)
 
 Se identificó un defecto reproducible en `/api/chat`: el insert masivo de
@@ -15,8 +42,8 @@ Se utilizan proveedores simulados únicamente en pruebas; no acreditan una
 respuesta remota de IA o escritura en la base del usuario. El servicio gratuito
 tiene Auto-Deploy apagado: el propietario debe ejecutar **Manual Deploy → Deploy
 latest commit** en Render. `/health` debe mostrar backend 0.3.1 después del despliegue.
-La corrección no requiere una APK nueva ni una migración SQL. La APK publicada
-permanece en 0.3.2. La [guía de los avisos](SOLUCION_ERRORES.md) documenta lo
+Esta corrección inicial no requería una APK nueva ni una migración SQL; en ese
+momento la APK publicada era 0.3.2. La [guía de los avisos](SOLUCION_ERRORES.md) documenta lo
 pendiente de Gmail, fuentes autorizadas y worker; no se activaron envíos.
 
 ## Corrección de enlaces de autenticación 0.3.2

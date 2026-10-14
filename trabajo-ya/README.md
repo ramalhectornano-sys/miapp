@@ -2,9 +2,9 @@
 
 **Supabase ya está creado y el backend está publicado en
 https://trabajo-ya-api.onrender.com.** La configuración pública de Android está
-completa y la **APK conectada 0.3.2 / 5 está publicada**:
-[descargar Trabajo YA para Android](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.2-real/Trabajo-YA-0.3.2-real.apk).
-La [compilación 38453859661](https://github.com/ramalhectornano-sys/miapp/actions/runs/38453859661)
+completa y la **APK conectada 0.3.3 / 6 está publicada**:
+[descargar Trabajo YA para Android](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.3-real/Trabajo-YA-0.3.3-real.apk).
+La [compilación 38568445689](https://github.com/ramalhectornano-sys/miapp/actions/runs/38568445689)
 terminó correctamente y verificó el paquete y la firma de prueba. El código
 0.3.2 añade el regreso por enlace de autenticación y conserva las correcciones de foto y CV principal. Los pasos de instalación
 y prueba están en [APK conectada](docs/APK_REAL.md).
@@ -12,7 +12,7 @@ y prueba están en [APK conectada](docs/APK_REAL.md).
 Se corrigió un error del backend al guardar el chat: PostgREST rechazaba el lote
 porque los dos mensajes tenían campos distintos. Para aplicar la corrección,
 en Render elegí **Manual Deploy → Deploy latest commit** y esperá **Live**;
-podés conservar la APK 0.3.2. Gmail y los envíos automáticos requieren completar
+podés instalar la APK 0.3.3 como actualización de la anterior. Gmail y los envíos automáticos requieren completar
 la configuración descrita en [solución de los tres avisos](docs/SOLUCION_ERRORES.md).
 
 La [APK 0.3.0 publicada](docs/APK_GITHUB.md) es la demostración anterior:
