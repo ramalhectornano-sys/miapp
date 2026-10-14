@@ -50,6 +50,32 @@ async def store_tokens(db, connection_id, user_id, tokens):
         "p_encrypted_payload": encrypted, "p_key_id": "v1"})
 
 
+def provider_tokens(payload: object) -> dict:
+    """Validate a fresh Google token before extending its usable lifetime."""
+    if not isinstance(payload, dict):
+        raise ValueError("Respuesta de credenciales inválida")
+    token = payload.get("access_token")
+    if not isinstance(token, str) or not token or any(character.isspace() for character in token):
+        raise ValueError("Sin credencial de acceso válida")
+    token_type = payload.get("token_type", "Bearer")
+    if not isinstance(token_type, str) or token_type.casefold() != "bearer":
+        raise ValueError("Tipo de credencial no admitido")
+    lifetime = payload.get("expires_in", 3600)
+    if isinstance(lifetime, bool) or not isinstance(lifetime, (int, str)):
+        raise ValueError("Vigencia inválida")
+    lifetime = int(lifetime)
+    if not 0 < lifetime <= 86400:
+        raise ValueError("Vigencia inválida")
+    if "refresh_token" in payload and (not isinstance(payload["refresh_token"], str)
+            or not payload["refresh_token"] or any(character.isspace() for character in payload["refresh_token"])):
+        raise ValueError("Credencial de renovación inválida")
+    if "scope" in payload and (not isinstance(payload["scope"], str) or SCOPES[0] not in payload["scope"].split()):
+        raise ValueError("Falta permiso de envío")
+    tokens = dict(payload)
+    tokens["expires_at"] = (datetime.now(timezone.utc) + timedelta(seconds=lifetime)).isoformat()
+    return tokens
+
+
 async def oauth_callback(db: Database, state: str, code: str):
     if not db.settings.oauth_ready:
         raise HTTPException(503, "La integración de correo no está configurada.")
@@ -64,27 +90,49 @@ async def oauth_callback(db: Database, state: str, code: str):
             "client_secret": db.settings.google_client_secret, "redirect_uri": saved["redirect_uri"], "code": code,
             "code_verifier": verifier, "grant_type": "authorization_code"})
         response.raise_for_status()
-        tokens = response.json()
+        tokens = provider_tokens(response.json())
         info = await db.client.get("https://openidconnect.googleapis.com/v1/userinfo", headers={"Authorization": f"Bearer {tokens['access_token']}"})
         info.raise_for_status()
         identity = info.json()
-        if identity.get("email_verified") is not True or not identity.get("email"):
+        if (not isinstance(identity, dict) or identity.get("email_verified") is not True
+                or not isinstance(identity.get("email"), str) or not identity["email"].strip()):
             raise ValueError("Correo no verificado")
-        granted = tokens.get("scope", "").split()
+        scope = tokens.get("scope", "")
+        if not isinstance(scope, str):
+            raise ValueError("Permisos no válidos")
+        granted = scope.split()
         if SCOPES[0] not in granted:
             raise ValueError("Falta permiso de envío")
-    except (httpx.HTTPError, ValueError, KeyError, InvalidToken):
+    except (httpx.HTTPError, ValueError, KeyError, TypeError, InvalidToken):
         raise HTTPException(502, "Google no confirmó la conexión del correo. No se envió ningún mensaje.")
-    tokens["expires_at"] = (datetime.now(timezone.utc) + timedelta(seconds=int(tokens.get("expires_in", 3600)))).isoformat()
     existing = await db.select("email_connections", None, params={"user_id": f"eq.{saved['user_id']}", "provider": "eq.google", "email": f"eq.{identity['email']}", "limit": "1"})
     connection_id = existing[0]["id"] if existing else str(uuid4())
+    if existing and not tokens.get("refresh_token"):
+        # Google can omit a refresh token on a later authorization. Keep the
+        # credential belonging to this exact user/account instead of replacing
+        # a working offline connection with one that expires after an hour.
+        previous = await db.rpc("get_email_secret", {"p_connection_id": connection_id,
+            "p_user_id": saved["user_id"]})
+        if previous:
+            try:
+                old = json.loads(cipher(db).decrypt(previous["encrypted_payload"].encode()))
+                refresh = old.get("refresh_token") if isinstance(old, dict) else None
+                if isinstance(refresh, str) and refresh and not any(character.isspace() for character in refresh):
+                    tokens["refresh_token"] = refresh
+            except (InvalidToken, ValueError, KeyError, TypeError):
+                raise HTTPException(409, "No se pudo conservar la conexión anterior. Volvé a conectar tu correo.") from None
     data = {"id": connection_id, "user_id": saved["user_id"], "provider": "google", "email": identity["email"],
-        "status": "connected", "scopes": granted, "connected_at": datetime.now(timezone.utc).isoformat(), "revoked_at": None}
+        "status": "disconnected", "scopes": granted}
     if existing:
         await db.patch("email_connections", data, params={"id": f"eq.{connection_id}", "user_id": f"eq.{saved['user_id']}"})
     else:
         await db.insert("email_connections", data)
     await store_tokens(db, connection_id, saved["user_id"], tokens)
+    connected = await db.patch("email_connections", {"status": "connected",
+        "connected_at": datetime.now(timezone.utc).isoformat(), "revoked_at": None},
+        params={"id": f"eq.{connection_id}", "user_id": f"eq.{saved['user_id']}"})
+    if not connected:
+        raise HTTPException(502, "No se confirmó el registro de la conexión. Volvé a conectar tu correo.")
     return {"connected": True, "message": "Correo conectado. Volvé a Trabajo YA. Ningún envío fue autorizado por esta conexión."}
 
 
@@ -94,8 +142,13 @@ async def access_token(db: Database, connection: dict, user_id: str):
         raise HTTPException(409, "Volvé a conectar tu correo para enviar.")
     try:
         tokens = json.loads(cipher(db).decrypt(saved["encrypted_payload"].encode()))
+        if (not isinstance(tokens, dict) or not isinstance(tokens.get("access_token"), str)
+                or not tokens["access_token"] or any(character.isspace() for character in tokens["access_token"])):
+            raise ValueError("Credenciales inválidas")
         expiry = datetime.fromisoformat(tokens["expires_at"])
-    except (InvalidToken, ValueError, KeyError):
+        if expiry.tzinfo is None:
+            raise ValueError("Vigencia sin zona horaria")
+    except (InvalidToken, ValueError, KeyError, TypeError):
         raise HTTPException(409, "No se pudo recuperar la conexión. Volvé a conectar tu correo.")
     if expiry > datetime.now(timezone.utc) + timedelta(minutes=1):
         return tokens["access_token"]
@@ -105,12 +158,11 @@ async def access_token(db: Database, connection: dict, user_id: str):
         response = await db.client.post("https://oauth2.googleapis.com/token", data={"client_id": db.settings.google_client_id,
             "client_secret": db.settings.google_client_secret, "grant_type": "refresh_token", "refresh_token": tokens["refresh_token"]})
         response.raise_for_status()
-        update = response.json()
+        update = provider_tokens(response.json())
         tokens.update(update)
-        tokens["expires_at"] = (datetime.now(timezone.utc) + timedelta(seconds=int(update.get("expires_in", 3600)))).isoformat()
         await store_tokens(db, connection["id"], user_id, tokens)
         return tokens["access_token"]
-    except (httpx.HTTPError, KeyError, ValueError):
+    except (httpx.HTTPError, KeyError, ValueError, TypeError):
         raise HTTPException(409, "Google no renovó la conexión. Volvé a conectar tu correo.")
 
 

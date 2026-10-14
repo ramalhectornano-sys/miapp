@@ -16,6 +16,9 @@ class Settings:
     default_timezone: str = "America/Argentina/Buenos_Aires"
     cors_origins: list[str] = field(default_factory=list)
     authorized_feeds: list[dict] = field(default_factory=list)
+    web_search_provider: str = ""
+    web_search_api_key: str = ""
+    web_search_max_queries: int = 2
     google_client_id: str = ""
     google_client_secret: str = ""
     google_redirect_uri: str = "http://localhost:8000/api/mail/google/callback"
@@ -44,6 +47,9 @@ class Settings:
             default_timezone=os.getenv("DEFAULT_TIMEZONE", "America/Argentina/Buenos_Aires"),
             cors_origins=json_env("CORS_ORIGINS", []),
             authorized_feeds=json_env("AUTHORIZED_JOB_FEEDS", []),
+            web_search_provider=os.getenv("WEB_SEARCH_PROVIDER", "").strip().lower(),
+            web_search_api_key=os.getenv("WEB_SEARCH_API_KEY", "").strip(),
+            web_search_max_queries=min(max(int(os.getenv("WEB_SEARCH_MAX_QUERIES", "2")), 1), 6),
             google_client_id=os.getenv("GOOGLE_CLIENT_ID", ""),
             google_client_secret=os.getenv("GOOGLE_CLIENT_SECRET", ""),
             google_redirect_uri=os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/mail/google/callback"),
@@ -59,3 +65,12 @@ class Settings:
     @property
     def oauth_ready(self):
         return bool(self.google_client_id and self.google_client_secret and self.token_encryption_key and self.supabase_service_role_key)
+
+    @property
+    def web_search_ready(self):
+        return self.web_search_provider == "tavily" and bool(self.web_search_api_key)
+
+    @property
+    def job_sources(self):
+        from .services.source_registry import configured_sources
+        return configured_sources(self)

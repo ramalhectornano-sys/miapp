@@ -33,6 +33,8 @@ de los servicios y la compilación no acreditan esas operaciones.
 Para activar el proyecto desde el celular, empezar por [EMPEZAR](EMPEZAR.md).
 Para conectar el modelo real, consultar [IA real con Groq](docs/IA_REAL.md).
 
+La versión 0.4 incorpora búsqueda web mediante Tavily, extracción de vacantes con evidencia y **Ver ofertas encontradas**. Requiere cargar la clave privada en Render y desplegar el backend actualizado. La [guía de búsqueda web](docs/BUSQUEDA_WEB.md) y el [worker de pruebas](docs/WORKER_GITHUB.md) explican cómo activarla. Los resultados de un buscador se revisan antes de postularse; no verifican por sí solos destinatarios para correo automático.
+
 Primera versión de una aplicación Android en español para preparar el perfil
 profesional, conversar con un asistente y programar búsquedas laborales desde el
 servidor. Incluye React Native con Expo/TypeScript, FastAPI y migraciones Supabase.

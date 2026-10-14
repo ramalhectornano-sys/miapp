@@ -1,4 +1,4 @@
-"""Only administrator-declared, authorized JSON integrations are requested."""
+"""Permitted JSON feeds and configured web-search APIs; no simulated discovery."""
 import asyncio
 import hashlib
 import ipaddress
@@ -67,8 +67,10 @@ def normalize_job(raw: dict, source: dict, user_id: str) -> dict:
         if not isinstance(value, str) or len(value) > limit or (required and not value.strip()):
             raise ValueError(f"Campo inválido: {key}")
         return value.strip()
-    email = text("recipient_email", 254).casefold()
-    verified = bool(email and re.fullmatch(r"[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+", email)
+    # Web discoveries and legitimate feeds may explicitly provide null when
+    # applications belong on a portal. Keep those jobs for manual review.
+    email = "" if raw.get("recipient_email") is None else text("recipient_email", 254).casefold()
+    verified = bool(source.get("kind") != "web_search" and email and re.fullmatch(r"[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+", email)
         and raw.get("recipient_verified") is True and source.get("recipient_verification") == "source_attestation")
     row = {"user_id": user_id, "source": source["id"], "external_id": str(raw["id"])[:200] if raw.get("id") is not None else None,
         "company": text("company", 200, True), "title": text("title", 200, True), "city": text("city", 160, True),
@@ -79,32 +81,32 @@ def normalize_job(raw: dict, source: dict, user_id: str) -> dict:
         "payload": {"integration_id": source["id"], "verification_method": "source_attestation" if verified else None}}
     if row["url"] and urlparse(row["url"]).scheme != "https":
         raise ValueError("Las vacantes deben usar URL HTTPS.")
+    if source.get("kind") == "web_search":
+        payload = raw.get("payload") if isinstance(raw.get("payload"), dict) else {}
+        row["payload"].update({key: payload[key] for key in (
+            "evidence", "discovery_origin", "source_id", "observed_at", "validity", "web_search") if key in payload})
+        row["payload"]["requires_manual_review"] = True
+        row["payload"]["validity_confirmed"] = False
     row["fingerprint"] = fingerprint(row)
     return row
 
 
 async def find_jobs(db: Database, search: dict) -> tuple[list[dict], list[str]]:
-    sources = db.settings.authorized_feeds
+    sources = db.settings.job_sources
     if not sources:
         raise HTTPException(503, "No hay fuentes reales autorizadas configuradas. No se ejecutó ninguna búsqueda.")
-    matches, failures = [], []
+    matches, failures, completed_sources = [], [], 0
     for source in sources[:20]:
         try:
             if not source.get("id") or not source.get("authorized"):
                 raise ValueError("La fuente no tiene autorización declarada.")
-            await safe_feed_url(source["url"])
-            async with db.client.stream("GET", source["url"], follow_redirects=False, timeout=30) as response:
-                response.raise_for_status()
-                chunks, length = [], 0
-                async for chunk in response.aiter_bytes():
-                    length += len(chunk)
-                    if length > 5 * 1024 * 1024:
-                        raise ValueError("Fuente demasiado grande")
-                    chunks.append(chunk)
-            payload = json.loads(b"".join(chunks))
-            rows = payload.get("jobs") if isinstance(payload, dict) else payload
-            if not isinstance(rows, list) or len(rows) > 2000:
-                raise ValueError("La fuente requiere un array de hasta 2000 vacantes")
+            if source.get("kind") == "web_search":
+                from .web_search import discover_web_jobs
+                rows, partial_failures = await discover_web_jobs(db.settings, db.client, search, source["id"])
+                failures.extend(partial_failures)
+            else:
+                rows = await read_json_feed(db, source)
+            completed_sources += 1
             for raw in rows:
                 try:
                     row = normalize_job(raw, source, search["user_id"])
@@ -114,11 +116,35 @@ async def find_jobs(db: Database, search: dict) -> tuple[list[dict], list[str]]:
                     matches.append(row)
         except (KeyError, ValueError, httpx.HTTPError, HTTPException):
             failures.append(source.get("id", "fuente sin identificador"))
-    if len(failures) == len(sources[:20]):
+    if not completed_sources:
         raise HTTPException(502, "No se pudo consultar ninguna fuente autorizada. La búsqueda no se completó.")
-    # Same vacancy offered by two sources is inserted once per user.
-    unique = {job["fingerprint"]: job for job in matches}
+    unique = {}
+    for job in matches:
+        previous = unique.get(job["fingerprint"])
+        # Prefer a current source attestation to an unverified duplicate. Keep
+        # one complete source record: never assemble verification from one
+        # integration and a recipient or description from another.
+        if previous and previous.get("recipient_verified_at") and not job.get("recipient_verified_at"):
+            continue
+        unique[job["fingerprint"]] = job
     return list(unique.values()), failures
+
+
+async def read_json_feed(db: Database, source: dict):
+    await safe_feed_url(source["url"])
+    async with db.client.stream("GET", source["url"], follow_redirects=False, timeout=30) as response:
+        response.raise_for_status()
+        chunks, length = [], 0
+        async for chunk in response.aiter_bytes():
+            length += len(chunk)
+            if length > 5 * 1024 * 1024:
+                raise ValueError("Fuente demasiado grande")
+            chunks.append(chunk)
+    payload = json.loads(b"".join(chunks))
+    rows = payload.get("jobs") if isinstance(payload, dict) else payload
+    if not isinstance(rows, list) or len(rows) > 2000:
+        raise ValueError("La fuente requiere un array de hasta 2000 vacantes")
+    return rows
 
 
 RUN_MAX_SECONDS = 900
@@ -168,7 +194,7 @@ async def process_automatic_drafts(db: Database, search: dict, user: User):
         "parent_application_id": "is.null",
         "limit": str(PAGE_SIZE),
     }
-    allowed_sources = {source["id"] for source in db.settings.authorized_feeds
+    allowed_sources = {source["id"] for source in db.settings.job_sources
         if isinstance(source, dict) and source.get("id") and source.get("authorized")}
     prepared_ids, offset = [], 0
     while len(prepared_ids) < MAX_JOBS_PER_RUN:
@@ -358,7 +384,7 @@ async def execute_claim(db: Database, search: dict):
             if pending_count:
                 message += f" Se alcanzó el límite de {MAX_JOBS_PER_RUN} registros; {pending_count} quedan para próximas ejecuciones."
             if failures:
-                message += f" {len(failures)} fuentes no respondieron; resultados parciales."
+                message += f" {len(failures)} consultas o fuentes no se completaron; resultados parciales."
     except TimeoutError:
         status, message = "error", "Se alcanzó el tiempo máximo de procesamiento. Los resultados parciales se conservan; no se reintentan envíos reservados."
     except HTTPException as error:

@@ -1,4 +1,4 @@
-import type { Application, ChatMessage, Health, JobSearch, SearchProposal } from '../types';
+import type { Application, ChatMessage, FoundJob, Health, JobSearch, SearchProposal } from '../types';
 import { requireSession } from './supabase';
 
 export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL?.trim().replace(/\/$/, '') ?? '';
@@ -43,6 +43,7 @@ export const updateSearch = (id: string, patch: { status?: 'enabled' | 'paused';
 export const runSearch = (id: string) => api<{ run_id: string; status: string; found_count: number; message: string; recorded: boolean }>(`/api/searches/${encodeURIComponent(id)}/run`, { method: 'POST' });
 export type SearchRun = { id: string; status: 'running' | 'completed' | 'error' | 'blocked'; started_at: string; finished_at: string | null; found_count: number; message: string | null };
 export const getRuns = (id: string) => api<SearchRun[]>(`/api/searches/${encodeURIComponent(id)}/runs`);
+export const getSearchResults = (id: string) => api<FoundJob[]>(`/api/searches/${encodeURIComponent(id)}/results`);
 export const extractResume = (id: string) => api<{ resume_id: string; text: string; profile_saved: false; requires_confirmation: true; extraction_method: string; message: string }>(`/api/resumes/${encodeURIComponent(id)}/extract`, { method: 'POST' });
 export const startGoogleOAuth = () => api<{ authorization_url: string; message: string }>('/api/mail/google/start', { method: 'POST' });
 
@@ -87,7 +88,7 @@ export const grantSendingConsent = (body: { search_id: string; resume_id: string
   api<{ consent: Record<string, unknown>; search: JobSearch; message: string }>('/api/mail/consents', { method: 'POST', body: { ...body, acknowledgment: sendingAuthorizationText(body.repeat_every_days) } });
 export const revokeSendingConsent = (id: string) => api<{ revoked: boolean }>(`/api/mail/consents/${encodeURIComponent(id)}`, { method: 'DELETE' });
 export type MailPolicy = { daily_limit: number; timezone: string; repeat_every_days: 0 | 3 };
-export type Integrations = { sources: { id: string; name: string }[]; email_connections: { id: string; provider: string; email: string; status: string; connected_at: string }[]; sending_enabled: boolean; mail_policy?: MailPolicy };
+export type Integrations = { sources: { id: string; name: string; description?: string; supports_automatic_email: boolean }[]; email_connections: { id: string; provider: string; email: string; status: string; connected_at: string }[]; sending_enabled: boolean; mail_policy?: MailPolicy };
 export const getIntegrations = () => api<Integrations>('/api/integrations');
 
 type BackendHealth = { integrations: { ai: string; job_sources: string; mail_oauth: string; mail_sending: string; scheduler: string }; status: string };

@@ -17,8 +17,9 @@ from .services.account import delete_account
 from .services.feeds import execute_claim
 from .services.resumes import extract_resume
 from .services.schedule import next_occurrence, proposal_row
+from .services.source_registry import public_source
 
-BACKEND_VERSION = "0.3.1"
+BACKEND_VERSION = "0.4.0"
 
 
 def create_app(settings: Settings | None = None, client: httpx.AsyncClient | None = None):
@@ -51,7 +52,8 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
         return {"status": "ok", "version": app.version, "integrations": {
             "supabase": "configured" if settings.auth_ready else "not_configured",
             "ai": "demo" if settings.ai_provider == "demo" else "configured_unverified",
-            "job_sources": "configured_unverified" if settings.authorized_feeds else "not_configured",
+            "job_sources": "configured_unverified" if settings.job_sources else "not_configured",
+            "web_search": "configured_unverified" if settings.web_search_ready else "not_configured",
             "mail_oauth": "configured_unverified" if settings.oauth_ready else "not_configured",
             "mail_sending": "enabled" if settings.mail_send_enabled else "disabled",
             "scheduler": "requires_separate_worker"}, "message": "El estado de configuración no confirma una búsqueda ni un envío."}
@@ -70,8 +72,7 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
     async def integrations(request: Request, user: User = Depends(require_user)):
         connections = await request.app.state.db.select("email_connections", user, params={
             "user_id": f"eq.{user.id}", "select": "id,provider,email,status,connected_at", "order": "connected_at.desc", "limit": "20"})
-        sources = [{"id": feed["id"], "name": str(feed.get("name") or feed["id"])}
-            for feed in settings.authorized_feeds if isinstance(feed, dict) and feed.get("authorized") and feed.get("id")]
+        sources = [public_source(source) for source in settings.job_sources]
         metadata = [{key: row.get(key) for key in ("id", "provider", "email", "status", "connected_at")} for row in connections]
         profiles = await request.app.state.db.select("profiles", user, params={
             "user_id": f"eq.{user.id}", "select": "sending_timezone", "limit": "1"})
@@ -129,8 +130,8 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
     async def run_search(search_id: UUID, request: Request, user: User = Depends(require_user)):
         db = request.app.state.db
         await db.owned("job_searches", search_id, user)
-        if not settings.authorized_feeds:
-            raise HTTPException(503, "No hay fuentes reales autorizadas configuradas. No se ejecutó ninguna búsqueda.")
+        if not settings.job_sources:
+            raise HTTPException(503, "Falta conectar un buscador web o una fuente de vacantes en el servidor. No se ejecutó ninguna búsqueda.")
         search = await db.rpc("claim_search_now", {"p_search_id": str(search_id), "p_user_id": user.id,
             "p_worker_id": f"manual-{uuid4()}", "p_lease_seconds": 3600})
         if not search:
@@ -142,6 +143,31 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
         db = request.app.state.db
         await db.owned("job_searches", search_id, user)
         return await db.select("job_search_runs", user, params={"search_id": f"eq.{search_id}", "order": "started_at.desc", "limit": "50"})
+
+    @app.get("/api/searches/{search_id}/results")
+    async def search_results(search_id: UUID, request: Request, user: User = Depends(require_user)):
+        db = request.app.state.db
+        await db.owned("job_searches", search_id, user)
+        matches = await db.select("job_search_matches", user, params={
+            "search_id": f"eq.{search_id}", "user_id": f"eq.{user.id}",
+            "select": "observed_at,job:jobs(id,company,title,city,url,source,payload,recipient_email,recipient_verified_at)",
+            "order": "observed_at.desc,id.desc", "limit": "200"})
+        seen, results = set(), []
+        for match in matches:
+            job = match.get("job")
+            if not isinstance(job, dict) or not job.get("id") or job["id"] in seen:
+                continue
+            seen.add(job["id"])
+            payload = job.get("payload") if isinstance(job.get("payload"), dict) else {}
+            evidence = payload.get("evidence") if isinstance(payload.get("evidence"), dict) else {}
+            requires_review = bool(payload.get("requires_manual_review")) or job.get("source") == "web:tavily"
+            results.append({key: job.get(key) for key in ("id", "company", "title", "city", "url", "source")})
+            results[-1].update({"observed_at": match.get("observed_at"), "requires_manual_review": requires_review,
+                "evidence": {key: str(value)[:2000] for key, value in evidence.items() if key in (
+                    "company", "title", "city", "vacancy", "description", "email") and isinstance(value, str)},
+                "recipient_email": job.get("recipient_email"),
+                "recipient_verified": bool(job.get("recipient_verified_at")) and not requires_review})
+        return results
 
     @app.post("/api/resumes/{resume_id}/extract")
     async def resume_extract(resume_id: UUID, request: Request, user: User = Depends(require_user)):
@@ -245,9 +271,9 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
             raise HTTPException(409, "Conectá tu correo antes de autorizar envíos.")
         if mail.SCOPES[0] not in connection.get("scopes", []):
             raise HTTPException(409, "Volvé a conectar Gmail y habilitá el permiso de envío.")
-        allowed = {feed["id"] for feed in settings.authorized_feeds if feed.get("authorized")}
+        allowed = {source["id"] for source in settings.job_sources if source.get("kind") != "web_search"}
         if not set(body.allowed_sources).issubset(allowed):
-            raise HTTPException(409, "Solo se pueden autorizar fuentes configuradas y permitidas.")
+            raise HTTPException(409, "Solo se pueden autorizar fuentes permitidas para correo. Los resultados del buscador web requieren revisión y no verifican destinatarios.")
         result = await db.rpc("grant_sending_consent", {"p_user_id": user.id,
             "p_search_id": str(body.search_id), "p_resume_id": str(body.resume_id),
             "p_email_connection_id": str(body.email_connection_id), "p_authorized_sources": body.allowed_sources,
@@ -263,7 +289,7 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
         repeat_message = (" Se autorizaron recordatorios cada 72 horas al mismo correo, mientras la fuente vuelva a verificar una vacante vigente compatible."
             if body.repeat_every_days == 3 else " No se autorizaron recordatorios.")
         return {**result, "message": "Se autorizó esta búsqueda con un máximo total de 10 correos por día por usuario, sumando todas las búsquedas, envíos manuales y recordatorios."
-            + repeat_message + " La autorización vence en la fecha indicada. Los borradores se procesarán en la próxima ejecución programada."}
+            + repeat_message + " La autorización vence en la fecha indicada. Su ejecución requiere fuentes verificadas, envíos habilitados y tareas activas del servidor; esta autorización no confirma una búsqueda ni un envío."}
 
     @app.get("/api/mail/consents")
     async def list_consents(request: Request, user: User = Depends(require_user)):

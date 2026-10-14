@@ -149,7 +149,7 @@ class SchedulerFenceTests(unittest.IsolatedAsyncioTestCase):
                 async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
                     response = await client.get("/api/integrations", headers={"Authorization": "Bearer valid"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["sources"], [{"id": "partner", "name": "Fuente permitida"}])
+        self.assertEqual(response.json()["sources"], [{"id": "partner", "name": "Fuente permitida", "description": "", "supports_automatic_email": False}])
         self.assertNotIn("PRIVATE-TOKEN", response.text)
         self.assertNotIn("SECRET", response.text)
         self.assertNotIn("url", response.text)

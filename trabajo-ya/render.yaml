@@ -39,3 +39,7 @@ services:
         value: 'false'
       - key: GOOGLE_REDIRECT_URI
         value: https://trabajo-ya-api.onrender.com/api/mail/google/callback
+      - key: WEB_SEARCH_PROVIDER
+        value: tavily
+      - key: WEB_SEARCH_MAX_QUERIES
+        value: '2'

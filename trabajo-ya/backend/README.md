@@ -237,3 +237,7 @@ y pruebas contra Supabase/Gmail reales con cuentas de prueba. Las pruebas inclui
 son offline: no certifican disponibilidad de esos proveedores. Dockerfile permite
 ejecutar API; para el worker usar el mismo contenedor con `python -m app.worker`.
 No compartir service-role con la aplicación móvil.
+
+## Búsqueda web con IA
+
+Además de los feeds JSON permitidos, `WEB_SEARCH_PROVIDER=tavily` y `WEB_SEARCH_API_KEY` habilitan consultas de Internet por puesto y ciudad. `WEB_SEARCH_MAX_QUERIES=2` limita el costo por ejecución. La IA extrae solo anuncios con citas de empresa, puesto y ciudad, y conserva enlaces para revisión. El endpoint `GET /api/searches/{id}/results` devuelve los hallazgos de la búsqueda del usuario autenticado; `GET /api/searches/{id}/runs` muestra ejecuciones y errores. Los hallazgos web no habilitan consentimiento de envío automático ni verifican direcciones de correo. Ver [configuración y límites](../docs/BUSQUEDA_WEB.md).
