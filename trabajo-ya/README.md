@@ -1,10 +1,9 @@
 # Trabajo YA
 
 El proyecto usa el Supabase existente y el backend **https://trabajo-ya-api.onrender.com**.
-La APK conectada **0.4.0 / 7** está publicada para pruebas:
-[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.0-real/Trabajo-YA-0.4.0-real.apk).
-La actualización **0.4.1 / 8** está preparada en el código; la descarga nueva se
-publica cuando finaliza y se verifica su compilación.
+La APK conectada **0.4.1 / 8** está publicada para pruebas:
+[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.1-real/Trabajo-YA-0.4.1-real.apk).
+La [compilación 38609341591](https://github.com/ramalhectornano-sys/miapp/actions/runs/38609341591) verificó firma, nombre, paquete y versión. Se conserva el certificado de prueba; instalar como actualización sin desinstalar.
 
 Las capturas del usuario muestran su CV elegido y Gmail conectado. También
 muestran envíos desactivados y la fuente web sin permiso para correo: esas

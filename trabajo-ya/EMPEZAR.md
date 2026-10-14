@@ -2,22 +2,22 @@
 
 **El proyecto Supabase ya existe y Render muestra el backend Live en
 https://trabajo-ya-api.onrender.com.** La configuración pública de Android está
-cargada y la **APK real 0.4.0 / 7 ya está publicada**:
-[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.0-real/Trabajo-YA-0.4.0-real.apk).
-La [compilación 38579659455](https://github.com/ramalhectornano-sys/miapp/actions/runs/38579659455)
+cargada y la **APK real 0.4.1 / 8 ya está publicada**:
+[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.1-real/Trabajo-YA-0.4.1-real.apk).
+La [compilación 38609341591](https://github.com/ramalhectornano-sys/miapp/actions/runs/38609341591)
 terminó correctamente. Los pasos de instalación y las comprobaciones pendientes
 están en [APK conectada](docs/APK_REAL.md).
 
-La actualización 0.3.2 recibe el enlace predeterminado de Supabase mediante
-PKCE. Antes de ingresar, guardar **Site URL** y **Redirect URLs** con
-`autoempleoia://auth/callback` y solicitar un correo nuevo desde esa APK.
-El SMTP propio se necesita para personalizar las plantillas o ampliar los
-usuarios de prueba; la plantilla predeterminada sirve para el ingreso por enlace.
-Seguir [acceso sin contraseña](docs/AUTH_SETUP.md). Después falta probar en el teléfono el código OTP, el guardado
-y la recuperación de perfil, foto y CV y una respuesta real de la IA. Esas
-operaciones todavía no se comprobaron. No necesitás crear de nuevo Supabase ni
-Render. Las búsquedas programadas y los correos automáticos requieren configuración
-adicional: Render Free no aporta el worker/programador de esta app.
+Las capturas del usuario muestran acceso a la app, CV seleccionado y Gmail
+conectado. Conservar los servicios y conexiones existentes. Para otra instalación,
+el acceso por enlace usa PKCE y la redirección `autoempleoia://auth/callback`;
+ver [acceso sin contraseña](docs/AUTH_SETUP.md).
+
+Para esta actualización, desplegar el backend nuevo en Render, elegir la fuente
+**Ofertas verificadas de Greenhouse** y guardar el consentimiento. Los fragmentos
+de otros portales siguen para revisión. Habilitar envíos y tareas del servidor
+requiere una comprobación real, según [activar correos](docs/ACTIVAR_CORREOS.md).
+Render Free no aporta el worker/programador de esta app; se entrega separado.
 
 Como referencia histórica para recorrer las pantallas, está disponible la
 [APK de demostración Trabajo YA 0.3.0](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk).
@@ -118,7 +118,7 @@ permiso para enviar: se autoriza dentro de la app.
 ## 4. Compilar Android en la nube
 
 La ruta actual usa GitHub Actions con los datos públicos ya cargados. La
-compilación 0.4.0 / 7 terminó y publicó la APK conectada; no hace falta una cuenta
+compilación 0.4.1 / 8 terminó y publicó la APK conectada; no hace falta una cuenta
 Expo para esa ruta. Descargarla desde el enlace de arriba e instalarla siguiendo
 [APK conectada](docs/APK_REAL.md). La APK 0.3.0 de demostración no se conecta a
 los nuevos servicios por instalarla de nuevo. Si Android rechaza la actualización
@@ -151,12 +151,12 @@ todavía esa APK. Si el login o la firma piden verificación de tu cuenta, la co
   diarios y recordatorios después de 72 horas, sujetos a vacante vigente y permiso activo.
 - Perfiles de compilación Android y controles locales/CI.
 - Supabase creado y API de pruebas publicada en Render.
-- Configuración pública y APK conectada 0.4.0 / 7 compilada, verificada y publicada.
+- Configuración pública y APK conectada 0.4.1 / 8 compilada, verificada y publicada.
 - APK autónoma anterior de demostración compilada y publicada en GitHub.
 
-Lo que requiere tu acceso ahora: comprobar las migraciones y el acceso OTP en
-Supabase, instalar la APK conectada y probar perfil, foto,
-CV y chat. Para automatización, preparar worker/programador, fuente autorizada,
-Gmail y consentimiento. La compilación de la APK demo se ejecutó en GitHub
-Actions; todavía no se comprobó el funcionamiento completo de la nueva
-instalación desde un celular o emulador.
+Lo que requiere tu acceso ahora: instalar la APK nueva, desplegar el backend
+actualizado en Render, comprobar una búsqueda real y una entrega controlada,
+y completar el worker/programador y el consentimiento de cada búsqueda antes
+de activar los envíos diarios. No se confirmó una consulta ni una entrega real
+mediante las pruebas del código. La actualización no añade migraciones ni exige
+recrear Supabase, Gmail o sus claves.

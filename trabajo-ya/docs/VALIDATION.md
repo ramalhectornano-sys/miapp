@@ -15,9 +15,19 @@ La integración nueva requiere desplegar el backend y completar una prueba real
 antes de activar la operación diaria. No se cambió la base de datos, el paquete,
 el esquema de ingreso ni los límites de 10 intentos y 72 horas.
 
+La [verificación 38609341584](https://github.com/ramalhectornano-sys/miapp/actions/runs/38609341584)
+aprobó **266 pruebas backend**, **44 móviles**, TypeScript, **29 cloud**,
+seis migraciones y pruebas SQL, y arranque del contenedor. El job de CI también
+comprobó Supabase Auth HTTP 200 y que la tabla profiles existe y no es legible
+por el rol anónimo, sin consultar datos personales.
+
 Las nuevas pruebas usan HTTP interceptado: no consultan ofertas reales, no
-utilizan claves privadas del usuario y no envían mensajes. La compilación de
-0.4.1 y su verificación completa todavía están pendientes en esta revisión.
+utilizan claves privadas del usuario y no envían mensajes. La [compilación 38609341591](https://github.com/ramalhectornano-sys/miapp/actions/runs/38609341591) publicó
+[Trabajo-YA-0.4.1-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.1-real/Trabajo-YA-0.4.1-real.apk) con `versionCode=8`, paquete y esquema nativo conservados. `apksigner` y `aapt` verificaron la entrega. El comprobante de certificado tiene el mismo digest que 0.4.0; instalar como actualización.
+
+APK: **51848277 bytes**. SHA-256: `21f6aca141ad7bc686d2ca1e8c69f128c7ec8949289c60a09a1bd3f3a89c5ab8`.
+Commit compilado: `7135181c83b2bf9245dcbddfb04666d5ec84c9a3`.
+No se desplegó Render desde estas herramientas ni se activaron envíos.
 
 
 ## Búsqueda web y Android 0.4.0
