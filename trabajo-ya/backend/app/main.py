@@ -20,7 +20,7 @@ from .services.resumes import extract_resume
 from .services.schedule import next_occurrence, proposal_row
 from .services.source_registry import public_source
 
-BACKEND_VERSION = "0.5.2"
+BACKEND_VERSION = "0.5.3"
 
 
 class LocationRequest(StrictModel):

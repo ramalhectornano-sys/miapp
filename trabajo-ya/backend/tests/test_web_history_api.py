@@ -159,7 +159,7 @@ class WebHistoryApiTests(unittest.IsolatedAsyncioTestCase):
         response, calls, _ = await self.call("/health")
         version = json.loads((Path(__file__).resolve().parents[2] / "mobile" / "app.json").read_text())["expo"]["version"]
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], "0.5.2")
+        self.assertEqual(response.json()["version"], "0.5.3")
         # A server patch can fix research without changing the Android package.
         self.assertEqual(response.json()["version"].split(".")[:2], version.split(".")[:2])
         self.assertEqual(calls, [])

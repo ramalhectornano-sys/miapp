@@ -90,7 +90,7 @@ class GroqRateLimitTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([event["batch_index"] for event in terminal], [1, 2, 2])
         self.assertNotIn(PRIVATE, str(error.exception.detail))
 
-    async def test_one_retry_budget_is_shared_by_all_batches(self):
+    async def test_total_wait_budget_is_shared_by_all_batches(self):
         with self.assertRaises(HTTPException):
             await self.extract([limited("60"), success(), limited("1"), success()], count=9)
         self.assertEqual(len(self.requests), 3)
@@ -98,6 +98,20 @@ class GroqRateLimitTests(unittest.IsolatedAsyncioTestCase):
         terminal = [event for event in self.events if event["status"] != "started"]
         self.assertEqual([event["batch_index"] for event in terminal], [1, 1, 2])
         self.assertEqual([event["attempt"] for event in terminal], [1, 2, 1])
+
+    async def test_separate_limited_batches_retry_once_each_within_shared_wait_budget(self):
+        self.assertEqual(await self.extract([success(), limited("9"), success(), limited("20"), success()], count=24), [])
+        self.assertEqual(len(self.requests), 5)
+        self.assertEqual([call.args[0] for call in self.sleep.await_args_list], [9, 20])
+        self.assertEqual(self.requests[1].content, self.requests[2].content)
+        self.assertEqual(self.requests[3].content, self.requests[4].content)
+        terminal = [event for event in self.events if event["status"] != "started"]
+        self.assertEqual([event["batch_index"] for event in terminal], [1, 2, 2, 3, 3])
+
+    async def test_all_three_batches_remain_bounded_to_six_requests_and_sixty_seconds(self):
+        self.assertEqual(await self.extract([limited("20"), success()] * 3, count=24), [])
+        self.assertEqual(len(self.requests), 6)
+        self.assertEqual(sum(call.args[0] for call in self.sleep.await_args_list), 60)
 
     async def test_late_batch_retry_does_not_repeat_prior_batches(self):
         self.assertEqual(await self.extract([success(), success(), limited("0"), success()], count=24), [])

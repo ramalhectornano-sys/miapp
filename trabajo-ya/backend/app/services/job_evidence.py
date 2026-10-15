@@ -582,8 +582,9 @@ async def extract_job_evidence(settings: Settings, client: httpx.AsyncClient, se
     Successful analysis is not job/recipient verification. Invalid candidates
     are discarded independently; provider or audit failures stop the research
     without returning a misleadingly complete partial analysis. A Groq 429 may
-    retry the same batch once per invocation after a numeric Retry-After of at
-    most 60 seconds, preserving the original search results and prior batches.
+    retry each failed batch once after numeric Retry-After, with at most
+    60 seconds of waiting across all three batches and at most six requests.
+    Original search results and successful batches are preserved.
     """
     if settings.ai_provider not in {"ollama", "openai_compatible"} or not settings.ai_model.strip():
         raise HTTPException(503, "La búsqueda web necesita un proveedor de IA real configurado.")
@@ -595,7 +596,7 @@ async def extract_job_evidence(settings: Settings, client: httpx.AsyncClient, se
     current = now or datetime.now(timezone.utc)
     if current.tzinfo is None:
         raise ValueError("now debe incluir zona horaria.")
-    unique, retry_used = {}, False
+    unique, retry_waited = {}, 0.0
     for offset in range(0, min(len(results), MAX_TOTAL_RESULTS), MAX_RESULTS):
         prepared = _prepare_results(results[offset:offset + MAX_RESULTS])
         if prepared:
@@ -603,9 +604,9 @@ async def extract_job_evidence(settings: Settings, client: httpx.AsyncClient, se
                 jobs = await _analyze_batch(settings, client, search, prepared, source_id, current,
                     offset // MAX_RESULTS + 1, audit)
             except _GroqRateLimit as error:
-                if retry_used or error.retry_after_seconds is None:
+                if error.retry_after_seconds is None or retry_waited + error.retry_after_seconds > 60:
                     raise
-                retry_used = True
+                retry_waited += error.retry_after_seconds
                 await asyncio.sleep(error.retry_after_seconds)
                 jobs = await _analyze_batch(settings, client, search, prepared, source_id, current,
                     offset // MAX_RESULTS + 1, audit, attempt=2)
