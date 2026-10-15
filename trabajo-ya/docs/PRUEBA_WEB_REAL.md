@@ -1,5 +1,22 @@
 # Prueba real de Internet: chofer, Rincón de los Sauces, 100 km
 
+## Estado actual: claves aceptadas, resultado parcial
+
+El segundo intento de [la ejecución 38744160735](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160735/attempts/2)
+consultó realmente Tavily el 15/10/2026 entre 13:55:30 y 13:55:52 UTC:
+**8 consultas HTTP 200, 8 créditos informados, 3 respuestas Groq y 2 GeoRef**.
+El centro oficial fue Rincón de los Sauces, Neuquén (ID 58091040).
+Hay [JSON completo](evidence/web-real-38744160735-attempt2.json) y
+[resumen con enlaces y recibos](evidence/web-real-38744160735-attempt2.md).
+
+El estado es **partial**: no se acreditó una vacante vigente con enlace y
+ubicación verificados dentro de 100 km. El lector encontró páginas restringidas,
+HTTP 403, robots que deniegan acceso y demoras de rastreo superiores al presupuesto.
+El código también gastó lecturas en perfiles personales y enlaces restringidos;
+el parche del backend 0.5.1 corrige selección y presupuesto y debe comprobarse
+con una nueva ejecución. Esto no autoriza correos y no significa que no existan
+empleos en la zona. Las credenciales ya no son el bloqueo de esta prueba.
+
 ## Resultado comprobado de la primera ejecución
 
 [GitHub Actions 38744160735](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160735)
@@ -23,10 +40,11 @@ base de datos ni Gmail. El escenario es **Chofer — Rincón de los Sauces, Neuq
 Argentina — 100 kilómetros**. Las coordenadas se obtienen de GeoRef y las
 distancias son aéreas entre centroides de localidades; no son distancias por ruta.
 
-## Las claves que están en Render no están en GitHub
+## Configuración de claves para otra instalación
 
-El usuario confirmó que las claves están solamente en Render. GitHub Actions no
-puede leerlas desde allí. Sin estas dos claves en Actions, la prueba termina en
+Render y GitHub no comparten secretos automáticamente. El propietario ya cargó
+las dos claves en Actions y el segundo intento verificó su funcionamiento.
+Para una instalación nueva, GitHub no puede leerlas desde Render. Sin estas dos claves en Actions, la prueba termina en
 `preflight_failed`, con `actual_tavily_calls: 0` y `provider_consulted: false`.
 Eso demuestra que falta configuración; no es una búsqueda exitosa sin resultados.
 
@@ -40,9 +58,11 @@ Desde el celular, en GitHub:
    de Supabase, Google, Gmail ni la clave de cifrado para esta prueba.
 4. Abrí [Actions → Prueba REAL de búsqueda web — Tavily y Groq](https://github.com/ramalhectornano-sys/miapp/actions/workflows/trabajo-ya-web-real-test.yml).
    Tocá **Run workflow**, elegí la rama `main` o `trabajo-ya-real`, mantené `8`
-   consultas y ejecutá. El workflow usa explícitamente el código de `trabajo-ya-real`.
+   consultas y ejecutá. En una publicación push se fija al commit de esa ejecución; en una ejecución
+   manual usa `trabajo-ya-real`. El resumen de la ejecución muestra el informe
+   sin necesidad de extraer el ZIP.
 5. Abrí la ejecución. En **Artifacts**, descargá
-   `prueba-web-real-rincon-100km-<número de ejecución>`. Contiene un JSON y un
+   `prueba-web-real-rincon-100km-<número>-intento-<intento>`. Contiene un JSON y un
    resumen Markdown con enlaces, horas, consultas, errores y comprobantes.
 
 La primera publicación del workflow también intenta la prueba. Si los secretos

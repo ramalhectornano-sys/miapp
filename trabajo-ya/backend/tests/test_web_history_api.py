@@ -155,12 +155,13 @@ class WebHistoryApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual([request.url.path for request in calls], ["/auth/v1/user"])
 
-    async def test_health_version_matches_android_without_probing_or_claiming_provider_success(self):
+    async def test_health_reports_compatible_backend_patch_without_claiming_provider_success(self):
         response, calls, _ = await self.call("/health")
         version = json.loads((Path(__file__).resolve().parents[2] / "mobile" / "app.json").read_text())["expo"]["version"]
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], version)
-        self.assertEqual(version, "0.5.0")
+        self.assertEqual(response.json()["version"], "0.5.1")
+        # A server patch can fix research without changing the Android package.
+        self.assertEqual(response.json()["version"].split(".")[:2], version.split(".")[:2])
         self.assertEqual(calls, [])
         self.assertNotEqual(response.json()["integrations"]["web_search"], "verified")
 

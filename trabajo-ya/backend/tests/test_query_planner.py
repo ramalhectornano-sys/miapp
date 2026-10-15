@@ -32,6 +32,48 @@ class QueryPlannerTests(unittest.TestCase):
         self.assertEqual(role_terms({**SEARCH, "roles": ["médico"]}), ["médico"])
         self.assertEqual(role_terms({**SEARCH, "roles": ["chofer"], "role_synonyms": ["abogado"]}), role_terms(SEARCH))
 
+    def test_linkedin_supplement_targets_jobs_and_excludes_personal_profiles_without_limiting_general_queries(self):
+        plan = plan_queries(SEARCH, 6)
+        linkedin = next(row for row in plan if row.get("domains") == ["linkedin.com"])
+        self.assertIn("site:linkedin.com/jobs ", linkedin["query"])
+        self.assertIn("-site:linkedin.com/in/", linkedin["query"])
+        self.assertIn("-site:linkedin.com/pub/", linkedin["query"])
+        self.assertEqual(linkedin["kind"], "additional_portal")
+        self.assertTrue(all("site:" not in row["query"] and "domains" not in row for row in plan[:4]))
+        computrabajo = next(row for row in plan if row.get("domains") == ["ar.computrabajo.com"])
+        self.assertIn("site:ar.computrabajo.com ", computrabajo["query"])
+
+    def test_radius_plan_does_not_repeat_center_as_its_own_neighbor(self):
+        search = {**SEARCH, "location": {**SEARCH["location"], "id": "58035010000"}, "nearby_cities": [
+            {"city": "RINCÓN DE LOS SAUCES", "verified": True, "distance_km": 0},
+            {"city": "Otro nombre del centro", "id": "58035010000", "verified": True, "distance_km": 0},
+            {"city": "Localidad vecina", "verified": True, "distance_km": 55}]}
+        self.assertEqual(verified_nearby_cities(search), ["Localidad vecina"])
+        plan = plan_queries(search, 12)
+        employers = next(row for row in plan if row["kind"] == "nearby_employers")
+        neighbors = next(row for row in plan if row["kind"] == "nearby_cities")
+        self.assertEqual(employers["query"].count('"Rincón de los Sauces"'), 1)
+        self.assertNotIn("RINCÓN DE LOS SAUCES", neighbors["query"])
+        self.assertNotIn("Otro nombre del centro", neighbors["query"])
+        self.assertIn("Localidad vecina", neighbors["query"])
+
+    def test_center_only_catalog_does_not_spend_an_extra_query_on_the_same_city(self):
+        search = {**SEARCH, "nearby_cities": [{"city": "Rincon de los Sauces", "verified": True, "distance_km": 0}]}
+        self.assertEqual(verified_nearby_cities(search), [])
+        self.assertNotIn("nearby_cities", [row["kind"] for row in plan_queries(search, 12)])
+
+    def test_nearby_names_deduplicate_accents_case_and_whitespace(self):
+        search = {**SEARCH, "nearby_cities": [
+            {"city": "  RINCON  DE LOS SAUCES ", "verified": True, "distance_km": 0},
+            {"city": "Añelo", "verified": True, "distance_km": 75},
+            {"city": " ANELO ", "verified": True, "distance_km": 75},
+            {"city": "AÑELO", "verified": True, "distance_km": 75}]}
+        self.assertEqual(verified_nearby_cities(search), ["Añelo"])
+        area_queries = [row["query"] for row in plan_queries(search, 12)
+            if row["kind"] in {"nearby_employers", "nearby_cities"}]
+        self.assertEqual(len(area_queries), 2)
+        self.assertTrue(all(query.count('"Añelo"') == 1 for query in area_queries))
+
     def test_unverified_or_out_of_radius_nearby_names_are_not_queried(self):
         rows = ["Ciudad inventada", {"city": "No confirmada", "distance_km": 5},
             {"city": "Fuera del radio", "verified": True, "distance_km": 101},

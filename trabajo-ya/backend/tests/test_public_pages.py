@@ -341,5 +341,52 @@ class URLAndRobotsTests(unittest.TestCase):
         self.assertFalse(_robots_permission("User-agent: *\nDisallow: /empleos/%70rivado$\n", ROOT + "/empleos/privado")[0])
 
 
+class ReadingBudgetRegressionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_manual_sources_do_not_consume_the_followed_page_budget(self):
+        career = ROOT + "/empleos"
+        html = f'<main>{TEXT}<a href="/empleos">Empleos</a></main>'
+        blocked = [discovery("https://www.linkedin.com/in/persona"),
+            discovery("https://ar.computrabajo.com/trabajo-de-chofer")]
+        options = SimpleNamespace(public_page_reads_enabled=True, public_page_max_reads=2)
+        (results, _), captured, events = await run_reader({ROOT + "/robots.txt": ROBOTS,
+            URL: html, career: f"<main>{TEXT}</main>"}, blocked + [discovery()], options)
+        self.assertEqual([str(request.url) for request in captured], [ROOT + "/robots.txt", URL, career])
+        self.assertEqual(results[-1]["url"], career)
+        self.assertEqual(sum(event["status"] == "blocked" for event in events), 2)
+        self.assertTrue(all(result["page_verification"]["status"] == "pending_review" for result in results[:2]))
+
+    async def test_specific_advert_is_read_before_listing_with_the_same_small_budget(self):
+        listing = ROOT + "/trabajo-de-chofer"
+        options = SimpleNamespace(public_page_reads_enabled=True, public_page_max_reads=1)
+        (results, _), captured, _ = await run_reader({ROOT + "/robots.txt": ROBOTS,
+            URL: f"<main>{TEXT}</main>", listing: "<main>Listado de empleos</main>"},
+            [discovery(listing), discovery()], options)
+        self.assertEqual([str(request.url) for request in captured], [ROOT + "/robots.txt", URL])
+        self.assertEqual([result["url"] for result in results], [listing, URL])
+        self.assertEqual(results[0]["page_verification"]["status"], "pending_review")
+        self.assertEqual(results[1]["page_verification"]["status"], "verified_link")
+
+    async def test_ten_second_crawl_delay_is_honored_after_robots_and_between_pages(self):
+        other = ROOT + "/empleos/otro-chofer"
+        sleep = AsyncMock()
+        with patch("app.services.public_pages.asyncio.sleep", sleep):
+            (results, errors), captured, _ = await run_reader({ROOT + "/robots.txt": ROBOTS + "Crawl-delay: 10\n",
+                URL: f"<main>{TEXT}</main>", other: f"<main>{TEXT}</main>"}, [discovery(), discovery(other)])
+        self.assertFalse(errors)
+        self.assertEqual(len(captured), 3)
+        self.assertEqual(sleep.await_count, 2)
+        self.assertTrue(all(9 < call.args[0] <= 10 for call in sleep.await_args_list))
+        self.assertTrue(all(result["page_verification"]["status"] == "verified_link" for result in results))
+
+    async def test_delay_over_the_bound_remains_pending_without_reading_the_page(self):
+        sleep = AsyncMock()
+        with patch("app.services.public_pages.asyncio.sleep", sleep):
+            (results, errors), captured, _ = await run_reader({ROOT + "/robots.txt": ROBOTS + "Crawl-delay: 60\n"})
+        self.assertTrue(errors)
+        self.assertEqual(len(captured), 1)
+        sleep.assert_not_awaited()
+        self.assertEqual(results[0]["page_verification"]["status"], "pending_review")
+
+
 if __name__ == "__main__":
     unittest.main()

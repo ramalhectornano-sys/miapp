@@ -31,6 +31,7 @@ MAX_INITIAL_PAGES = 6
 MAX_FOLLOWED_PAGES = 2
 MAX_REDIRECTS = 2
 MAX_REQUEST_SECONDS = 15
+MAX_CRAWL_DELAY_SECONDS = 15
 PRIVATE_QUERY_KEYS = frozenset({"access_token", "refresh_token", "token", "key", "api_key", "secret", "password", "code", "session", "auth", "signature"})
 # Discovery through a licensed search API remains possible. These services do
 # not permit this application's direct automated page copying.
@@ -459,6 +460,7 @@ class _Investigation:
         current = origin + "/robots.txt"
         for index in range(MAX_REDIRECTS + 1):
             status, headers, content, _ = await _http_get(self.client, current, robots=True, audit=self.audit)
+            self.last_read[origin] = time.monotonic()
             if status in {301, 302, 303, 307, 308}:
                 current = urljoin(current, headers.get("location", ""))
                 if not public_page_url(current) or _restricted(current) or index == MAX_REDIRECTS:
@@ -487,7 +489,7 @@ class _Investigation:
         allowed, delay = _robots_permission(self.robots[origin], url)
         if not allowed:
             raise PageReadError("robots.txt no permite leer esta página.")
-        if not 0 <= delay <= 5:
+        if not 0 <= delay <= MAX_CRAWL_DELAY_SECONDS:
             raise PageReadError("El intervalo solicitado por robots.txt supera el presupuesto de esta investigación.")
         remaining = self.last_read.get(origin, 0) + delay - time.monotonic()
         if remaining > 0:
@@ -564,6 +566,20 @@ class _Investigation:
         return result, candidates
 
 
+def _read_priority(item, search):
+    """Prioritize likely adverts without changing verification or permissions."""
+    if _restricted(item["url"]):
+        return 3
+    path = unquote(urlsplit(item["url"]).path).casefold()
+    if re.search(r"/(?:trabajo-(?:de|en)-|empleos-en-|q-[^/]*empleos|trabajo-chofer)", path):
+        return 2
+    title = "".join(char for char in unicodedata.normalize("NFD", str(item.get("title", "")).casefold())
+        if unicodedata.category(char) != "Mn")
+    roles = ["".join(char for char in unicodedata.normalize("NFD", str(role).casefold())
+        if unicodedata.category(char) != "Mn") for role in search.get("roles", [])]
+    return 0 if any(role and role in title for role in roles) else 1
+
+
 async def investigate_pages(settings, client, results: list[dict], search: dict, *, audit=None) -> tuple[list[dict], list[str]]:
     """Retain discoveries even when reading is blocked; never invent vacancies.
 
@@ -589,6 +605,13 @@ async def investigate_pages(settings, client, results: list[dict], search: dict,
 
         async def read(item, limited=False):
             nonlocal attempted_pages
+            if _restricted(item["url"]):
+                reason = "El sitio requiere revisión manual; no permite esta lectura automatizada."
+                failures.append(reason)
+                proof = {"status": "pending_review", "checked_at": datetime.now(timezone.utc).isoformat(), "reason": reason}
+                await _audit(audit, {"kind": "public_page", "provider": "publisher", "event_id": str(uuid.uuid4()),
+                    "operation": "page_fetch", "url": item["url"], **proof, "status": "blocked"})
+                return {**item, "page_verification": proof}, []
             limited = limited or attempted_pages >= maximum
             if unavailable or limited:
                 reason = ("La lectura pública está desactivada." if not enabled else
@@ -609,11 +632,13 @@ async def investigate_pages(settings, client, results: list[dict], search: dict,
                     "operation": "page_fetch", "url": item["url"], **proof, "status": "blocked"})
                 return {**item, "page_verification": proof}, []
 
-        for item in results[:30]:
+        ordered = sorted((item for item in results[:30] if isinstance(item, dict)
+            and public_page_url(item.get("url"))), key=lambda item: _read_priority(item, search))
+        for item in ordered:
             if not isinstance(item, dict) or not public_page_url(item.get("url")) or item["url"] in seen:
                 continue
             seen.add(item["url"])
-            result, links = await read(item, limited=len(enriched) >= maximum)
+            result, links = await read(item)
             enriched.append(result)
             followups.extend(links)
         followed = 0
@@ -626,4 +651,8 @@ async def investigate_pages(settings, client, results: list[dict], search: dict,
             result, _ = await read(item)
             enriched.append(result)
             followed += 1
+    # Keep provider order in the returned history; only request order changes.
+    positions = {item["url"]: index for index, item in enumerate(results[:30])
+        if isinstance(item, dict) and isinstance(item.get("url"), str)}
+    enriched.sort(key=lambda item: positions.get(item["url"], 30))
     return enriched, list(dict.fromkeys(failures))

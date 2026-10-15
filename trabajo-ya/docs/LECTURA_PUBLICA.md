@@ -97,3 +97,16 @@ ausencia de cookies/credenciales/formularios, respuestas bloqueadas, vencimiento
 y auditoría. No realizan una búsqueda real ni prueban un envío real. La prueba
 de Tavily debe mostrar la solicitud efectiva y su identificador de proveedor
 desde el entorno que tenga configurada la clave.
+
+## Ajustes comprobados después de la primera consulta real
+
+El backend 0.5.1 prioriza anuncios concretos frente a páginas de listado, sin
+cambiar los permisos ni afirmar que un anuncio esté vigente. LinkedIn y
+Computrabajo siguen para revisión manual y no consumen lecturas de páginas
+permitidas. Se conserva el orden de descubrimientos en el resultado y el máximo
+de seis candidatos que requieren acceso de red, incluidos los enlaces seguidos.
+
+El lector respeta Crawl-delay de hasta 15 segundos entre peticiones al mismo
+origen, incluyendo la lectura previa de robots.txt. Un intervalo mayor sigue
+pendiente. Se probaron estas esperas con reloj real y espera sustituida, no con
+tráfico externo en los tests unitarios.

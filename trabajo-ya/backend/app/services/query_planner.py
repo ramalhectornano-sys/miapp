@@ -104,7 +104,14 @@ def verified_nearby_cities(search: dict) -> list[str]:
     if not isinstance(raw, list):
         return []
     radius = search.get("radius_km", location.get("radius_km"))
+    center_city = location.get("city")
+    if not isinstance(center_city, str):
+        cities = search.get("cities")
+        center_city = cities[0] if isinstance(cities, list) and cities and isinstance(cities[0], str) else ""
+    center_city = _normalized(" ".join(center_city.split()))
+    center_id = location.get("id")
     results = []
+    seen = {center_city}
     for value in raw[:20]:
         if not isinstance(value, dict) or value.get("verified") is not True:
             continue
@@ -117,8 +124,12 @@ def verified_nearby_cities(search: dict) -> list[str]:
             name = _part(name)
         except HTTPException:
             continue
-        if name not in results:
-            results.append(name)
+        normalized_name = _normalized(name)
+        if (normalized_name in seen
+                or isinstance(center_id, str) and center_id and value.get("id") == center_id):
+            continue
+        seen.add(normalized_name)
+        results.append(name)
     return results[:8]
 
 
@@ -214,7 +225,9 @@ def plan_queries(search: dict, limit: int = 6) -> list[dict]:
     add(f'"{first_role}" consultora bolsa de trabajo convocatoria {scope}', "consultancies_boards",
         "Buscar consultoras, bolsas laborales y convocatorias públicas fuera de los portales conocidos.")
     for domain in PORTAL_DOMAINS:
-        add(f'site:{domain} ({aliases}) {scope}', "additional_portal",
+        target = f"{domain}/jobs" if domain == "linkedin.com" else domain
+        exclude_profiles = " -site:linkedin.com/in/ -site:linkedin.com/pub/" if domain == "linkedin.com" else ""
+        add(f'site:{target} ({aliases}) {scope}{exclude_profiles}', "additional_portal",
             "Añadir un portal solicitado, manteniendo las consultas generales.", [domain])
     if nearby:
         add(f'({aliases}) vacantes ({nearby_scope}){nearby_country}', "nearby_cities",

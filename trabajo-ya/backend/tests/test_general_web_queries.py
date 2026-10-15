@@ -42,7 +42,9 @@ class GeneralWebQueryTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(str(request.url) == TAVILY_ENDPOINT for request in requests))
         self.assertTrue(all("include_domains" not in body for body in bodies))
         self.assertTrue(all("site:" not in body["query"] for body in bodies[:4]))
-        self.assertIn("site:linkedin.com", bodies[4]["query"])
+        self.assertIn("site:linkedin.com/jobs ", bodies[4]["query"])
+        self.assertIn("-site:linkedin.com/in/", bodies[4]["query"])
+        self.assertIn("-site:linkedin.com/pub/", bodies[4]["query"])
         self.assertIn("site:ar.computrabajo.com", bodies[5]["query"])
         completed = [event for event in events if event["event"] == "completed"]
         self.assertEqual(len(events), 12)

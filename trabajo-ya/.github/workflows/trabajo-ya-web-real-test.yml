@@ -32,7 +32,7 @@ jobs:
         with:
           # Scheduled/manual workflows are visible on main, while this is the
           # reviewed project branch. Never run the unrelated old main backend.
-          ref: trabajo-ya-real
+          ref: ${{ github.event_name == 'push' && github.sha || 'trabajo-ya-real' }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -57,11 +57,22 @@ jobs:
             --province 'Neuquén' --country 'Argentina' --radius-km 100 \
             --max-queries "$MAX_QUERIES" --max-pages 6 \
             --output ../web-research-evidence/web-research-report.json
+      - name: Mostrar informe público en el resumen de la ejecución
+        if: always()
+        run: |
+          python - <<'PYTHON'
+          import os
+          from pathlib import Path
+          report = Path('trabajo-ya/web-research-evidence/web-research-report.md')
+          if report.is_file():
+              with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a', encoding='utf-8') as output:
+                  output.write(report.read_text(encoding='utf-8'))
+          PYTHON
       - name: Adjuntar informe público, incluso si faltaron claves o falló un proveedor
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: prueba-web-real-rincon-100km-${{ github.run_id }}
+          name: prueba-web-real-rincon-100km-${{ github.run_id }}-intento-${{ github.run_attempt }}
           path: trabajo-ya/web-research-evidence/web-research-report.*
           if-no-files-found: error
           retention-days: 30
