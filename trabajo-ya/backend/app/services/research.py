@@ -72,7 +72,15 @@ async def run_research(settings, client, search, *, audit=None):
     discoveries, failures = await discover_web_results(settings, client, working, audit=audit)
     enriched, page_failures = await investigate_pages(settings, client, discoveries, working, audit=audit)
     failures.extend(page_failures)
-    jobs = await extract_web_jobs(settings, client, working, enriched, audit=audit)
+    try:
+        jobs = await extract_web_jobs(settings, client, working, enriched, audit=audit)
+    except HTTPException as failure:
+        # Keep already observed public evidence for the CLI's bounded serializer.
+        # The HTTP error remains an error: no partial jobs or mail are authorized.
+        failure.research_partial = {"search": {key: value for key, value in working.items()
+            if key != "_research_audit"}, "discoveries": enriched, "results": [],
+            "failures": list(dict.fromkeys(failures)), "warnings": working.get("geography_warnings", [])}
+        raise
     proofs = {result["url"]: result.get("page_verification", {}) for result in enriched}
     qualified, outside_count = [], 0
     for job in jobs:

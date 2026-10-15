@@ -1,0 +1,1023 @@
+{
+  "schema_version": 1,
+  "test": "Trabajo YA: investigación web real Tavily + Groq",
+  "started_at": "2026-10-15T18:22:47.625736+00:00",
+  "finished_at": "2026-10-15T18:23:18.106053+00:00",
+  "search": {
+    "roles": [
+      "Chofer"
+    ],
+    "cities": [
+      "Rincón de los Sauces"
+    ],
+    "city": "Rincón de los Sauces",
+    "province": "Neuquén",
+    "country": "Argentina",
+    "radius_km": 100,
+    "research_mode": "general"
+  },
+  "budget": {
+    "max_tavily_queries": 8,
+    "max_public_pages": 6,
+    "tavily_search_depth": "basic",
+    "automatic_retries": false
+  },
+  "missing_environment_variables": [],
+  "invalid_environment_variables": [],
+  "actual_tavily_calls": 8,
+  "tavily_response_count": 8,
+  "provider_consulted": true,
+  "groq_response_count": 3,
+  "georef_response_count": 2,
+  "test_passed": false,
+  "status": "failed",
+  "results": [],
+  "discoveries": [],
+  "audit_events": [
+    {
+      "provider": "georef",
+      "url": "https://apis.datos.gob.ar/georef/api/v2.0/localidades",
+      "status": "started",
+      "kind": "geocode",
+      "query": "Rincón de los Sauces, Neuquén",
+      "started_at": "2026-10-15T18:22:47.974376+00:00",
+      "event_id": "5c25a6e3-d111-4e6e-ae57-7e06e0918cbe",
+      "provider_response_received": false
+    },
+    {
+      "provider": "georef",
+      "url": "https://apis.datos.gob.ar/georef/api/v2.0/localidades",
+      "status": "succeeded",
+      "kind": "geocode",
+      "query": "Rincón de los Sauces, Neuquén",
+      "http_status": 200,
+      "started_at": "2026-10-15T18:22:47.974376+00:00",
+      "finished_at": "2026-10-15T18:22:49.043323+00:00",
+      "event_id": "5c25a6e3-d111-4e6e-ae57-7e06e0918cbe",
+      "provider_response_received": true,
+      "result_count": 1
+    },
+    {
+      "provider": "georef",
+      "url": "https://apis.datos.gob.ar/georef/api/v2.0/localidades",
+      "status": "started",
+      "kind": "geocode",
+      "query": "Catálogo localidades",
+      "started_at": "2026-10-15T18:22:49.043716+00:00",
+      "event_id": "37327fcd-4960-42b4-a83a-342eeb866c9f",
+      "provider_response_received": false
+    },
+    {
+      "provider": "georef",
+      "url": "https://apis.datos.gob.ar/georef/api/v2.0/localidades",
+      "status": "succeeded",
+      "kind": "geocode",
+      "query": "Catálogo localidades",
+      "http_status": 200,
+      "started_at": "2026-10-15T18:22:49.043716+00:00",
+      "finished_at": "2026-10-15T18:22:53.632988+00:00",
+      "event_id": "37327fcd-4960-42b4-a83a-342eeb866c9f",
+      "provider_response_received": true,
+      "result_count": 4028
+    },
+    {
+      "event": "started",
+      "provider": "tavily",
+      "query_index": 1,
+      "status": "started",
+      "kind": "tavily_query",
+      "query": "vacantes empleo \"Chofer\" \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "general_vacancies",
+      "started_at": "2026-10-15T18:22:53.967337+00:00",
+      "source_id": "web:tavily",
+      "event_id": "f22b19d7-ac15-4731-aecc-a9d9b9283be8",
+      "provider_response_received": false
+    },
+    {
+      "event": "completed",
+      "provider": "tavily",
+      "query_index": 1,
+      "status": "succeeded",
+      "kind": "tavily_query",
+      "query": "vacantes empleo \"Chofer\" \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "general_vacancies",
+      "http_status": 200,
+      "request_id": "cb9ca089-64c9-4feb-8626-5407776b2f0e",
+      "started_at": "2026-10-15T18:22:53.967337+00:00",
+      "finished_at": "2026-10-15T18:22:55.779149+00:00",
+      "source_id": "web:tavily",
+      "event_id": "f22b19d7-ac15-4731-aecc-a9d9b9283be8",
+      "result_urls": [
+        "https://vientosurnoticias.com.ar/empresa-busca-chofer-de-reparto-para-cubrir-vacante-en-rincon-de-los-sauces",
+        "https://ar.computrabajo.com/trabajo-de-chofer-de-distribucion-en-neuquen-en-rincon-de-los-sauces",
+        "https://bebee.com/ar/jobs/chofer-de-autoelevador-con-carnet-importante-empresa-de-transporte-en-rincon-de-los-sauces-neuquen-g--ss-ar-p9kh2q",
+        "https://ar.jobsora.com/empleos-empresa-transporte-chofer-neuqu%C3%A9n",
+        "https://ar.computrabajo.com/empleos-en-neuquen-en-rincon-de-los-sauces"
+      ],
+      "credits": 1,
+      "source_hosts": [
+        "ar.computrabajo.com",
+        "ar.jobsora.com",
+        "bebee.com",
+        "vientosurnoticias.com.ar"
+      ],
+      "provider_response_received": true,
+      "result_count": 5
+    },
+    {
+      "event": "started",
+      "provider": "tavily",
+      "query_index": 2,
+      "status": "started",
+      "kind": "tavily_query",
+      "query": "(\"Chofer\" OR \"conductor\" OR \"chofer\" OR \"conductor profesional\") trabajo se busca \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "role_synonyms",
+      "started_at": "2026-10-15T18:22:55.779566+00:00",
+      "source_id": "web:tavily",
+      "event_id": "36f563ff-9d33-4309-b5c8-2a95292452a2",
+      "provider_response_received": false
+    },
+    {
+      "event": "completed",
+      "provider": "tavily",
+      "query_index": 2,
+      "status": "succeeded",
+      "kind": "tavily_query",
+      "query": "(\"Chofer\" OR \"conductor\" OR \"chofer\" OR \"conductor profesional\") trabajo se busca \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "role_synonyms",
+      "http_status": 200,
+      "request_id": "081a5016-7d48-4937-8ad9-3131b2d903ee",
+      "started_at": "2026-10-15T18:22:55.779566+00:00",
+      "finished_at": "2026-10-15T18:22:57.863735+00:00",
+      "source_id": "web:tavily",
+      "event_id": "36f563ff-9d33-4309-b5c8-2a95292452a2",
+      "result_urls": [
+        "https://ar.indeed.com/q-chofer-empleos.html",
+        "https://vientosurnoticias.com.ar/empresa-busca-chofer-de-reparto-para-cubrir-vacante-en-rincon-de-los-sauces",
+        "https://bebee.com/ar/jobs/chofer-de-reparto-rincon-de-los-sauces-grupo-gestion-rincon-de-los-sauce--ss-ar-aj7a6p",
+        "https://ar.jobsora.com/empleos-empresa-transporte-chofer-neuqu%C3%A9n",
+        "https://ar.linkedin.com/jobs/chofer-profesional-empleos"
+      ],
+      "credits": 1,
+      "source_hosts": [
+        "ar.indeed.com",
+        "ar.jobsora.com",
+        "ar.linkedin.com",
+        "bebee.com",
+        "vientosurnoticias.com.ar"
+      ],
+      "provider_response_received": true,
+      "result_count": 5
+    },
+    {
+      "event": "started",
+      "provider": "tavily",
+      "query_index": 3,
+      "status": "started",
+      "kind": "tavily_query",
+      "query": "\"Chofer\" empresas transporte logística empleo (\"Rincón de los Sauces\" OR \"Octavio Pico\" OR \"Aguada San Roque\" OR \"Buta Ranquil\" OR \"Barrio Pinar\") \"Argentina\"",
+      "query_kind": "nearby_employers",
+      "started_at": "2026-10-15T18:22:57.863961+00:00",
+      "source_id": "web:tavily",
+      "event_id": "bcf706ee-66a9-4433-bc71-651692a6be2c",
+      "provider_response_received": false
+    },
+    {
+      "event": "completed",
+      "provider": "tavily",
+      "query_index": 3,
+      "status": "succeeded",
+      "kind": "tavily_query",
+      "query": "\"Chofer\" empresas transporte logística empleo (\"Rincón de los Sauces\" OR \"Octavio Pico\" OR \"Aguada San Roque\" OR \"Buta Ranquil\" OR \"Barrio Pinar\") \"Argentina\"",
+      "query_kind": "nearby_employers",
+      "http_status": 200,
+      "request_id": "9e3f7318-c86b-4633-b57f-4ed2bf70af58",
+      "started_at": "2026-10-15T18:22:57.863961+00:00",
+      "finished_at": "2026-10-15T18:23:00.593406+00:00",
+      "source_id": "web:tavily",
+      "event_id": "bcf706ee-66a9-4433-bc71-651692a6be2c",
+      "result_urls": [
+        "https://fr.wikipedia.org/wiki/Buta_Ranquil",
+        "https://agroempresario.com/categoria/10000038/neuquen/municipios",
+        "https://agroempresario.com/categoria/10000038/municipios",
+        "https://pueblo.ar/explorar/neuquen",
+        "https://pueblo.ar/safety/province/neuquen?lang=es"
+      ],
+      "credits": 1,
+      "source_hosts": [
+        "agroempresario.com",
+        "fr.wikipedia.org",
+        "pueblo.ar"
+      ],
+      "provider_response_received": true,
+      "result_count": 5
+    },
+    {
+      "event": "started",
+      "provider": "tavily",
+      "query_index": 4,
+      "status": "started",
+      "kind": "tavily_query",
+      "query": "\"Chofer\" consultora bolsa de trabajo convocatoria \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "consultancies_boards",
+      "started_at": "2026-10-15T18:23:00.593650+00:00",
+      "source_id": "web:tavily",
+      "event_id": "55e7f02e-e921-4ec8-b473-2d87a1d011c9",
+      "provider_response_received": false
+    },
+    {
+      "event": "completed",
+      "provider": "tavily",
+      "query_index": 4,
+      "status": "succeeded",
+      "kind": "tavily_query",
+      "query": "\"Chofer\" consultora bolsa de trabajo convocatoria \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "consultancies_boards",
+      "http_status": 200,
+      "request_id": "a28f5b65-f87f-48de-868c-88240d941a89",
+      "started_at": "2026-10-15T18:23:00.593650+00:00",
+      "finished_at": "2026-10-15T18:23:02.302824+00:00",
+      "source_id": "web:tavily",
+      "event_id": "55e7f02e-e921-4ec8-b473-2d87a1d011c9",
+      "result_urls": [
+        "https://vientosurnoticias.com.ar/empresa-busca-chofer-de-reparto-para-cubrir-vacante-en-rincon-de-los-sauces",
+        "https://bebee.com/ar/jobs/chofer-de-reparto-rincon-de-los-sauces-grupo-gestion-rincon-de-los-sauce--ss-ar-aj7a6p",
+        "https://www.facebook.com/MuniRDLS/posts/-b%C3%BAsqueda-laboral-en-rinc%C3%B3n-de-los-saucesla-municipalidad-abre-convocatoria-para/1398371105653284",
+        "https://ar.computrabajo.com/trabajo-de-personal-para-trabajos-en-neuquen-en-rincon-de-los-sauces",
+        "https://salud.neuquen.gob.ar/busquedas-laborales"
+      ],
+      "credits": 1,
+      "source_hosts": [
+        "ar.computrabajo.com",
+        "bebee.com",
+        "salud.neuquen.gob.ar",
+        "vientosurnoticias.com.ar",
+        "www.facebook.com"
+      ],
+      "provider_response_received": true,
+      "result_count": 5
+    },
+    {
+      "event": "started",
+      "provider": "tavily",
+      "query_index": 5,
+      "status": "started",
+      "kind": "tavily_query",
+      "query": "site:linkedin.com/jobs (\"Chofer\" OR \"conductor\" OR \"chofer\" OR \"conductor profesional\") \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\" -site:linkedin.com/in/ -site:linkedin.com/pub/",
+      "query_kind": "additional_portal",
+      "started_at": "2026-10-15T18:23:02.303052+00:00",
+      "source_id": "web:tavily",
+      "event_id": "b887075e-d257-411a-a612-894b7f2ba408",
+      "provider_response_received": false
+    },
+    {
+      "event": "completed",
+      "provider": "tavily",
+      "query_index": 5,
+      "status": "succeeded",
+      "kind": "tavily_query",
+      "query": "site:linkedin.com/jobs (\"Chofer\" OR \"conductor\" OR \"chofer\" OR \"conductor profesional\") \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\" -site:linkedin.com/in/ -site:linkedin.com/pub/",
+      "query_kind": "additional_portal",
+      "http_status": 200,
+      "request_id": "55e206ab-54bc-434a-9f4e-34bc6b148e68",
+      "started_at": "2026-10-15T18:23:02.303052+00:00",
+      "finished_at": "2026-10-15T18:23:06.103257+00:00",
+      "source_id": "web:tavily",
+      "event_id": "b887075e-d257-411a-a612-894b7f2ba408",
+      "result_urls": [
+        "https://ar.linkedin.com/jobs/view/data-scientist-applied-ai-latin-america-remote-at-azumo-4300567940",
+        "https://mx.linkedin.com/jobs/view/conductor-profesional-con-veh%C3%ADculo-propio-at-afa-transfer-4458421213",
+        "https://mx.linkedin.com/jobs/conductor-empleos-los-angeles",
+        "https://es.linkedin.com/jobs/chofer-empleos",
+        "https://es.linkedin.com/jobs/chofer-carnet-c%2Be-empleos-barcelona-ct"
+      ],
+      "credits": 1,
+      "source_hosts": [
+        "ar.linkedin.com",
+        "es.linkedin.com",
+        "mx.linkedin.com"
+      ],
+      "provider_response_received": true,
+      "result_count": 5
+    },
+    {
+      "event": "started",
+      "provider": "tavily",
+      "query_index": 6,
+      "status": "started",
+      "kind": "tavily_query",
+      "query": "site:ar.computrabajo.com (\"Chofer\" OR \"conductor\" OR \"chofer\" OR \"conductor profesional\") \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "additional_portal",
+      "started_at": "2026-10-15T18:23:06.103487+00:00",
+      "source_id": "web:tavily",
+      "event_id": "2edc3504-e939-426c-92c5-f3191a16210d",
+      "provider_response_received": false
+    },
+    {
+      "event": "completed",
+      "provider": "tavily",
+      "query_index": 6,
+      "status": "succeeded",
+      "kind": "tavily_query",
+      "query": "site:ar.computrabajo.com (\"Chofer\" OR \"conductor\" OR \"chofer\" OR \"conductor profesional\") \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "additional_portal",
+      "http_status": 200,
+      "request_id": "b9d0410f-0948-4a37-bef8-3fd089022daf",
+      "started_at": "2026-10-15T18:23:06.103487+00:00",
+      "finished_at": "2026-10-15T18:23:08.557055+00:00",
+      "source_id": "web:tavily",
+      "event_id": "2edc3504-e939-426c-92c5-f3191a16210d",
+      "result_urls": [
+        "https://ar.computrabajo.com/trabajo-de-conductor-profesional-en-neuquen-en-rincon-de-los-sauces",
+        "https://ar.computrabajo.com/trabajo-de-chofer-de-distribucion-en-neuquen-en-rincon-de-los-sauces",
+        "https://ar.computrabajo.com/trabajo-de-clarkista-en-neuquen-en-rincon-de-los-sauces",
+        "https://ar.computrabajo.com/trabajo-de-repartos-en-neuquen-en-rincon-de-los-sauces",
+        "https://ar.computrabajo.com/trabajo-de-transportista-en-neuquen-en-rincon-de-los-sauces"
+      ],
+      "credits": 1,
+      "source_hosts": [
+        "ar.computrabajo.com"
+      ],
+      "provider_response_received": true,
+      "result_count": 5
+    },
+    {
+      "event": "started",
+      "provider": "tavily",
+      "query_index": 7,
+      "status": "started",
+      "kind": "tavily_query",
+      "query": "(\"Chofer\" OR \"conductor\" OR \"chofer\" OR \"conductor profesional\") vacantes (\"Octavio Pico\" OR \"Aguada San Roque\" OR \"Buta Ranquil\" OR \"Barrio Pinar\") \"Argentina\"",
+      "query_kind": "nearby_cities",
+      "started_at": "2026-10-15T18:23:08.557304+00:00",
+      "source_id": "web:tavily",
+      "event_id": "1aa28b2f-7d45-4a2a-a01e-93916be28c56",
+      "provider_response_received": false
+    },
+    {
+      "event": "completed",
+      "provider": "tavily",
+      "query_index": 7,
+      "status": "succeeded",
+      "kind": "tavily_query",
+      "query": "(\"Chofer\" OR \"conductor\" OR \"chofer\" OR \"conductor profesional\") vacantes (\"Octavio Pico\" OR \"Aguada San Roque\" OR \"Buta Ranquil\" OR \"Barrio Pinar\") \"Argentina\"",
+      "query_kind": "nearby_cities",
+      "http_status": 200,
+      "request_id": "47072565-02e6-42bc-aaa4-d91d391e897b",
+      "started_at": "2026-10-15T18:23:08.557304+00:00",
+      "finished_at": "2026-10-15T18:23:11.231927+00:00",
+      "source_id": "web:tavily",
+      "event_id": "1aa28b2f-7d45-4a2a-a01e-93916be28c56",
+      "result_urls": [
+        "https://www.bumeran.com.ar/empleos/chofer-profesional-1118391250.html",
+        "https://ar.linkedin.com/jobs/chofer-profesional-empleos",
+        "https://ar.computrabajo.com/trabajo-de-conductor-profesional-en-neuquen-en-aguada-san-roque",
+        "https://ar.computrabajo.com/trabajo-de-chofer-de-reparto-en-neuquen-en-aguada-san-roque",
+        "https://www.facebook.com/groups/7470495039671115/posts/28415934481367199"
+      ],
+      "credits": 1,
+      "source_hosts": [
+        "ar.computrabajo.com",
+        "ar.linkedin.com",
+        "www.bumeran.com.ar",
+        "www.facebook.com"
+      ],
+      "provider_response_received": true,
+      "result_count": 5
+    },
+    {
+      "event": "started",
+      "provider": "tavily",
+      "query_index": 8,
+      "status": "started",
+      "kind": "tavily_query",
+      "query": "site:vientosurnoticias.com.ar \"Chofer\" vacantes requisitos postulación \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "employer_follow_up",
+      "started_at": "2026-10-15T18:23:11.232377+00:00",
+      "source_id": "web:tavily",
+      "event_id": "e3c415af-c79f-471c-9dc5-86abe417a5a8",
+      "provider_response_received": false
+    },
+    {
+      "event": "completed",
+      "provider": "tavily",
+      "query_index": 8,
+      "status": "succeeded",
+      "kind": "tavily_query",
+      "query": "site:vientosurnoticias.com.ar \"Chofer\" vacantes requisitos postulación \"Rincón de los Sauces\" \"Neuquén\" \"Argentina\"",
+      "query_kind": "employer_follow_up",
+      "http_status": 200,
+      "request_id": "e9596fac-08ee-41b2-a504-c2dae23c319e",
+      "started_at": "2026-10-15T18:23:11.232377+00:00",
+      "finished_at": "2026-10-15T18:23:13.453137+00:00",
+      "source_id": "web:tavily",
+      "event_id": "e3c415af-c79f-471c-9dc5-86abe417a5a8",
+      "result_urls": [
+        "https://vientosurnoticias.com.ar/servipet-busca-oficial-mecanico-con-experiencia-en-maquinaria-vial-y-flota-pesada",
+        "https://vientosurnoticias.com.ar/oldelval-busca-incorporar-encargado-de-cargas-para-su-operacion-en-la-region",
+        "https://vientosurnoticias.com.ar/neuquen-empresa-de-servicios-petroleros-busca-administrativa-de-deposito-con-perfil-tecnico",
+        "https://vientosurnoticias.com.ar/pesca-deportiva-en-rio-negro-donde-se-puede-y-cuales-son-los-requisitos",
+        "https://vientosurnoticias.com.ar/quienes-son-los-mayores-terratenientes-de-la-patagonia"
+      ],
+      "credits": 1,
+      "source_hosts": [
+        "vientosurnoticias.com.ar"
+      ],
+      "provider_response_received": true,
+      "result_count": 5
+    },
+    {
+      "provider": "publisher",
+      "url": "https://vientosurnoticias.com.ar/robots.txt",
+      "status": "started",
+      "kind": "public_page",
+      "event_id": "9908f836-afc3-46bb-a2d7-5c231d94e518"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://vientosurnoticias.com.ar/robots.txt",
+      "status": "succeeded",
+      "kind": "public_page",
+      "http_status": 200,
+      "event_id": "9908f836-afc3-46bb-a2d7-5c231d94e518"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://vientosurnoticias.com.ar/empresa-busca-chofer-de-reparto-para-cubrir-vacante-en-rincon-de-los-sauces",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El intervalo solicitado por robots.txt supera el presupuesto de esta investigación.",
+      "event_id": "9fec1e4b-b008-4491-8737-01e8cfbfe360"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://www.bumeran.com.ar/robots.txt",
+      "status": "started",
+      "kind": "public_page",
+      "event_id": "f7204400-931f-4526-aead-6c08bc4bd935"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://www.bumeran.com.ar/robots.txt",
+      "status": "succeeded",
+      "kind": "public_page",
+      "http_status": 200,
+      "event_id": "f7204400-931f-4526-aead-6c08bc4bd935"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://www.bumeran.com.ar/empleos/chofer-profesional-1118391250.html",
+      "status": "started",
+      "kind": "public_page",
+      "event_id": "e3ddd9cf-d461-447b-a3ca-5a83adc9e6ca"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://www.bumeran.com.ar/empleos/chofer-profesional-1118391250.html",
+      "status": "succeeded",
+      "kind": "public_page",
+      "http_status": 200,
+      "event_id": "e3ddd9cf-d461-447b-a3ca-5a83adc9e6ca"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://bebee.com/robots.txt",
+      "status": "started",
+      "kind": "public_page",
+      "event_id": "c8fcfd9f-669f-46c8-bf89-4853b097c536"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://bebee.com/robots.txt",
+      "status": "succeeded",
+      "kind": "public_page",
+      "http_status": 200,
+      "event_id": "c8fcfd9f-669f-46c8-bf89-4853b097c536"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://bebee.com/ar/jobs/chofer-de-reparto-rincon-de-los-sauces-grupo-gestion-rincon-de-los-sauce--ss-ar-aj7a6p",
+      "status": "started",
+      "kind": "public_page",
+      "event_id": "20574bf8-6692-4998-8e59-d07c613f23ad"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://bebee.com/ar/jobs/chofer-de-reparto-rincon-de-los-sauces-grupo-gestion-rincon-de-los-sauce--ss-ar-aj7a6p",
+      "status": "succeeded",
+      "kind": "public_page",
+      "http_status": 200,
+      "event_id": "20574bf8-6692-4998-8e59-d07c613f23ad"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://bebee.com/ar/jobs/chofer-de-autoelevador-con-carnet-importante-empresa-de-transporte-en-rincon-de-los-sauces-neuquen-g--ss-ar-p9kh2q",
+      "status": "started",
+      "kind": "public_page",
+      "event_id": "0333ca09-aa22-495f-bf2d-5814c60f8af3"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://bebee.com/ar/jobs/chofer-de-autoelevador-con-carnet-importante-empresa-de-transporte-en-rincon-de-los-sauces-neuquen-g--ss-ar-p9kh2q",
+      "status": "succeeded",
+      "kind": "public_page",
+      "http_status": 200,
+      "event_id": "0333ca09-aa22-495f-bf2d-5814c60f8af3"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.jobsora.com/robots.txt",
+      "status": "started",
+      "kind": "public_page",
+      "event_id": "8a990850-db09-4464-b8fe-ac46c71dc45a"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.jobsora.com/robots.txt",
+      "status": "succeeded",
+      "kind": "public_page",
+      "http_status": 200,
+      "event_id": "8a990850-db09-4464-b8fe-ac46c71dc45a"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.jobsora.com/empleos-empresa-transporte-chofer-neuqu%C3%A9n",
+      "status": "started",
+      "kind": "public_page",
+      "event_id": "b9d8b59e-97bf-4964-b000-0bcca4c118ec"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.jobsora.com/empleos-empresa-transporte-chofer-neuqu%C3%A9n",
+      "status": "succeeded",
+      "kind": "public_page",
+      "http_status": 200,
+      "event_id": "b9d8b59e-97bf-4964-b000-0bcca4c118ec"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://fr.wikipedia.org/robots.txt",
+      "status": "started",
+      "kind": "public_page",
+      "event_id": "79f9d916-9f62-4e59-a891-ecd8bab5b95e"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://fr.wikipedia.org/robots.txt",
+      "status": "failed",
+      "kind": "public_page",
+      "reason": "El editor respondió HTTP 403.",
+      "http_status": 403,
+      "event_id": "79f9d916-9f62-4e59-a891-ecd8bab5b95e"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://fr.wikipedia.org/wiki/Buta_Ranquil",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "No se pudo comprobar el permiso de lectura de robots.txt.",
+      "event_id": "ef4be679-5d82-46e0-a2cd-ab4928c56b6c"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://vientosurnoticias.com.ar/servipet-busca-oficial-mecanico-con-experiencia-en-maquinaria-vial-y-flota-pesada",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "La página quedó pendiente por el límite de lecturas de esta investigación.",
+      "event_id": "442ddba1-0c07-4064-8390-54bb54833646"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://agroempresario.com/categoria/10000038/neuquen/municipios",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "La página quedó pendiente por el límite de lecturas de esta investigación.",
+      "event_id": "429d3e76-af4b-4087-89c2-ff5df6ac4c23"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://vientosurnoticias.com.ar/oldelval-busca-incorporar-encargado-de-cargas-para-su-operacion-en-la-region",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "La página quedó pendiente por el límite de lecturas de esta investigación.",
+      "event_id": "766310f4-9af2-492e-aacb-2343f29696be"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://agroempresario.com/categoria/10000038/municipios",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "La página quedó pendiente por el límite de lecturas de esta investigación.",
+      "event_id": "89550f4c-c866-41f0-b823-eb3595392ad7"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://www.facebook.com/MuniRDLS/posts/-b%C3%BAsqueda-laboral-en-rinc%C3%B3n-de-los-saucesla-municipalidad-abre-convocatoria-para/1398371105653284",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "La página quedó pendiente por el límite de lecturas de esta investigación.",
+      "event_id": "ecd1c47c-2c17-4126-b906-50912ea40f53"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://vientosurnoticias.com.ar/neuquen-empresa-de-servicios-petroleros-busca-administrativa-de-deposito-con-perfil-tecnico",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "La página quedó pendiente por el límite de lecturas de esta investigación.",
+      "event_id": "f1e97c55-82cf-4925-87dd-39b40e391a5f"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://pueblo.ar/explorar/neuquen",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "La página quedó pendiente por el límite de lecturas de esta investigación.",
+      "event_id": "d67548e8-4609-43c5-b410-e51743f3dfaa"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.indeed.com/q-chofer-empleos.html",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "La página quedó pendiente por el límite de lecturas de esta investigación.",
+      "event_id": "67f8b8e8-3dce-416c-99ca-c12f660b82ed"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.linkedin.com/jobs/view/data-scientist-applied-ai-latin-america-remote-at-azumo-4300567940",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "44986eee-668e-47dd-9336-659d79aab46f"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.computrabajo.com/trabajo-de-conductor-profesional-en-neuquen-en-rincon-de-los-sauces",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "0b2ee4b1-c01d-498d-9f19-8542d889c41a"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.computrabajo.com/trabajo-de-chofer-de-distribucion-en-neuquen-en-rincon-de-los-sauces",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "27f2e608-e25c-4f30-b214-e8678d0bceb3"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://mx.linkedin.com/jobs/view/conductor-profesional-con-veh%C3%ADculo-propio-at-afa-transfer-4458421213",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "1f82493c-77d7-4dc0-8640-74f188170a3a"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.linkedin.com/jobs/chofer-profesional-empleos",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "39fe9c4c-a2a8-41e2-a275-6daf7a5d529a"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://mx.linkedin.com/jobs/conductor-empleos-los-angeles",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "8066f66e-56d3-45d7-aee8-fb2ce7ad0696"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.computrabajo.com/trabajo-de-clarkista-en-neuquen-en-rincon-de-los-sauces",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "996b853a-fee2-4b6c-88c4-b99c29b09c21"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.computrabajo.com/trabajo-de-conductor-profesional-en-neuquen-en-aguada-san-roque",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "e881c1b8-412a-44ff-8686-2198e500f1e4"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://ar.computrabajo.com/trabajo-de-personal-para-trabajos-en-neuquen-en-rincon-de-los-sauces",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "fca9975a-f3db-4bdb-8558-a8ac4f8a3219"
+    },
+    {
+      "provider": "publisher",
+      "url": "https://es.linkedin.com/jobs/chofer-empleos",
+      "status": "blocked",
+      "kind": "public_page",
+      "reason": "El sitio requiere revisión manual; no permite esta lectura automatizada.",
+      "event_id": "39d29c49-d33d-4624-a5ce-273af568d340"
+    },
+    {
+      "provider": "groq",
+      "model": "openai/gpt-oss-20b",
+      "input_count": 8,
+      "status": "started",
+      "kind": "analysis",
+      "started_at": "2026-10-15T18:23:16.346020+00:00",
+      "source_id": "web:tavily",
+      "event_id": "34a5dacc-c3c4-4644-afdf-690083816bc9",
+      "provider_response_received": false,
+      "batch_index": 1
+    },
+    {
+      "provider": "groq",
+      "model": "openai/gpt-oss-20b",
+      "input_count": 8,
+      "status": "succeeded",
+      "kind": "analysis",
+      "http_status": 200,
+      "request_id": "chatcmpl-8e861f69-8923-45a4-acd7-6d41ad320534",
+      "started_at": "2026-10-15T18:23:16.346020+00:00",
+      "finished_at": "2026-10-15T18:23:17.157212+00:00",
+      "source_id": "web:tavily",
+      "usage": {
+        "prompt_tokens": 3497,
+        "completion_tokens": 329,
+        "total_tokens": 3826
+      },
+      "event_id": "34a5dacc-c3c4-4644-afdf-690083816bc9",
+      "discarded_count": 1,
+      "provider_response_received": true,
+      "batch_index": 1,
+      "result_count": 0
+    },
+    {
+      "provider": "groq",
+      "model": "openai/gpt-oss-20b",
+      "input_count": 8,
+      "status": "started",
+      "kind": "analysis",
+      "started_at": "2026-10-15T18:23:17.157489+00:00",
+      "source_id": "web:tavily",
+      "event_id": "48fd48c1-75ef-4463-9d4a-1edaabd9b747",
+      "provider_response_received": false,
+      "batch_index": 2
+    },
+    {
+      "provider": "groq",
+      "model": "openai/gpt-oss-20b",
+      "input_count": 8,
+      "status": "succeeded",
+      "kind": "analysis",
+      "http_status": 200,
+      "request_id": "chatcmpl-d76ec802-fe12-4cce-9eb2-ce77b9cb37ea",
+      "started_at": "2026-10-15T18:23:17.157489+00:00",
+      "finished_at": "2026-10-15T18:23:18.029505+00:00",
+      "source_id": "web:tavily",
+      "usage": {
+        "prompt_tokens": 3707,
+        "completion_tokens": 444,
+        "total_tokens": 4151
+      },
+      "event_id": "48fd48c1-75ef-4463-9d4a-1edaabd9b747",
+      "discarded_count": 2,
+      "provider_response_received": true,
+      "batch_index": 2,
+      "result_count": 0
+    },
+    {
+      "provider": "groq",
+      "model": "openai/gpt-oss-20b",
+      "input_count": 8,
+      "status": "started",
+      "kind": "analysis",
+      "started_at": "2026-10-15T18:23:18.029770+00:00",
+      "source_id": "web:tavily",
+      "event_id": "ff5b34c5-c880-40c1-a5a6-c84801facfbc",
+      "provider_response_received": false,
+      "batch_index": 3
+    },
+    {
+      "provider": "groq",
+      "model": "openai/gpt-oss-20b",
+      "input_count": 8,
+      "status": "failed",
+      "kind": "analysis",
+      "http_status": 429,
+      "started_at": "2026-10-15T18:23:18.029770+00:00",
+      "error": "La IA no pudo analizar las vacantes con evidencia verificable. No se ejecutó ninguna postulación.",
+      "finished_at": "2026-10-15T18:23:18.105614+00:00",
+      "source_id": "web:tavily",
+      "event_id": "ff5b34c5-c880-40c1-a5a6-c84801facfbc",
+      "provider_response_received": true,
+      "batch_index": 3
+    }
+  ],
+  "http_events": [
+    {
+      "event": "request_started",
+      "provider": "georef_ar",
+      "at": "2026-10-15T18:22:47.976659+00:00",
+      "method": "GET",
+      "endpoint": "https://apis.datos.gob.ar/georef/api/v2.0/localidades"
+    },
+    {
+      "event": "response_received",
+      "provider": "georef_ar",
+      "at": "2026-10-15T18:22:49.042519+00:00",
+      "http_status": 200,
+      "endpoint": "https://apis.datos.gob.ar/georef/api/v2.0/localidades"
+    },
+    {
+      "event": "request_started",
+      "provider": "georef_ar",
+      "at": "2026-10-15T18:22:49.043972+00:00",
+      "method": "GET",
+      "endpoint": "https://apis.datos.gob.ar/georef/api/v2.0/localidades"
+    },
+    {
+      "event": "response_received",
+      "provider": "georef_ar",
+      "at": "2026-10-15T18:22:49.643619+00:00",
+      "http_status": 200,
+      "endpoint": "https://apis.datos.gob.ar/georef/api/v2.0/localidades"
+    },
+    {
+      "event": "request_started",
+      "provider": "tavily",
+      "at": "2026-10-15T18:22:53.967628+00:00",
+      "method": "POST",
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "response_received",
+      "provider": "tavily",
+      "at": "2026-10-15T18:22:55.778298+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "request_started",
+      "provider": "tavily",
+      "at": "2026-10-15T18:22:55.779772+00:00",
+      "method": "POST",
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "response_received",
+      "provider": "tavily",
+      "at": "2026-10-15T18:22:57.862877+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "request_started",
+      "provider": "tavily",
+      "at": "2026-10-15T18:22:57.864190+00:00",
+      "method": "POST",
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "response_received",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:00.592427+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "request_started",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:00.593853+00:00",
+      "method": "POST",
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "response_received",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:02.301928+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "request_started",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:02.303263+00:00",
+      "method": "POST",
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "response_received",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:06.102389+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "request_started",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:06.103681+00:00",
+      "method": "POST",
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "response_received",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:08.556395+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "request_started",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:08.557500+00:00",
+      "method": "POST",
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "response_received",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:11.231172+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "request_started",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:11.232582+00:00",
+      "method": "POST",
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "response_received",
+      "provider": "tavily",
+      "at": "2026-10-15T18:23:13.452275+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.tavily.com/search"
+    },
+    {
+      "event": "request_started",
+      "provider": "groq",
+      "at": "2026-10-15T18:23:16.346467+00:00",
+      "method": "POST",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions"
+    },
+    {
+      "event": "response_received",
+      "provider": "groq",
+      "at": "2026-10-15T18:23:17.155709+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions"
+    },
+    {
+      "event": "request_started",
+      "provider": "groq",
+      "at": "2026-10-15T18:23:17.158093+00:00",
+      "method": "POST",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions"
+    },
+    {
+      "event": "response_received",
+      "provider": "groq",
+      "at": "2026-10-15T18:23:18.026675+00:00",
+      "http_status": 200,
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions"
+    },
+    {
+      "event": "request_started",
+      "provider": "groq",
+      "at": "2026-10-15T18:23:18.030368+00:00",
+      "method": "POST",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions"
+    },
+    {
+      "event": "response_received",
+      "provider": "groq",
+      "at": "2026-10-15T18:23:18.104982+00:00",
+      "http_status": 429,
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions"
+    }
+  ],
+  "failures": [
+    "La investigación no terminó. Revisá los errores saneados del historial y la configuración de los proveedores."
+  ],
+  "email_sent": false,
+  "database_accessed": false,
+  "limitations": [
+    "Una búsqueda no garantiza vacantes disponibles.",
+    "Las distancias usan centroides y kilómetros aéreos aproximados, no trayectos por carretera.",
+    "Este informe no autoriza ni ejecuta postulaciones ni verifica destinatarios de correo."
+  ],
+  "tavily_successful_queries": 8,
+  "tavily_credits_reported": 8,
+  "verified_within_radius_count": 0,
+  "provider_proofs": {
+    "tavily": true,
+    "groq": true,
+    "georef": false
+  }
+}

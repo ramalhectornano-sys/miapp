@@ -56,6 +56,23 @@ class ResearchPipelineTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         clear_geography_cache()
 
+    async def test_groq_failure_retains_observed_links_without_returning_or_authorizing_jobs(self):
+        saved = {**SEARCH, "location": {"id": "fixture-location", "verified": True}}
+        page = {"url": HOST + "/vacante", "title": "Chofer", "raw_content": "Published evidence"}
+        with patch("app.services.research.prepare_search_geography", AsyncMock(return_value=saved)), \
+                patch("app.services.research.discover_web_results", AsyncMock(return_value=([page], []))) as discovery, \
+                patch("app.services.research.investigate_pages", AsyncMock(return_value=([page], []))), \
+                patch("app.services.research.extract_web_jobs", AsyncMock(side_effect=HTTPException(429, "Quota"))):
+            with self.assertRaises(HTTPException) as caught:
+                await run_research(settings(), None, SEARCH)
+        discovery.assert_awaited_once()
+        self.assertEqual(caught.exception.status_code, 429)
+        partial = caught.exception.research_partial
+        self.assertEqual(partial["discoveries"][0]["url"], page["url"])
+        self.assertTrue(partial["search"]["location"]["verified"])
+        self.assertEqual(partial["results"], [])
+        self.assertNotIn("_research_audit", partial["search"])
+
     async def test_actual_adapters_keep_cross_province_nearby_and_unknown_but_drop_outside(self):
         center = place(city="Localidad central")
         # Deliberately synthetic centroids: 0.5 degree (~55.6km) and 2 degrees

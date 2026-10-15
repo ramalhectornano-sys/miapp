@@ -27,7 +27,7 @@ EVENT_FIELDS = frozenset({
     "query_index", "query_kind", "started_at", "finished_at", "http_status",
     "provider_response_received", "request_id", "credits", "result_count",
     "result_urls", "source_hosts", "error", "url", "reason", "source_url",
-    "model", "batch_index", "input_count", "discarded_count", "usage",
+    "model", "batch_index", "input_count", "discarded_count", "usage", "attempt", "retry_after_seconds",
 })
 LOCATION_FIELDS = frozenset({
     "id", "city", "province", "province_id", "country", "country_code",
@@ -134,6 +134,25 @@ def preflight(settings):
     return missing, invalid
 
 
+def _capture_research_data(report, data):
+    enriched = data.get("search", {})
+    if isinstance(enriched, dict):
+        report["search_location"] = _public_location(enriched.get("location"))
+        report["geography_warnings"] = enriched.get("geography_warnings", [])
+        report["nearby_cities"] = [_public_location(value) for value in enriched.get("nearby_cities", []) if isinstance(value, dict)]
+    report["results"] = [result for job in data.get("results", []) if (result := _public_job(job))]
+    for value in data.get("discoveries", []):
+        if isinstance(value, dict) and _safe_url(value.get("url")):
+            report["discoveries"].append({"url": value["url"], "title": value.get("title"),
+                "source_host": urlsplit(value["url"]).hostname,
+                "page_verification": _pick(value.get("page_verification", {}), PAGE_FIELDS),
+                "status": "pending_review"})
+    report["failures"].extend(data.get("failures", []) if isinstance(data.get("failures"), list) else [])
+    report["coverage_warnings"] = data.get("warnings", []) if isinstance(data.get("warnings"), list) else []
+    outside = data.get("outside_radius_count", 0)
+    report["outside_radius_count"] = outside if type(outside) is int and outside >= 0 else 0
+
+
 async def check(settings, search=None, *, max_queries=8, max_pages=6, runner=None, transport=None):
     """Return an auditable report, including an explicit report on preflight failure."""
     search = dict(DEFAULT_SEARCH if search is None else search)
@@ -189,24 +208,12 @@ async def check(settings, search=None, *, max_queries=8, max_pages=6, runner=Non
             data = await runner(settings, client, search, audit=audit)
         if not isinstance(data, dict):
             raise ValueError("No research envelope")
-        enriched = data.get("search", {})
-        if isinstance(enriched, dict):
-            report["search_location"] = _public_location(enriched.get("location"))
-            report["geography_warnings"] = enriched.get("geography_warnings", [])
-            report["nearby_cities"] = [_public_location(value) for value in enriched.get("nearby_cities", []) if isinstance(value, dict)]
-        report["results"] = [result for job in data.get("results", []) if (result := _public_job(job))]
-        for value in data.get("discoveries", []):
-            if isinstance(value, dict) and _safe_url(value.get("url")):
-                report["discoveries"].append({"url": value["url"], "title": value.get("title"),
-                    "source_host": urlsplit(value["url"]).hostname,
-                    "page_verification": _pick(value.get("page_verification", {}), PAGE_FIELDS),
-                    "status": "pending_review"})
-        report["failures"].extend(data.get("failures", []) if isinstance(data.get("failures"), list) else [])
-        report["coverage_warnings"] = data.get("warnings", []) if isinstance(data.get("warnings"), list) else []
-        outside = data.get("outside_radius_count", 0)
-        report["outside_radius_count"] = outside if type(outside) is int and outside >= 0 else 0
+        _capture_research_data(report, data)
         report["status"] = "evaluating"
-    except Exception:
+    except Exception as failure:
+        partial = getattr(failure, "research_partial", None)
+        if isinstance(partial, dict):
+            _capture_research_data(report, partial)
         # No exception text/traceback: upstream errors may include a URL, header
         # or token. Sanitized service audit events preserve the actual cause.
         report["status"] = "failed"

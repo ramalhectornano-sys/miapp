@@ -103,6 +103,26 @@ class RealResearchCheckTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(report["test_passed"])
         self.assertTrue(all(report["provider_proofs"].values()))
 
+    async def test_late_analysis_failure_preserves_public_discovery_and_location_evidence(self):
+        from fastapi import HTTPException
+        async def runner(settings, client, search, *, audit):
+            data = await self.success_runner(settings, client, search, audit=audit)
+            data["results"] = []
+            data["discoveries"][0]["raw_content"] = "PRIVATE RAW PAGE MUST NOT BE IN REPORT"
+            failure = HTTPException(429, "test-groq-private-key")
+            failure.research_partial = data
+            raise failure
+        report = await check(configured(), runner=runner,
+            transport=httpx.MockTransport(lambda request: httpx.Response(200, json={})))
+        self.assertEqual(report["status"], "failed")
+        self.assertFalse(report["test_passed"])
+        self.assertEqual(report["actual_tavily_calls"], 1)
+        self.assertTrue(report["search_location"]["verified"])
+        self.assertEqual(report["discoveries"][0]["url"], "https://example.org/empleos/chofer")
+        self.assertEqual(report["results"], [])
+        self.assertNotIn("PRIVATE RAW PAGE", json.dumps(report))
+        self.assertNotIn("test-groq-private-key", json.dumps(report))
+
     async def test_outside_or_unknown_radius_does_not_pass(self):
         for classification in ({"location_verified": True, "within_radius": False},
                                {"location_verified": False, "within_radius": None}):
