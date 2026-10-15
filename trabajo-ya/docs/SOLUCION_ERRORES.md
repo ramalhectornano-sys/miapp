@@ -2,8 +2,10 @@
 
 Las capturas muestran tres problemas distintos. Se corrigió un defecto del
 guardado del chat compatible con el aviso de datos; ese mensaje era genérico
-y los logs remotos permiten distinguir otras causas. Los otros dos indican que todavía no se
-configuró Gmail y que el servidor conserva los envíos deshabilitados. El archivo
+y los logs remotos permiten distinguir otras causas. Las capturas iniciales también mostraban Gmail sin configurar. El propietario
+confirmó posteriormente que ya lo vinculó; no hay que recrear esa conexión.
+Las capturas recientes siguen mostrando envíos deshabilitados y ninguna fuente
+apta para autorizar correo. El archivo
 `render.yaml` gratuito prepara la API y la IA, pero no instala un worker ni
 incorpora credenciales Google. Cambiar el texto del aviso no habilita el servicio.
 
@@ -20,8 +22,9 @@ conjunto de campos, conservando el historial real. Para aplicarla en Render,
 elegí **Manual Deploy → Deploy latest commit** y esperá **Live**; no hace falta
 una APK nueva para esta corrección del backend.
 
-El backend actualizado identifica su versión **0.3.1** en
-https://trabajo-ya-api.onrender.com/health; la APK sigue siendo **0.3.2**.
+El código actualizado identifica el backend como **0.5.0** en
+https://trabajo-ya-api.onrender.com/health después de desplegarlo. La aplicación
+0.5.0 necesita también la migración 007 para geografía e historial web.
 Las versiones de servidor y aplicación son independientes. Esa respuesta
 permite distinguir el servidor anterior, pero no confirma una llamada de IA
 ni una conversación guardada: comprobá ambas desde el chat autenticado.

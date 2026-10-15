@@ -1,34 +1,49 @@
 # APK conectada a servicios reales
 
-La actualización **0.5.0 / versionCode 9** incorpora provincia, país, radio y
-selección de localidad, investigación general y consulta del historial web.
-Su compilación y prueba real están en curso; la APK anterior 0.4.1 que se
-documenta debajo todavía no contiene estas funciones nuevas.
+**APK 0.5.0 / versionCode 9 publicada para pruebas.**
+[Descargar Trabajo-YA-0.5.0-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.5.0-real/Trabajo-YA-0.5.0-real.apk).
+La [compilación 38744160527](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160527)
+terminó correctamente: Expo/Gradle incluyeron JavaScript y recursos; `apksigner`
+y `aapt` verificaron firma, nombre, paquete y versión.
 
-Para activarlas en el servicio existente hay que aplicar **solo la migración
-007** en Supabase, desplegar la rama `trabajo-ya-real` en Render y comprobar que
-`/health` muestra backend **0.5.0**. Configurar el worker es un paso separado.
-No se reemplazan las conexiones Gmail ni la clave de cifrado existentes.
-Ver [búsqueda general](BUSQUEDA_WEB.md) y [prueba real](PRUEBA_WEB_REAL.md).
+La APK usa `demo=false`, paquete **com.trabajoya.autoempleoia** y callback
+**autoempleoia://auth/callback**. El comprobante de certificado coincide con la
+entrega anterior: instalar **como actualización, sin desinstalar**.
+Es una firma de prueba, no una publicación en Google Play.
 
-
-La APK de demostración publicada no autentica usuarios ni guarda sus datos en un servidor. La nueva ruta de compilación usa **`EXPO_PUBLIC_DEMO_MODE=false` y `TRABAJO_YA_BUILD_MODE=real`**, requiere servicios desplegados y falla si falta la configuración. No cambia automáticamente a una demo para completar una compilación.
-
-**Estado actual: APK real 0.4.1 publicada para pruebas.** [Descargar Trabajo-YA-0.4.1-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.1-real/Trabajo-YA-0.4.1-real.apk) o abrir la [versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.4.1-real). La [ejecución de GitHub Actions 38609341591](https://github.com/ramalhectornano-sys/miapp/actions/runs/38609341591) terminó correctamente y verificó la firma con `apksigner` y los datos del paquete con `aapt`: **Trabajo YA**, **`com.trabajoya.autoempleoia`**, versión **0.4.1**, `versionCode` **8**. La APK ocupa **51.848.277 bytes** y su SHA-256 es:
+Tamaño: **51870841 bytes**. SHA-256:
 
 ```text
-21f6aca141ad7bc686d2ca1e8c69f128c7ec8949289c60a09a1bd3f3a89c5ab8
+f0229c1edb388b5d07f0ae09ddb63c9c16f63218ea6c705274d3e1602c422d2c
 ```
 
-El backend está publicado en **https://trabajo-ya-api.onrender.com** y el proyecto Supabase ya existe. El endpoint de salud de Supabase Auth respondió HTTP 200; también se comprobó que la tabla de perfiles existe y que el acceso anónimo está protegido. La APK incorpora la configuración pública de esos servicios y el modo real. Todavía no se probó en un teléfono físico ni se confirmó el funcionamiento completo de las integraciones.
+Commit compilado: `d008ba39b4a119c833230aaeaffb894591204810`. Los comprobantes y checksum están en
+[la versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.5.0-real).
+La APK no incluye claves privadas de Tavily, Groq, Gmail ni Supabase.
 
-Las capturas del usuario muestran acceso a la app, CV elegido y Gmail conectado. No hay que recrear servicios, claves o conexiones que ya funcionan. Todavía falta comprobar una consulta real del buscador, la operación del programador y una entrega controlada confirmada por Gmail. La API de Render Free necesita un worker/programador separado; ni esta compilación ni el despliegue activan automáticamente los envíos. Ver [activación de correos](ACTIVAR_CORREOS.md).
+Esta actualización agrega provincia, país, radio, selección de localidad,
+resultados con evidencia e historial web. El código pasó **403 pruebas backend,
+52 móviles, TypeScript, siete migraciones y 29 cloud** en
+[CI 38744160825](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160825).
+Eso no acredita búsquedas ni correos reales.
 
-La entrega 0.3.3 incorpora los cambios de persistencia del chat de la [PR2](https://github.com/ramalhectornano-sys/miapp/pull/2), integrada en `trabajo-ya-real`. Conserva paquete, esquema de autenticación y certificado de prueba. Instalá la APK como actualización sin desinstalar. Para aplicar la corrección del chat, desplegá el último commit del backend en **Render → trabajo-ya-api → Manual Deploy → Deploy latest commit** y esperá **Live**. La compilación de Android no despliega Render ni habilita Gmail o tareas automáticas.
+**Antes de usar las pantallas nuevas**, aplicar solo [migración 007](../supabase/migrations/202610140007_web_research_and_locations.sql)
+si 001–006 ya están instaladas. En Render Environment cambiar explícitamente
+`WEB_SEARCH_MAX_QUERIES=6` si seguía en 2; después desplegar la rama
+`trabajo-ya-real` mediante Manual Deploy y esperar Live. `/health` debe mostrar
+backend **0.5.0**. No repetir el instalador inicial, recrear Gmail ni regenerar
+TOKEN_ENCRYPTION_KEY. El programador necesita su configuración separada.
 
-La actualización 0.4.0 agrega Tavily, extracción de vacantes con evidencia y **Ver ofertas encontradas**. El código 0.4.1 agrega un verificador independiente de anuncios de Greenhouse con canal explícito de CV por correo, reconsulta antes de enviar y muestra qué requisito falta junto al botón de autorización. Su compilación nueva está publicada y verificada; ver [activación de correo](ACTIVAR_CORREOS.md). Seguir [BUSQUEDA_WEB](BUSQUEDA_WEB.md) para activarla en Render y [WORKER_GITHUB](WORKER_GITHUB.md) para las tareas de pruebas. El estado actualizado de país, provincia y radio está en: ver [estado geográfico](ESTADO_UBICACIONES_Y_KM.md).
+La [prueba real solicitada](PRUEBA_WEB_REAL.md) fue intentada pero quedó bloqueada
+por `WEB_SEARCH_API_KEY` y `AI_API_KEY` ausentes en Actions: **cero llamadas** a
+Tavily y sin ofertas reales acreditadas. Las claves existentes de Render no se
+comparten con GitHub. La función no se considera terminada hasta obtener esa
+prueba. No se desplegó Render ni se activaron envíos desde estas herramientas.
+Ver [EMPEZAR](../EMPEZAR.md), [búsqueda general](BUSQUEDA_WEB.md),
+[worker](WORKER_GITHUB.md) y [correo](ACTIVAR_CORREOS.md).
 
-Los pasos siguientes se conservan para preparar otra instalación o repetir la compilación. Para la configuración actual no hace falta volver a crear los servicios ni reemplazar los datos públicos ya cargados.
+Los pasos siguientes sirven para preparar otra instalación o repetir una
+compilación. El servicio Supabase y el Gmail existentes se conservan.
 
 ## Qué necesita Android
 
@@ -44,7 +59,7 @@ La clave pública de Supabase forma parte de cualquier app que use Supabase; el 
 
 ## Preparar y compilar desde el celular
 
-1. Terminá la instalación de Supabase con las seis migraciones y los buckets privados, habilitá el acceso por correo OTP y desplegá el backend. Configurá el proveedor de IA en el servidor. En Cloud Run o un servidor propio podés comprobarlo con `test-ai` o `python -m app.check_ai` según [IA real](IA_REAL.md). Render Free no ofrece terminal: allí la comprobación se completa mediante el chat autenticado de la app, después de compilar. No alcanza con crear una clave ni con `/health`.
+1. Terminá la instalación de Supabase con las siete migraciones y los buckets privados, habilitá el acceso por correo OTP y desplegá el backend. Configurá el proveedor de IA en el servidor. En Cloud Run o un servidor propio podés comprobarlo con `test-ai` o `python -m app.check_ai` según [IA real](IA_REAL.md). Render Free no ofrece terminal: allí la comprobación se completa mediante el chat autenticado de la app, después de compilar. No alcanza con crear una clave ni con `/health`.
 2. Abrí el repositorio del proyecto en GitHub. Creá o seleccioná la rama **`trabajo-ya-real`**. Si el repositorio contiene el ZIP descomprimido, los archivos del proyecto están dentro de `trabajo-ya/`; si contiene directamente el código, están en la raíz. El workflow debe estar en **`.github/workflows/android-real.yml` en la raíz del repositorio**.
 3. Abrí `mobile/services.public.json.example` (o `trabajo-ya/mobile/services.public.json.example`) y copiá su contenido. Creá junto a él un archivo llamado **`services.public.json`** mediante **Add file → Create new file**. Si estas opciones no aparecen en el navegador del celular, activá **Sitio de escritorio**.
 4. Completá las tres cadenas vacías con tus valores públicos y guardá el archivo. Debe conservar esta estructura, sin agregar más campos:
@@ -64,7 +79,7 @@ La clave pública de Supabase forma parte de cualquier app que use Supabase; el 
 7. Esperá a que la ejecución complete la compilación, verifique la firma y publique la prerelease. Recién entonces habrá una APK nueva. Abrí **Releases** y descargá el archivo `Trabajo-YA-<versión>-real.apk`. Como alternativa, descargá el artefacto `Trabajo-YA-<versión>-real` desde esa ejecución de Actions y extraé el ZIP.
 8. Abrí la APK desde Archivos y completá la instalación en Android. No requiere Expo Go ni un servidor Metro.
 
-La versión y `versionCode` se obtienen de `mobile/app.json`; la revisión publicada es **0.4.1 / 8**. El archivo APK, nombre de artefacto y tag se generan a partir de esa versión; no hay un nombre fijo en el workflow. Una versión publicada no se reemplaza automáticamente: para una siguiente entrega hay que incrementar `version` y `android.versionCode`.
+La versión y `versionCode` se obtienen de `mobile/app.json`; la revisión publicada es **0.5.0 / 9**. El archivo APK, nombre de artefacto y tag se generan a partir de esa versión; no hay un nombre fijo en el workflow. Una versión publicada no se reemplaza automáticamente: para una siguiente entrega hay que incrementar `version` y `android.versionCode`.
 
 ## Qué comprueba la compilación
 

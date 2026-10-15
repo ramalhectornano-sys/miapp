@@ -1,24 +1,37 @@
 # Validación de Trabajo YA
 
-## Investigación general 0.5.0: validación en curso
+## Investigación general 0.5.0: código validado, prueba real bloqueada
 
-La versión 0.5.0 añade investigación general Tavily → páginas públicas permitidas
-→ Groq → GeoRef, filtro geográfico, historial de peticiones y consulta desde
-Android. Se conservan los controles de consentimiento, destinatario verificado,
-límite diario y confirmación de Gmail. La migración 007 es nueva y todavía no
-se aplicó al proyecto alojado desde estas herramientas.
+La [verificación 38744160825](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160825)
+aprobó **403 pruebas backend**, **52 móviles**, TypeScript, **29 cloud**, las
+**siete migraciones y cinco baterías SQL**, y el arranque del contenedor con
+`PORT` asignado. Commit: `d008ba39b4a119c833230aaeaffb894591204810`.
+Supabase Auth respondió HTTP 200 y se comprobó la existencia y bloqueo de lectura
+anónima de profiles sin consultar datos personales.
 
-Pasaron **393 pruebas backend locales** con HTTP interceptado. La prueba de
-arranque que necesita abrir un socket se ejecutará en CI, junto con TypeScript,
-las pruebas móviles, las siete migraciones y el contenedor. Estas pruebas no
-acreditan consultas reales de Tavily/Groq ni envíos.
+Las pruebas nuevas cubren Tavily → páginas permitidas → Groq → GeoRef con
+transportes interceptados, ubicaciones ambiguas, radio que cruza provincias,
+exclusión fuera del área, auditoría bajo reserva vigente, aislamiento de usuarios
+y barrera de envíos por geografía. **No son consultas a proveedores reales.**
+La migración 007 todavía requiere aplicación en el Supabase alojado.
 
-La prueba real está preparada en [PRUEBA_WEB_REAL](PRUEBA_WEB_REAL.md). Las claves
-están únicamente en Render según confirmó el propietario; no están disponibles
-en esta sesión. No se encontraron ofertas reales ni se llamó a Tavily usando
-esas claves durante la validación local. La entrega no se considera completa
-hasta obtener el informe real con las respuestas y enlaces verificables.
+La [prueba real 38744160735](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160735)
+sí ejecutó el comando desde Actions, pero falló antes de buscar: faltan
+`WEB_SEARCH_API_KEY` y `AI_API_KEY` en los secretos de GitHub, aunque el
+propietario las tenga en Render. Resultado comprobado: `preflight_failed`,
+**0 llamadas Tavily**, **0 respuestas Groq/GeoRef**, `test_passed=false`.
+Se conservó el informe como artefacto y un
+[comprobante resumido](evidence/web-real-preflight-38744160735.json).
+No hay enlaces de vacantes reales acreditados; la función no se considera
+terminada. Seguir [PRUEBA_WEB_REAL](PRUEBA_WEB_REAL.md) para completar la prueba.
 
+La [compilación Android 38744160527](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160527)
+publicó la APK 0.5.0/code9, con verificación de firma y paquete. El comprobante
+del certificado coincide con 0.4.1; se instala como actualización. SHA-256:
+`f0229c1edb388b5d07f0ae09ddb63c9c16f63218ea6c705274d3e1602c422d2c`. Tamaño: 51870841 bytes.
+Detalles en [APK_REAL](APK_REAL.md).
+No se desplegó Render, aplicó 007 en el proyecto alojado, activó el worker ni
+envió un correo desde estas herramientas.
 
 ## Correos verificados y diagnóstico de permisos 0.4.1
 

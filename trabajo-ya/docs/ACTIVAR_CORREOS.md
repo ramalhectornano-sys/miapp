@@ -6,7 +6,7 @@ válida. El botón estaba bloqueado porque la única fuente disponible era
 El aviso de envíos desactivados es otro requisito, necesario para ejecutar,
 pero no para guardar una autorización con una fuente apta.
 
-La actualización **0.4.1** agrega una integración independiente con la
+La versión **0.5.0** conserva la integración independiente incorporada en 0.4.1 con la
 [API pública de Greenhouse](https://docs.greenhouse.io/job-board.html).
 No convierte todos los hallazgos de Tavily en destinatarios verificados.
 
@@ -26,11 +26,14 @@ confirma la aceptación del envío; eso tampoco confirma una contratación.
 
 ## Actualizar el servicio y guardar el permiso
 
-1. En **Render → trabajo-ya-api → Manual Deploy → Deploy latest commit**, usar
-   la rama **trabajo-ya-real** y esperar **Live**. Esta actualización no cambia
-   la base de datos ni borra documentos, sesiones o conexiones Gmail.
+1. Si ya están instaladas 001–006, aplicar **solo la migración 007** en Supabase
+   para geografía e historial. No repetir el instalador inicial. Luego, en
+   **Render → trabajo-ya-api → Manual Deploy → Deploy latest commit**, usar
+   la rama **trabajo-ya-real** y esperar **Live**; `/health` debe identificar
+   backend **0.5.0**. Se conservan documentos, sesiones y conexiones Gmail.
 2. Conservar en **Environment** `WEB_SEARCH_PROVIDER=tavily` y la clave privada
-   existente en `WEB_SEARCH_API_KEY`. Greenhouse no necesita una clave adicional.
+   existente en `WEB_SEARCH_API_KEY`. Cambiar explícitamente
+   `WEB_SEARCH_MAX_QUERIES=6` si seguía en 2. Greenhouse no necesita una clave adicional.
    `MAIL_SEND_ENABLED=false` permite revisar primero sin enviar.
 3. Abrir la app actualizada y entrar en los permisos de la búsqueda. Debe aparecer
    **Ofertas verificadas de Greenhouse**. Elegirla junto al CV y Gmail, la fecha

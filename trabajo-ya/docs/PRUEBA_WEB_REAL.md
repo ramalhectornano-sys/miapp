@@ -1,5 +1,23 @@
 # Prueba real de Internet: chofer, Rincón de los Sauces, 100 km
 
+## Resultado comprobado de la primera ejecución
+
+[GitHub Actions 38744160735](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160735)
+ejecutó el comando real sobre el commit `d008ba39b4a119c833230aaeaffb894591204810`.
+Se detuvo en `preflight_failed`: faltaban `WEB_SEARCH_API_KEY` y `AI_API_KEY`
+en los secretos de Actions. El informe registra **0 intentos HTTP Tavily**, **0
+respuestas Tavily/Groq/GeoRef** y `test_passed=false`. Esto no significa que no
+existan empleos: no se pudo ejecutar la búsqueda. **No hay enlaces de ofertas
+reales acreditados por esta prueba.**
+
+El informe JSON y Markdown se adjuntó como artefacto
+`prueba-web-real-rincon-100km-38744160735` (30 días). El
+[comprobante resumido](evidence/web-real-preflight-38744160735.json) conserva la
+salida del comando y la referencia verificable. Cargar las claves únicamente en
+los secretos y ejecutar nuevamente el workflow indicado debajo; no hace falta
+volver a crear Supabase, Gmail ni las claves que ya existen en Render.
+
+
 La prueba consulta Tavily y analiza con Groq sin acceder a usuarios, currículums,
 base de datos ni Gmail. El escenario es **Chofer — Rincón de los Sauces, Neuquén,
 Argentina — 100 kilómetros**. Las coordenadas se obtienen de GeoRef y las

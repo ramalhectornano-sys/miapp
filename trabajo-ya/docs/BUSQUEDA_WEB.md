@@ -65,3 +65,11 @@ Ejecutar ahora no activa un programador. Render Free puede dormir y no incluye e
 Tavily basic consume créditos reales y el cupo se comparte entre usuarios. Seis consultas diarias consumen hasta 180 créditos en 30 días por búsqueda, sin contar pruebas. Groq, GeoRef, GitHub Actions, Supabase y hosting tienen límites propios. El código no activa PAYGO ni crea servicios pagos. Revisar precios antes de ampliar frecuencia o usuarios.
 
 Fuentes: [Tavily API](https://docs.tavily.com/documentation/api-reference/endpoint/search), [créditos](https://docs.tavily.com/documentation/api-credits), [condiciones](https://www.tavily.com/terms), [GeoRef](https://www.argentina.gob.ar/georef).
+
+## Primera comprobación ejecutada
+
+[Actions 38744160735](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160735)
+falló en preflight por los dos secretos de proveedor ausentes. Registró cero
+llamadas Tavily y cero respuestas de los proveedores. No acredita ofertas reales.
+El [informe y los pasos para repetirla](PRUEBA_WEB_REAL.md) distinguen esta prueba
+bloqueada de la suite de código aprobada (403 backend y 52 móviles).

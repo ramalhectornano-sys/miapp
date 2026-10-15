@@ -2,7 +2,7 @@
 
 El Supabase y backend existentes se conservan. Android utiliza https://trabajo-ya-api.onrender.com; el usuario ya mostró CV seleccionado y confirmó Gmail vinculado. No hace falta recrear servicios ni claves.
 
-El código **0.5.0 / Android 9** añade búsqueda general, geografía de Argentina, radio e historial de consultas. La compilación y descarga deben comprobarse en [APK_REAL](docs/APK_REAL.md); este documento no acredita por sí solo una nueva publicación. La APK anterior 0.4.1 no contiene estas pantallas geográficas.
+La [APK **0.5.0 / versionCode 9**](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.5.0-real/Trabajo-YA-0.5.0-real.apk) está publicada y verificada. Añade búsqueda general, geografía de Argentina, radio e historial web. Instalar como actualización sin desinstalar; antes completar la migración 007 y desplegar el backend. Ver [APK_REAL](docs/APK_REAL.md).
 
 **Todavía no se acreditó una búsqueda real Tavily/Groq, una oferta de chofer a 100 km ni una entrega Gmail.** Las pruebas del código usan respuestas simuladas. Las claves están solo en Render; Actions no puede leerlas desde allí.
 
@@ -62,3 +62,13 @@ Gmail conectado y horario guardado no autorizan envíos. Elegir CV, cuenta, fuen
 Se mantienen **10 intentos diarios por usuario**, sumados entre búsquedas, y **72 horas** entre recordatorios autorizados. Habilitar MAIL_SEND_ENABLED y el worker solo después de la comprobación controlada de [ACTIVAR_CORREOS](docs/ACTIVAR_CORREOS.md). Una postulación aparece enviada únicamente con confirmación del proveedor.
 
 La consulta, ejecución periódica y entrega reales siguen pendientes de comprobación. No recrear Supabase, Gmail ni sus claves válidas.
+
+## Resultado de la prueba desde GitHub
+
+La ejecución [38744160735](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160735)
+se detuvo antes de consultar Tavily/Groq: faltaban WEB_SEARCH_API_KEY y AI_API_KEY
+en Actions. El informe adjunto confirma cero consultas; no se encontraron ofertas
+reales mediante esa prueba. Después de cargar los dos secretos privados, usar
+**Actions → Prueba REAL de búsqueda web — Tavily y Groq → Run workflow**.
+La [verificación del código](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160825)
+aprobó 403 pruebas backend, 52 móviles, TypeScript, siete migraciones y 29 cloud.

@@ -15,7 +15,7 @@ La actualización implementa investigación web general Tavily/Groq y geografía
 | Enlaces originales | Lector público acotado con DNS, redirecciones y robots. Páginas restringidas/no accesibles quedan pendientes. |
 | Fechas y requisitos | Se conservan y muestran cuando hay evidencia; no se inventan los ausentes. |
 | Historial web | Migración 007, API y pantalla con consultas, horas, fuentes, recibos y errores privados por usuario. |
-| Prueba real Tavily/Groq | CLI/workflow preparados. No ejecutada ni aprobada; claves actualmente solo en Render. |
+| Prueba real Tavily/Groq | Intentada en Actions; preflight bloqueado por claves ausentes allí. Cero llamadas a proveedores; no aprobada. |
 | Gmail | Vinculación confirmada por el usuario; entrega real todavía no acreditada. |
 | Teléfono apagado | Worker/programador preparados; requieren configuración, habilitación y ejecución registrada. |
 | Enviar a hallazgos web | La investigación general no verifica destinatarios. Solo fuentes específicas verificadas y consentimiento pueden habilitar correo. |
@@ -31,3 +31,11 @@ La actualización implementa investigación web general Tavily/Groq y geografía
 Una coordenada oficial confirma una localidad, no la ubicación del empleo. El puesto debe citar su lugar; el país o ciudad de la búsqueda no sirven para fingir cercanía. El radio puede cruzar provincias. El catálogo y las localidades investigadas tienen límites que se informan.
 
 Render Free no ejecuta el worker continuo. GitHub Actions sirve para pruebas con demoras y cuotas. Cloud Run Jobs/Scheduler o un servidor supervisado pueden generar cargos. IA, búsqueda, base de datos y geocodificación tienen condiciones propias. Esta actualización no activa servicios pagos.
+
+## Comprobación de entrega
+
+CI [38744160825](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160825)
+aprobó 403 pruebas backend, 52 móviles, TypeScript, siete migraciones y 29 cloud.
+La prueba real [38744160735](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160735)
+falló antes de consultar proveedores por secretos de Actions ausentes; no
+comprobó ubicaciones remotas ni produjo ofertas reales acreditadas.

@@ -11,7 +11,7 @@ en el secreto del servidor `SUPABASE_SERVICE_ROLE_KEY`.
 ## Proyecto nuevo desde el celular
 
 La ruta más corta es ejecutar [install-new-project.sql](install-new-project.sql)
-una sola vez. El archivo reúne las **seis migraciones en orden**, sin
+una sola vez. El archivo reúne las **siete migraciones en orden**, sin
 usuarios de demostración ni credenciales. Usá un proyecto Supabase nuevo, dedicado
 a Trabajo YA, antes de registrar usuarios en la app.
 
@@ -180,7 +180,7 @@ Storage firmado, workers concurrentes y el proveedor real en cuentas de prueba.
 
 La exclusión mutua real también tiene un harness opcional con **24 procesos psql
 concurrentes**, dos búsquedas con zonas diferentes y reservas automáticas/manuales.
-Requiere las seis migraciones ya aplicadas a Supabase local, psql y conexión como
+Requiere las siete migraciones ya aplicadas a Supabase local, psql y conexión como
 administrador. Solo admite localhost, crea su propia cuenta ficticia aleatoria,
 comprueba exactamente diez reservas y cero recibos, y borra su fixture al terminar.
 No se ejecutó en este entorno porque no hay PostgreSQL instalado:
@@ -192,3 +192,14 @@ DATABASE_TEST_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npm ru
 
 Nunca conectarlo a producción. Esta prueba no abre Gmail, no consulta portales ni
 envía correos; comprueba las reservas atómicas de base de datos en sesiones reales.
+
+## Investigación web y ubicaciones (007)
+
+Una instalación que ya tiene 001–006 necesita aplicar **solo**
+`migrations/202610140007_web_research_and_locations.sql`. No volver a ejecutar
+el instalador inicial sobre sus tablas. La migración agrega provincia, país,
+radio y ubicación a las búsquedas existentes, y el historial privado
+`web_research_events`. El lector autenticado solo ve sus propios registros;
+la escritura requiere una reserva vigente del worker mediante RPC. No se
+almacenan claves, respuestas completas del proveedor ni CV en ese historial.
+La migración no activa programadores ni autoriza correos.

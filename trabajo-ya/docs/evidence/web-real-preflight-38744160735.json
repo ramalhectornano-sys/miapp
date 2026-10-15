@@ -1,0 +1,18 @@
+{
+  "status": "preflight_failed",
+  "test_passed": false,
+  "actual_tavily_calls": 0,
+  "tavily_response_count": 0,
+  "groq_response_count": 0,
+  "georef_response_count": 0,
+  "missing_environment_variables": [
+    "WEB_SEARCH_API_KEY",
+    "AI_API_KEY"
+  ],
+  "invalid_environment_variables": [],
+  "run_id": 38744160735,
+  "job_id": 116453283733,
+  "source_url": "https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160735",
+  "commit": "d008ba39b4a119c833230aaeaffb894591204810",
+  "reported_at": "2026-10-15T13:36:54Z"
+}
