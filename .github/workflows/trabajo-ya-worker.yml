@@ -45,7 +45,7 @@ jobs:
           AI_MODEL: ${{ vars.AI_MODEL || 'openai/gpt-oss-20b' }}
           WEB_SEARCH_PROVIDER: ${{ vars.WEB_SEARCH_PROVIDER }}
           WEB_SEARCH_API_KEY: ${{ secrets.WEB_SEARCH_API_KEY }}
-          WEB_SEARCH_MAX_QUERIES: ${{ vars.WEB_SEARCH_MAX_QUERIES || '2' }}
+          WEB_SEARCH_MAX_QUERIES: ${{ vars.WEB_SEARCH_MAX_QUERIES || '6' }}
           AUTHORIZED_JOB_FEEDS: ${{ vars.AUTHORIZED_JOB_FEEDS || '[]' }}
           GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}

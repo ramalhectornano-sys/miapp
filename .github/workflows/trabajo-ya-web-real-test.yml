@@ -1,0 +1,67 @@
+name: Prueba REAL de búsqueda web — Tavily y Groq
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_queries:
+        description: Máximo de consultas Tavily basic (1–12; consume créditos reales)
+        required: true
+        default: '8'
+        type: choice
+        options: ['6', '8', '10', '12']
+  push:
+    branches: [trabajo-ya-real]
+    paths:
+      - '.github/workflows/trabajo-ya-web-real-test.yml'
+      - 'trabajo-ya/backend/app/check_web_research.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trabajo-ya-web-real-test
+  cancel-in-progress: false
+
+jobs:
+  investigate:
+    if: github.repository_owner == 'ramalhectornano-sys'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Scheduled/manual workflows are visible on main, while this is the
+          # reviewed project branch. Never run the unrelated old main backend.
+          ref: trabajo-ya-real
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: trabajo-ya/backend/requirements.txt
+      - name: Instalar dependencias
+        run: python -m pip install -r trabajo-ya/backend/requirements.txt
+      - name: Investigar chofer en Rincón de los Sauces a 100 km
+        working-directory: trabajo-ya/backend
+        env:
+          WEB_SEARCH_PROVIDER: tavily
+          WEB_SEARCH_API_KEY: ${{ secrets.WEB_SEARCH_API_KEY }}
+          AI_PROVIDER: openai_compatible
+          AI_BASE_URL: ${{ vars.AI_BASE_URL || 'https://api.groq.com/openai/v1' }}
+          AI_MODEL: ${{ vars.AI_MODEL || 'openai/gpt-oss-20b' }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          # No Supabase, Gmail or user-token secrets are passed to this job.
+          MAX_QUERIES: ${{ inputs.max_queries || '8' }}
+        run: |
+          python -m app.check_web_research \
+            --role 'Chofer' --city 'Rincón de los Sauces' \
+            --province 'Neuquén' --country 'Argentina' --radius-km 100 \
+            --max-queries "$MAX_QUERIES" --max-pages 6 \
+            --output ../web-research-evidence/web-research-report.json
+      - name: Adjuntar informe público, incluso si faltaron claves o falló un proveedor
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prueba-web-real-rincon-100km-${{ github.run_id }}
+          path: trabajo-ya/web-research-evidence/web-research-report.*
+          if-no-files-found: error
+          retention-days: 30
