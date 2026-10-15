@@ -1,5 +1,25 @@
 # Validación de Trabajo YA
 
+## Investigación general 0.5.0: validación en curso
+
+La versión 0.5.0 añade investigación general Tavily → páginas públicas permitidas
+→ Groq → GeoRef, filtro geográfico, historial de peticiones y consulta desde
+Android. Se conservan los controles de consentimiento, destinatario verificado,
+límite diario y confirmación de Gmail. La migración 007 es nueva y todavía no
+se aplicó al proyecto alojado desde estas herramientas.
+
+Pasaron **393 pruebas backend locales** con HTTP interceptado. La prueba de
+arranque que necesita abrir un socket se ejecutará en CI, junto con TypeScript,
+las pruebas móviles, las siete migraciones y el contenedor. Estas pruebas no
+acreditan consultas reales de Tavily/Groq ni envíos.
+
+La prueba real está preparada en [PRUEBA_WEB_REAL](PRUEBA_WEB_REAL.md). Las claves
+están únicamente en Render según confirmó el propietario; no están disponibles
+en esta sesión. No se encontraron ofertas reales ni se llamó a Tavily usando
+esas claves durante la validación local. La entrega no se considera completa
+hasta obtener el informe real con las respuestas y enlaces verificables.
+
+
 ## Correos verificados y diagnóstico de permisos 0.4.1
 
 El código agrega consulta independiente a la API pública de Greenhouse, evidencia

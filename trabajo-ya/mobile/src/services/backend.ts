@@ -1,4 +1,4 @@
-import type { Application, ChatMessage, FoundJob, Health, JobSearch, SearchProposal } from '../types';
+import type { Application, ChatMessage, FoundJob, GeoCandidate, Health, JobSearch, ResearchEvent, SearchProposal } from '../types';
 import { requireSession } from './supabase';
 
 export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL?.trim().replace(/\/$/, '') ?? '';
@@ -20,7 +20,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     const data = await response.json().catch(() => null);
     if (!response.ok) {
       const detail = data?.detail;
-      throw new Error(typeof detail === 'string' ? detail : response.status === 401
+      throw new Error(typeof detail === 'string' ? detail : detail && typeof detail.message === 'string' ? detail.message : response.status === 401
         ? 'La sesión venció. Iniciá sesión nuevamente.' : 'El servidor no pudo completar la operación.');
     }
     return data as T;
@@ -44,6 +44,11 @@ export const runSearch = (id: string) => api<{ run_id: string; status: string; f
 export type SearchRun = { id: string; status: 'running' | 'completed' | 'error' | 'blocked'; started_at: string; finished_at: string | null; found_count: number; message: string | null };
 export const getRuns = (id: string) => api<SearchRun[]>(`/api/searches/${encodeURIComponent(id)}/runs`);
 export const getSearchResults = (id: string) => api<FoundJob[]>(`/api/searches/${encodeURIComponent(id)}/results`);
+export const getWebHistory = (id: string) => api<ResearchEvent[]>(`/api/searches/${encodeURIComponent(id)}/web-history`);
+export async function resolveLocations(location: { city: string; province: string; country: string }): Promise<{ locations: GeoCandidate[] }> {
+  const result = await api<{ locations: (Omit<GeoCandidate, 'label'> & { label?: string })[] }>('/api/locations/resolve', { method: 'POST', body: location });
+  return { locations: result.locations.map(candidate => ({ ...candidate, label: candidate.label || [candidate.city, candidate.province, candidate.country].filter(Boolean).join(', ') })) };
+}
 export const extractResume = (id: string) => api<{ resume_id: string; text: string; profile_saved: false; requires_confirmation: true; extraction_method: string; message: string }>(`/api/resumes/${encodeURIComponent(id)}/extract`, { method: 'POST' });
 export const startGoogleOAuth = () => api<{ authorization_url: string; message: string }>('/api/mail/google/start', { method: 'POST' });
 

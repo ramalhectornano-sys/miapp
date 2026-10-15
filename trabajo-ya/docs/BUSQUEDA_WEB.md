@@ -1,74 +1,67 @@
-# Búsqueda de vacantes en Internet
+# Investigación laboral general en Internet — 0.5.0
 
-Trabajo YA puede consultar un buscador web mediante Tavily y pasar los resultados
-a la IA configurada en el servidor. Busca por los puestos y ciudades guardados,
-extrae anuncios con citas comprobables y conserva su URL y fecha de consulta.
-La fuente JSON anterior sigue disponible para integraciones verificadas.
+El código consulta Tavily y usa Groq para analizar anuncios con evidencia. Las consultas generales combinan puesto, sinónimos acotados, localidad, provincia, país, empresas, consultoras, bolsas laborales y páginas de contratación. LinkedIn y ar.computrabajo.com son fuentes adicionales; no restringen la búsqueda a esos portales ni a Greenhouse.
 
-Esta integración necesita una clave privada de Tavily en el servidor. Crear una
-cuenta usando GitHub inicia sesión en Tavily; no conecta el repositorio ni Render.
-La clave se carga entre paneles privados, nunca en código, APK o este documento.
+**Estado real:** la implementación y las pruebas con proveedores simulados están preparadas. Todavía no se ejecutó ni acreditó la búsqueda solicitada de chofer en Rincón de los Sauces a 100 km. No hay enlaces de ofertas reales acreditadas para mostrar. Las claves están solamente en Render y el workflow de prueba no puede leerlas desde allí.
 
-## Activación en Render
+## Actualizar la instalación existente
 
-En el servicio existente **trabajo-ya-api → Environment** configurar:
+No recrear Supabase, Gmail, el servicio Render ni claves válidas.
+
+1. Si ya están instaladas las migraciones 001–006, aplicar solamente [202610140007_web_research_and_locations.sql](../supabase/migrations/202610140007_web_research_and_locations.sql) en Supabase → SQL Editor. No repetir 007 si ya está aplicada ni ejecutar otra vez el instalador inicial. Con CLI, supabase db push aplica las pendientes en orden.
+2. En **Render → trabajo-ya-api → Environment**, conservar los secretos y revisar:
 
 | Nombre | Valor |
 | --- | --- |
-| `WEB_SEARCH_PROVIDER` | `tavily` |
-| `WEB_SEARCH_API_KEY` | Clave privada de tu cuenta Tavily. |
-| `WEB_SEARCH_MAX_QUERIES` | `2` para las pruebas; máximo permitido `6`. |
+| WEB_SEARCH_PROVIDER | tavily |
+| WEB_SEARCH_API_KEY | Clave privada de Tavily, solo en el entorno. |
+| WEB_SEARCH_MAX_QUERIES | **6** normalmente; entre 1 y 12. |
+| AI_PROVIDER | openai_compatible |
+| AI_BASE_URL | https://api.groq.com/openai/v1 |
+| AI_MODEL | openai/gpt-oss-20b |
+| AI_API_KEY | Clave privada de Groq, solo en el entorno. |
+| GEOCODER_PROVIDER | georef_ar |
+| PUBLIC_PAGE_READS_ENABLED | true |
+| PUBLIC_PAGE_MAX_READS | 6; máximo 6. |
 
-Conservar Supabase, Groq y Google tal como están configurados. Elegir
-**Save, rebuild, and deploy** o **Manual Deploy → Deploy latest commit** y esperar
-**Live**. El backend de esta actualización identifica su versión como **0.4.1**
-en `https://trabajo-ya-api.onrender.com/health`. Un estado
-`web_search: configured_unverified` confirma configuración, no una consulta.
+El Blueprint anterior configuraba WEB_SEARCH_MAX_QUERIES=2: **Manual Deploy por sí solo no cambia ese valor existente**. Cambiarlo explícitamente en Environment.
 
-En Android, guardar una búsqueda con puesto y ciudad, abrir **Búsquedas → Ejecutar
-ahora** y consultar **Ver ofertas encontradas** y **Ver ejecuciones**. El servidor
-debe registrar una consulta completada o un error concreto. Si no encuentra
-anuncios con evidencia suficiente, puede devolver cero coincidencias; un fallo
-del proveedor nunca se convierte en una búsqueda vacía exitosa.
+3. Desplegar la rama **trabajo-ya-real** mediante **Manual Deploy → Deploy latest commit** y esperar **Live**. Después, https://trabajo-ya-api.onrender.com/health debe informar versión **0.5.0**. El endpoint describe configuración; no demuestra consultas, inferencias ni envíos.
+4. Instalar la APK 0.5.0 cuando su compilación y publicación estén confirmadas en [APK conectada](APK_REAL.md). Actualizar Android no despliega el servidor.
+5. En la app, comprobar localidad/provincia/país, elegir la coincidencia correcta y el radio, guardar y usar **Búsquedas → Ejecutar ahora**. Revisar **Ver ofertas encontradas**, **Consultas web** y el historial de ejecuciones.
 
-## Qué hace la IA
+## Qué investiga y comprueba
 
-Se envía a Tavily únicamente el puesto y la ciudad, sin el CV, DNI, foto o tokens
-del usuario. La IA recibe fragmentos de resultados, no permisos de envío. Debe
-citar empresa, puesto, ciudad y contratación explícita; valores inventados,
-anuncios cerrados, fechas vencidas y enlaces sustituidos se descartan. La ciudad
-no se deduce de la consulta si no figura en el anuncio. Los enlaces se abren
-solo al tocar **Ver oferta**. Esta ruta no visita automáticamente las páginas de los portales. La integración independiente de Greenhouse consulta únicamente su API pública para los enlaces oficiales reconocidos.
+El presupuesto normal es **6 consultas Tavily basic**, máximo absoluto **12**, y hasta **24 resultados** deduplicados e intercalados. Puede formular una consulta posterior acotada sobre un sitio observado. Las combinaciones omitidas y fallas se informan: no se promete cubrir todo Internet ni cada localidad del radio.
 
-Las consultas y los resultados están acotados. Con listas extensas de puestos
-y ciudades, una ejecución puede cubrir solo parte de las combinaciones y lo
-informa en su resultado. El buscador ofrece cobertura de Internet, sin prometer
-consultar todos los portales ni encontrar toda vacante existente.
+El lector visita hasta **6 páginas públicas**, incluyendo hasta dos enlaces de contratación del mismo editor. Comprueba destinos públicos, DNS, redirecciones y reglas de robots.txt. No atraviesa login, CAPTCHA ni redes privadas. La lectura automática de LinkedIn y Computrabajo está bloqueada; sus enlaces descubiertos mediante Tavily quedan para revisión humana. La lectura permitida no concede permiso para postularse ni para incumplir condiciones de terceros.
 
-## Correos y revisión
+Groq analiza texto y datos del editor cuando se pudo leer; en otros casos solo hay fragmentos del buscador. Empresa, puesto, contratación, lugar, requisitos y fechas requieren citas. Se descartan anuncios cerrados/vencidos y datos sin evidencia. Las fechas ausentes no se inventan. Una página no comprobable conserva **pending_review**. No se envían CV, foto, DNI ni tokens OAuth a Tavily.
 
-Un resultado web es un hallazgo para revisar: no verifica que el correo exista,
-que pertenezca a la empresa, que la oferta siga abierta o que publique un canal para recibir CV. Conserva `recipient_verified=false` y no habilita consentimiento
-automático. Se puede abrir el anuncio original y seguir su proceso de postulación.
-La fuente independiente **Ofertas verificadas de Greenhouse** comprueba anuncios publicados mediante su API pública y exige un canal explícito para enviar CV; se vuelve a consultar antes de cada envío. No cubre todos los portales ni garantiza vacantes aptas en tu ciudad. Las postulaciones por correo requieren además Gmail vinculado y autorización específica. Ver [activación y prueba de correos](ACTIVAR_CORREOS.md).
-Se conservan el máximo global de 10 intentos diarios y las 72 horas entre
-recordatorios autorizados; ningún envío se confirma sin comprobante de Gmail.
+## Ubicación y radio
 
-## Ejecución con el teléfono apagado
+GeoRef verifica localidades, identificadores y centroides de **Argentina**. Otros países necesitan un proveedor adicional. La app exige elegir la localidad comprobada. Se admiten radios enteros de 0 a 1000 km; 0 significa la localidad elegida. Haversine calcula distancia aérea aproximada entre centroides, no kilómetros por ruta ni desde la dirección exacta del empleo.
 
-El botón Ejecutar ahora no inicia un programador permanente. Para pruebas está
-preparado el [worker con GitHub Actions](WORKER_GITHUB.md), apagado por defecto,
-sin garantía de puntualidad. Usa la misma base y secretos del servidor y ejecuta
-una búsqueda pendiente por lote. Para producción está la ruta de
-[Cloud Run Jobs y Scheduler](../deploy/google-cloud/README.md), con facturación
-y posibles cargos. Render Free no incluye el worker continuo de esta app.
+El centro y la localidad publicada se verifican independientemente. Las ofertas confirmadas fuera del radio se excluyen. Ubicaciones ambiguas, país ausente en el anuncio o fallas geográficas quedan pendientes; no se heredan datos de la consulta para fingir cercanía. Un radio puede cruzar provincias. Ver [alcance geográfico](ESTADO_UBICACIONES_Y_KM.md).
 
-Tavily ofrece actualmente 1.000 créditos gratuitos mensuales sin tarjeta.
-Una consulta básica consume un crédito; el cupo se comparte entre todos los
-usuarios del servidor. No se activa PAYGO desde el código. Al agotarse el cupo,
-se registra un error hasta que el proveedor vuelva a permitir consultas.
-La clave y las condiciones del servicio se administran en tu cuenta Tavily.
+## Historial y prueba real
 
-Fuentes: [API oficial](https://docs.tavily.com/documentation/api-reference/endpoint/search),
-[créditos y precios](https://docs.tavily.com/documentation/api-credits),
-[condiciones](https://www.tavily.com/terms).
+La migración 007 añade web_research_events, con lectura privada por usuario y registros de servidor asociados a la ejecución reclamada. Conserva consultas, horas, proveedor, HTTP, fuentes, errores y recibos cuando existen. Una operación iniciada no demuestra una respuesta. No almacena claves, headers privados, prompts completos ni tokens.
+
+La prueba independiente se ejecuta desde [Actions → Prueba REAL de búsqueda web — Tavily y Groq](https://github.com/ramalhectornano-sys/miapp/actions/workflows/trabajo-ya-web-real-test.yml). Antes, copiar las claves privadas a [miapp → Settings → Secrets and variables → Actions](https://github.com/ramalhectornano-sys/miapp/settings/secrets/actions) con los nombres exactos **WEB_SEARCH_API_KEY** y **AI_API_KEY**. No pegarlas en el chat ni código.
+
+El escenario es Chofer/Rincón de los Sauces/Neuquén/Argentina/100 km, con 8 consultas por defecto. Genera JSON y Markdown con comprobantes y enlaces observados, sin acceder a Supabase ni Gmail. Si faltan claves, informa preflight_failed y cero llamadas. Si falla o no demuestra una oportunidad con enlace y ubicación, no declara la prueba terminada. Ver [PRUEBA_WEB_REAL](PRUEBA_WEB_REAL.md).
+
+## Correo y funcionamiento con el celular apagado
+
+Descubrir o leer un anuncio no verifica un destinatario. Los hallazgos web generales siguen para revisión. La integración independiente de Greenhouse exige anuncio vigente, canal explícito para recibir CV y comprobación antes de enviar. Los feeds autorizados conservan su contrato. Siempre se requiere Gmail vinculado, CV y consentimiento específico vigente.
+
+**MAIL_SEND_ENABLED permanece false hasta una prueba controlada.** No activarlo para ocultar un aviso. Se mantienen 10 intentos globales por usuario/día y 72 horas entre recordatorios autorizados. Ningún correo figura enviado sin confirmación del proveedor. Ver [ACTIVAR_CORREOS](ACTIVAR_CORREOS.md).
+
+Ejecutar ahora no activa un programador. Render Free puede dormir y no incluye el worker continuo de esta app. El [worker GitHub Actions](WORKER_GITHUB.md) está preparado y apagado por defecto, requiere secretos/variables propios e intenta ejecutar cada 15 minutos, con posibles demoras. Para disponibilidad supervisada están [Cloud Run Jobs/Scheduler](../deploy/google-cloud/README.md) o [servidor propio](../deploy/README.md), con posibles costos. El teléfono puede estar apagado cuando worker y programador operan; su activación real todavía debe comprobarse.
+
+## Cupos
+
+Tavily basic consume créditos reales y el cupo se comparte entre usuarios. Seis consultas diarias consumen hasta 180 créditos en 30 días por búsqueda, sin contar pruebas. Groq, GeoRef, GitHub Actions, Supabase y hosting tienen límites propios. El código no activa PAYGO ni crea servicios pagos. Revisar precios antes de ampliar frecuencia o usuarios.
+
+Fuentes: [Tavily API](https://docs.tavily.com/documentation/api-reference/endpoint/search), [créditos](https://docs.tavily.com/documentation/api-credits), [condiciones](https://www.tavily.com/terms), [GeoRef](https://www.argentina.gob.ar/georef).

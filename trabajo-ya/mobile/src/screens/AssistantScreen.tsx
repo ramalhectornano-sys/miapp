@@ -4,34 +4,39 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ChatMessage, Profile, SearchProposal } from '../types';
 import { Badge, BrandMark, Button, Card, Divider } from '../components/ui';
 import { useTheme } from '../theme/theme';
+import GeographyFields, { type ResolveLocation } from '../components/GeographyFields';
+import { radiusLabel, validRadius } from '../state/geography';
 
-interface Props { profile: Profile; messages: ChatMessage[]; busy: boolean; onSend: (text: string) => Promise<void>; onSaveProposal: (messageId: string, proposal: SearchProposal) => Promise<void>; demo: boolean }
+interface Props { profile: Profile; messages: ChatMessage[]; busy: boolean; onSend: (text: string) => Promise<void>; onSaveProposal: (messageId: string, proposal: SearchProposal) => Promise<void>; onResolveLocation: ResolveLocation; demo: boolean }
 const prompts = [
-  { icon: 'search-outline' as const, label: 'Buscar un empleo', text: 'Buscá empleos de chofer en Rincón de los Sauces todos los días a las 9 de la mañana. Enviá mi currículum desde mi correo a destinatarios verificados.' },
+  { icon: 'search-outline' as const, label: 'Buscar un empleo', text: 'Buscá empleos de chofer en Rincón de los Sauces, Neuquén, Argentina, a 100 kilómetros, todos los días a las 9 de la mañana. Enviá mi currículum desde mi correo solo a destinatarios verificados y con mi autorización.' },
   { icon: 'document-text-outline' as const, label: 'Mejorar mi perfil', text: 'Ayudame a mejorar mi perfil profesional usando únicamente los datos de mi currículum.' },
   { icon: 'calendar-outline' as const, label: 'Crear una búsqueda', text: 'Quiero configurar una búsqueda semanal de empleo. Ayudame a elegir el puesto, la ciudad y el horario.' },
 ];
-function SearchPreview({ proposal, saved, busy, onSave }: { proposal: SearchProposal; saved?: boolean; busy: boolean; onSave: () => void }) {
+function SearchPreview({ proposal, saved, busy, onSave, onResolveLocation, demo }: { proposal: SearchProposal; saved?: boolean; busy: boolean; onSave: (value: SearchProposal) => void; onResolveLocation: ResolveLocation; demo: boolean }) {
   const { colors } = useTheme();
+  const [draft, setDraft] = useState<SearchProposal>(() => ({ ...proposal, country: proposal.country || 'Argentina', radius_km: proposal.radius_km ?? 0 }));
   return <View style={[styles.proposal, { backgroundColor: colors.bg, borderColor: colors.border }]}>
     <View style={styles.row}><View style={[styles.smallIcon, { backgroundColor: colors.primarySoft }]}><Ionicons name="calendar-outline" size={17} color={colors.primary} /></View><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>{proposal.title}</Text><Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>Configuración propuesta</Text></View><Badge label={saved ? 'Guardada' : 'Para confirmar'} tone={saved ? 'success' : 'warning'} /></View>
     <View style={{ gap: 11, marginTop: 18 }}>
       <Detail icon="briefcase-outline" label="Puesto" value={proposal.role} />
-      <Detail icon="location-outline" label="Ciudad" value={proposal.city} />
+      <Detail icon="location-outline" label="Localidad" value={[draft.city, draft.province, draft.country].filter(Boolean).join(', ')} />
+      <Detail icon="navigate-outline" label="Radio" value={radiusLabel(draft.radius_km)} />
       <Detail icon="time-outline" label="Frecuencia" value={`${proposal.frequency === 'daily' ? 'Todos los días' : 'Cada semana'} · ${proposal.time}`} />
       <Detail icon="globe-outline" label="Zona horaria" value={proposal.timezone} />
     </View>
+    {!saved ? <View style={{ marginTop: 18 }}><GeographyFields proposal={draft} onChange={patch => setDraft(current => ({ ...current, ...patch }))} onResolve={onResolveLocation} busy={busy} demo={demo} /></View> : null}
     <Divider />
     <Text style={{ fontSize: 11, lineHeight: 18, color: colors.muted, marginBottom: 14 }}>{proposal.mode === 'automatic' ? 'El envío automático requiere un consentimiento expreso, un correo conectado y una fuente que verifique destinatarios. Guardar esta propuesta no confirma una búsqueda ni un envío.' : 'Cuando una búsqueda encuentre vacantes, podrás revisar las postulaciones y autorizar cada envío.'}</Text>
     {proposal.mode === 'automatic' && !saved ? <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 18, marginBottom: 15 }}>Después de guardar, confirmás el CV, la cuenta de correo, las fuentes y el vencimiento. La ejecución dependerá de fuentes conectadas y tareas activas del servidor.</Text> : null}
-    <Button label={saved ? 'Búsqueda guardada' : 'Confirmar y guardar búsqueda'} icon={saved ? 'checkmark-circle-outline' : 'checkmark-outline'} onPress={onSave} disabled={saved || busy} variant={saved ? 'secondary' : 'primary'} />
+    <Button label={saved ? 'Búsqueda guardada' : 'Confirmar y guardar búsqueda'} icon={saved ? 'checkmark-circle-outline' : 'checkmark-outline'} onPress={() => onSave(draft)} disabled={saved || busy || !validRadius(draft.radius_km) || !(draft.country || '').trim() || (!demo && !draft.location_id)} variant={saved ? 'secondary' : 'primary'} />
   </View>;
 }
 function Detail({ icon, label, value }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; value: string }) {
   const { colors } = useTheme();
   return <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9 }}><Ionicons name={icon} size={14} color={colors.muted} style={{ marginTop: 1 }} /><Text style={{ fontSize: 11, width: 83, color: colors.muted }}>{label}</Text><Text style={{ fontSize: 11, color: colors.text, flex: 1 }}>{value}</Text></View>;
 }
-export default function AssistantScreen({ profile, messages, busy, onSend, onSaveProposal, demo }: Props) {
+export default function AssistantScreen({ profile, messages, busy, onSend, onSaveProposal, onResolveLocation, demo }: Props) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const desktop = width >= 1120;
@@ -54,7 +59,7 @@ export default function AssistantScreen({ profile, messages, busy, onSend, onSav
               {messages.length === 0 ? <View style={{ gap: 12 }}><Text style={{ fontSize: 15, lineHeight: 25, color: colors.text }}>Estoy acá para ayudarte a encontrar tu próximo trabajo.</Text><Text style={{ fontSize: 13, lineHeight: 23, color: colors.muted }}>Contame qué puesto buscás, en qué ciudad y cuándo querés que realice la búsqueda. Podemos armar un plan juntos.</Text></View> : messages.map(message => <View key={message.id} style={[styles.message, message.role === 'user' && { alignItems: 'flex-end' }]}>
                 <View style={[styles.messageLabel, { flexDirection: message.role === 'user' ? 'row-reverse' : 'row' }]}>{message.role === 'assistant' ? <Ionicons name="sparkles-outline" size={12} color={colors.primary} /> : <Ionicons name="person-outline" size={12} color={colors.muted} />}<Text style={{ fontSize: 10, fontWeight: '600', color: colors.muted }}>{message.role === 'assistant' ? 'TRABAJO YA' : 'VOS'}</Text>{message.demo ? <Text style={{ fontSize: 9, color: colors.warning }}>DEMO</Text> : null}</View>
                 <View style={[message.role === 'user' ? styles.userBubble : styles.assistantBubble, { backgroundColor: message.role === 'user' ? colors.primarySoft : 'transparent' }]}><Text selectable style={{ color: colors.text, fontSize: 13, lineHeight: 23 }}>{message.content}</Text></View>
-                {message.proposal ? <SearchPreview proposal={message.proposal} saved={message.saved} busy={busy} onSave={() => void onSaveProposal(message.id, message.proposal!)} /> : null}
+                {message.proposal ? <SearchPreview proposal={message.proposal} saved={message.saved} busy={busy} onResolveLocation={onResolveLocation} demo={demo} onSave={proposal => void onSaveProposal(message.id, proposal)} /> : null}
               </View>)}
               {busy ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><ActivityIndicator color={colors.primary} size="small" /><Text style={{ color: colors.muted, fontSize: 11 }}>Un momento, estoy trabajando en tu solicitud…</Text></View> : null}
             </View>

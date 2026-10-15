@@ -24,6 +24,8 @@ def next_occurrence(search: dict, now: datetime | None = None) -> datetime:
 
 def proposal_row(proposal, user_id):
     row = {"user_id": user_id, "name": proposal.title, "roles": [proposal.role], "cities": [proposal.city],
+        "province": proposal.province, "country": proposal.country, "radius_km": proposal.radius_km,
+        "research_mode": "general", "location": None,
         "frequency": proposal.frequency, "schedule_time": proposal.time, "timezone": proposal.timezone,
         "weekdays": proposal.weekdays, "status": "enabled", "auto_apply": False,
         "preferred_resume_id": str(proposal.resume_id) if proposal.resume_id else None}

@@ -15,12 +15,29 @@ class SearchProposal(StrictModel):
     title: str = Field(min_length=1, max_length=160)
     role: str = Field(min_length=1, max_length=120)
     city: str = Field(min_length=1, max_length=120)
+    province: str | None = Field(default=None, max_length=120)
+    country: str = Field(default="Argentina", min_length=1, max_length=120)
+    radius_km: int = Field(default=0, ge=0, le=1000, strict=True)
+    location_id: str | None = Field(default=None, min_length=1, max_length=100)
     frequency: Literal["daily", "weekly"] = "daily"
     time: str = "09:00"
     timezone: str = "America/Argentina/Buenos_Aires"
     weekdays: list[int] = Field(default_factory=lambda: [1, 2, 3, 4, 5, 6, 7], min_length=1, max_length=7)
     mode: Literal["manual", "automatic"] = "manual"
     resume_id: UUID | None = None
+
+    @field_validator("title", "role", "city", "country")
+    @classmethod
+    def required_text(cls, value):
+        value = value.strip()
+        if not value:
+            raise ValueError("Completá los datos de la búsqueda.")
+        return value
+
+    @field_validator("province", "location_id")
+    @classmethod
+    def optional_text(cls, value):
+        return value.strip() or None if value is not None else None
 
     @field_validator("time")
     @classmethod

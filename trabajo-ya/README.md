@@ -1,76 +1,24 @@
 # Trabajo YA
 
-El proyecto usa el Supabase existente y el backend **https://trabajo-ya-api.onrender.com**.
-La APK conectada **0.4.1 / 8** está publicada para pruebas:
-[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.1-real/Trabajo-YA-0.4.1-real.apk).
-La [compilación 38609341591](https://github.com/ramalhectornano-sys/miapp/actions/runs/38609341591) verificó firma, nombre, paquete y versión. Se conserva el certificado de prueba; instalar como actualización sin desinstalar.
+El código **0.5.0 / Android 9** incorpora investigación laboral general con Tavily/Groq, geografía de Argentina, radio aéreo e historial de consultas. Las consultas investigan sitios públicos de empresas, consultoras, bolsas y publicaciones; LinkedIn y ar.computrabajo.com son fuentes adicionales, sin limitar el conjunto de sitios.
 
-Las capturas del usuario muestran su CV elegido y Gmail conectado. También
-muestran envíos desactivados y la fuente web sin permiso para correo: esas
-condiciones impedían autorizar y ejecutar la automatización. Se añadió una
-integración independiente con la API pública de Greenhouse, que admite correo
-solo cuando una oferta vigente publica expresamente ese canal para recibir CV.
-Las ofertas de otros portales y las que requieren formularios quedan para
-revisión. No garantiza vacantes aptas en una ciudad ni recepción en el buzón.
-Ver [activación de correos](docs/ACTIVAR_CORREOS.md).
+**La prueba real solicitada de chofer en Rincón de los Sauces, Neuquén, Argentina, a 100 km todavía no fue ejecutada ni aprobada.** No hay ofertas reales acreditadas ni comprobantes de Tavily para mostrar. Las claves están únicamente en Render; las pruebas del código usan proveedores simulados. Se ejecutaron **393 pruebas backend locales sin la prueba de socket del contenedor**, sin que eso demuestre actividad real de los proveedores.
 
-La actualización necesita **Render → Manual Deploy → Deploy latest commit**.
-Compilar Android no despliega ese backend ni activa `MAIL_SEND_ENABLED`, el
-programador o permisos de cada búsqueda. Las
-[búsquedas web](docs/BUSQUEDA_WEB.md) y el
-[worker de pruebas](docs/WORKER_GITHUB.md) tienen pasos separados. País, provincia
-y radio en kilómetros siguen [pendientes](docs/ESTADO_UBICACIONES_Y_KM.md).
+La instalación conserva Supabase, CV, Gmail y el backend https://trabajo-ya-api.onrender.com. Para actualizar: aplicar solamente [migración 007](supabase/migrations/202610140007_web_research_and_locations.sql) si 001–006 ya están instaladas, cambiar **WEB_SEARCH_MAX_QUERIES=6 en Render Environment** si antes quedó en 2 y desplegar la rama **trabajo-ya-real**. Manual Deploy no cambia por sí solo las variables existentes. No repetir el instalador inicial ni recrear cuentas, documentos o claves.
 
-Las pruebas del código usan proveedores interceptados. No acreditan una consulta
-real de Tavily, respuesta real del modelo, tarea programada o entrega de Gmail
-en la cuenta del usuario. En **Mis postulaciones** solo se muestra enviado con
-confirmación del proveedor. La guía de la
-[APK conectada](docs/APK_REAL.md) describe instalación y pruebas.
+El presupuesto normal es de **6 consultas Tavily basic**, máximo **12**, con hasta **24 resultados** y **6 páginas públicas** por ejecución. Las páginas restringidas o no verificables quedan pendientes. GeoRef cubre Argentina; otros países requieren proveedor adicional. La distancia es aérea entre centroides, no por carretera ni desde la dirección exacta del empleo. Ver [búsqueda web](docs/BUSQUEDA_WEB.md) y [alcance geográfico](docs/ESTADO_UBICACIONES_Y_KM.md).
 
-Para preparar otra instalación desde el celular, ver [EMPEZAR](EMPEZAR.md),
-[IA real con Groq](docs/IA_REAL.md) y
-[acceso sin contraseña](docs/AUTH_SETUP.md). El esquema de redirección sigue siendo
-`autoempleoia://auth/callback`; no hay que recrear servicios o claves ya válidos.
-La [APK 0.3.0](docs/APK_GITHUB.md) es la demostración anterior.
+Para la prueba real, guardar **WEB_SEARCH_API_KEY** y **AI_API_KEY** en [miapp → Settings → Secrets and variables → Actions](https://github.com/ramalhectornano-sys/miapp/settings/secrets/actions), nunca en código ni chat. Ejecutar [Prueba REAL de búsqueda web — Tavily y Groq](https://github.com/ramalhectornano-sys/miapp/actions/workflows/trabajo-ya-web-real-test.yml) y descargar su informe. Sin esos secretos, el test falla explícitamente con cero llamadas. Ver [comprobantes y pasos desde el celular](docs/PRUEBA_WEB_REAL.md).
 
-Primera versión de una aplicación Android en español para preparar el perfil
-profesional, conversar con un asistente y programar búsquedas laborales desde el
-servidor. Incluye React Native con Expo/TypeScript, FastAPI y migraciones Supabase.
-Las cuatro pestañas son **Asistente IA**, **Mis postulaciones**, **Búsquedas
-automáticas** y **Mi perfil**, con componentes compartidos. Cada persona puede
-elegir tema claro, oscuro o el del dispositivo; la preferencia se conserva.
+La publicación y compilación de la APK nueva deben comprobarse en [APK conectada](docs/APK_REAL.md); el código preparado no acredita por sí solo un nuevo binario. La APK anterior 0.4.1 no contiene las pantallas geográficas de 0.5.0. El callback Android conserva **autoempleoia://auth/callback** y el paquete **com.trabajoya.autoempleoia**.
 
-El acceso y el registro usan un código enviado por correo, sin contraseña. Las
-postulaciones diarias se envían desde la cuenta OAuth de cada usuario después
-de una autorización inicial para la búsqueda, sin aprobar cada mensaje mientras
-el permiso siga vigente. La versión 0.3 limita a **10 correos por usuario y día**
-entre todas sus búsquedas y envíos manuales, y permite autorizar recordatorios
-al mismo correo cada **72 horas desde el último envío confirmado**. Hace falta
-mantener el servidor configurado y disponible.
+Guardar un horario no activa tareas. Render Free puede dormir y no incluye el worker continuo. El [worker GitHub Actions](docs/WORKER_GITHUB.md) está preparado, apagado por defecto y requiere secretos propios; intenta ejecutar cada 15 minutos con demoras posibles. [Cloud Run Jobs/Scheduler](deploy/google-cloud/README.md) y [servidor propio](deploy/README.md) son alternativas con posibles costos. Hay que comprobar una ejecución real antes de afirmar que las búsquedas periódicas operan.
 
-La demostración es local y está identificada. No consulta portales, no conecta
-cuentas de correo y no envía postulaciones. El modo real usa Supabase y la API;
-las tareas automáticas requieren además worker y proveedores configurados.
-La APK conectada ya está compilada; queda comprobar sus funciones con una cuenta
-real desde Android.
+La búsqueda general no verifica destinatarios. Correo automático exige fuente verificadora, Gmail, CV, consentimiento vigente y servicio habilitado. Se conservan 10 intentos totales por usuario/día y 72 horas entre recordatorios. **MAIL_SEND_ENABLED permanece false hasta una prueba controlada.** Ninguna postulación aparece enviada sin recibo del proveedor; tampoco se ha acreditado una entrega real del usuario. Ver [activar correos](docs/ACTIVAR_CORREOS.md).
 
-Para preparar otra instalación de pruebas, consultar
-[Supabase Free y Render Free](deploy/render/README.md). Para ejecutar las tareas
-automáticas o usar un servidor propio, consultar
-[pruebas desde el celular con Google Cloud](deploy/google-cloud/README.md),
-[servidor propio con Docker](deploy/README.md) y
-[compilación Android](docs/ANDROID_BUILD.md). Incluyen las cuentas que hay que
-crear, el despliegue con Ollama/API/worker/HTTPS y un APK en modo real separado de
-la demostración. La infraestructura de worker y programador todavía no se activó
-en la instalación actual de Render.
+La aplicación usa Expo/React Native/TypeScript, FastAPI y Supabase con documentos privados y RLS. Sus cuatro pestañas son Asistente IA, Mis postulaciones, Búsquedas automáticas y Mi perfil, con tema claro, oscuro o del dispositivo. La propuesta del chat debe confirmarse; no demuestra una ejecución ni concede permisos de correo.
 
-Con las variables cargadas, comprobar la configuración sin imprimir secretos:
-
-```bash
-python scripts/check_runtime.py --mode real --profile production
-```
-
-Este control revisa variables; no confirma conexión, migraciones ni envíos reales.
+Para actualizar desde el celular, seguir [EMPEZAR](EMPEZAR.md). La [APK 0.3.0](docs/APK_GITHUB.md) es una demostración histórica, no la aplicación conectada actual.
 
 ## Logo e icono
 
@@ -120,7 +68,7 @@ reiniciar Metro; usar `npx expo start --clear` si mantiene una configuración an
 
 Estos pasos se conservan para una instalación nueva o para desarrollo local.
 No hace falta volver a crear el Supabase ni el servicio Render actuales. Antes
-de usar la app, confirmar las seis migraciones y las plantillas OTP en el proyecto
+de usar la app, confirmar las siete migraciones, incluida 007, y conservar el acceso que ya funciona en el proyecto
 existente; no repetir el instalador de proyecto nuevo sobre una base instalada.
 
 1. Crear un proyecto Supabase propio, o instalar Supabase CLI/Docker y ejecutar
@@ -132,8 +80,8 @@ existente; no repetir el instalador de proyecto nuevo sobre una base instalada.
    `supabase db push` aplica las pendientes en orden. No exponer el schema `private`
    en la API. Los permisos anteriores conservan los envíos iniciales; para habilitar
    recordatorios hay que renovar expresamente el permiso de cada búsqueda.
-3. Configurar Email OTP y SMTP siguiendo [acceso sin contraseña](docs/AUTH_SETUP.md).
-   Las plantillas deben mostrar `{{ .Token }}`, para registro y para ingreso.
+3. Para otra instalación, configurar el acceso siguiendo [acceso sin contraseña](docs/AUTH_SETUP.md).
+   El enlace predeterminado no requiere editar plantillas. Si se elige OTP numérico con SMTP propio, las plantillas deben mostrar `{{ .Token }}`, para registro y para ingreso.
    La configuración local incluye códigos de 6 dígitos válidos durante 10 minutos;
    las opciones y plantillas del proyecto remoto se configuran en su Dashboard.
    `supabase/config.toml` conserva `autoempleoia://auth/callback` para la app.
@@ -204,9 +152,7 @@ configurable. Una propuesta del chat debe confirmarse; no concede permisos de en
 
 `AUTHORIZED_JOB_FEEDS` admite feeds HTTPS propios o autorizados. Sin fuentes
 configuradas, el sistema informa el bloqueo; no registra una búsqueda como exitosa.
-La compatibilidad inicial compara ciudad y texto del puesto. No hay scraping de
-portales ni una integración universal con bolsas de empleo. Los proveedores que
-requieren interacción humana conservan la postulación pendiente para revisión.
+La investigación general usa consultas variadas, evidencia de la publicación y verificación geográfica de Argentina. El lector público es acotado y respeta restricciones de acceso; no automatiza páginas de LinkedIn ni Computrabajo. Los proveedores que requieren interacción humana conservan la postulación pendiente para revisión.
 
 Google OAuth/Gmail está implementado como adaptador configurable. Registrar un
 cliente OAuth web, habilitar Gmail API, configurar el callback exacto y usuarios

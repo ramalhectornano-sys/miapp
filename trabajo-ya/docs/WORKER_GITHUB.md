@@ -49,7 +49,7 @@ URL públicas del proyecto se leen de `mobile/services.public.json`. No editar
    | `WORKER_ENABLED` | Primero `false`. Usá `true` sólo al estar lista la configuración para probar. |
    | `MAIL_SEND_ENABLED` | Primero `false`. Habilitar el worker no habilita correos. |
    | `WEB_SEARCH_PROVIDER` | `tavily` para búsqueda web; vacío si se usarán sólo feeds autorizados. |
-   | `WEB_SEARCH_MAX_QUERIES` | `2` para las pruebas. El servidor admite de 1 a 6 consultas por búsqueda. |
+   | `WEB_SEARCH_MAX_QUERIES` | `6` para investigación variada; de 1 a 12. Cada consulta basic consume un crédito del cupo compartido. |
    | `AUTHORIZED_JOB_FEEDS` | `[]` si se usa sólo búsqueda web, o la misma lista JSON de feeds autorizados de Render. |
    | `GOOGLE_CLIENT_ID` | El ID público del mismo cliente web de Render; requerido para envíos. |
    | `AI_BASE_URL` | La misma URL del proveedor de IA de Render. Por defecto: `https://api.groq.com/openai/v1`. |

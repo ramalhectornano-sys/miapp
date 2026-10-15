@@ -15,6 +15,7 @@ try {
     '202610120004_automatic_sending_policy.sql': ['security.sql', 'automatic_sending.sql'],
     '202610120005_daily_budget_and_followups.sql': ['daily_budget_and_followups.sql'],
     '202610130006_persistent_primary_resume.sql': ['primary_resume.sql'],
+    '202610140007_web_research_and_locations.sql': ['web_research.sql'],
   };
   for (const name of migrations) {
     await database.exec(await readFile(path.join(directory, '../migrations', name), 'utf8'));

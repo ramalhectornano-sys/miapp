@@ -11,6 +11,7 @@ import { ThemeProvider, useTheme } from './src/theme/theme';
 import { BrandMark, Button, IconButton } from './src/components/ui';
 import ConsentModal from './src/components/ConsentModal';
 import JobResultsModal from './src/components/JobResultsModal';
+import WebHistoryModal from './src/components/WebHistoryModal';
 import AssistantScreen from './src/screens/AssistantScreen';
 import ApplicationsScreen from './src/screens/ApplicationsScreen';
 import SearchesScreen from './src/screens/SearchesScreen';
@@ -20,9 +21,10 @@ import { initialDemoState, demoChat, demoSearch } from './src/state/demo';
 import { config } from './src/config';
 import { getSession, observeAuthRefresh, requestEmailCode, verifyEmailCode, signOut, supabase, SUPABASE_CONFIGURED, authLinkHandler } from './src/services/supabase';
 import { observeAuthLinkEvents } from './src/services/authLinks';
-import { chat, createSearch, updateSearch, runSearch, extractResume, startGoogleOAuth, sendApplication, stopApplicationFollowups, deleteAccount, getRuns, getSearchResults, type SearchRun } from './src/services/backend';
+import { chat, createSearch, updateSearch, runSearch, extractResume, startGoogleOAuth, sendApplication, stopApplicationFollowups, deleteAccount, getRuns, getSearchResults, getWebHistory, resolveLocations, type SearchRun } from './src/services/backend';
 import { loadState, saveProfile, uploadResume, deleteResume, getResumeUrl, uploadPhoto, getPhotoUrl, makeDefaultResume } from './src/services/data';
-import type { AppState, ChatMessage, FoundJob, JobSearch, Notice, Profile, Resume, SearchProposal, Tab } from './src/types';
+import { sameSearchConfiguration } from './src/state/geography';
+import type { AppState, ChatMessage, FoundJob, JobSearch, Notice, Profile, ResearchEvent, Resume, SearchProposal, Tab } from './src/types';
 
 const navigation: { key: Tab; label: string; short: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
   { key: 'assistant', label: 'Asistente IA', short: 'Asistente IA', icon: 'chatbubble-ellipses-outline' },
@@ -34,12 +36,7 @@ const navigation: { key: Tab; label: string; short: string; icon: React.Componen
 const emptyState = (): AppState => ({ profile: { full_name: '', city: '', headline: '', photo_path: null, experiences: [], credentials: [], references: [] }, resumes: [], searches: [], applications: [], messages: [] });
 const uniqueId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 const errorText = (caught: unknown) => caught instanceof Error ? caught.message : 'No pudimos completar la operación. Intentá nuevamente.';
-const sameSearch = (search: JobSearch, proposal: SearchProposal) => search.name === proposal.title
-  && search.roles.includes(proposal.role) && search.cities.includes(proposal.city)
-  && search.schedule_time.slice(0, 5) === proposal.time && search.timezone === proposal.timezone
-  && search.frequency === proposal.frequency
-  && [...search.weekdays].sort().join(',') === [...proposal.weekdays].sort().join(',')
-  && (!proposal.resume_id || search.preferred_resume_id === proposal.resume_id);
+const sameSearch = sameSearchConfiguration;
 
 function Workspace() {
   const { colors, dark, toggle, ready: themeReady } = useTheme();
@@ -53,6 +50,7 @@ function Workspace() {
   const [permissionsId, setPermissionsId] = useState<string | null>(null);
   const [executionHistory, setExecutionHistory] = useState<{ name: string; runs: SearchRun[] } | null>(null);
   const [jobResults, setJobResults] = useState<{ name: string; jobs: FoundJob[] } | null>(null);
+  const [webHistory, setWebHistory] = useState<{ name: string; events: ResearchEvent[] } | null>(null);
   const [loading, setLoading] = useState(!config.demo && SUPABASE_CONFIGURED);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -73,7 +71,7 @@ function Workspace() {
       if (!mounted.current) return;
       authRevision++;
       if (currentScope.current.userId !== nextSession?.user.id && !currentScope.current.demo) {
-        setData(emptyState()); setPhotoUrl(undefined); setExtraction(null); setPermissionsId(null); setExecutionHistory(null); setJobResults(null); setLoading(!!nextSession);
+        setData(emptyState()); setPhotoUrl(undefined); setExtraction(null); setPermissionsId(null); setExecutionHistory(null); setJobResults(null); setWebHistory(null); setLoading(!!nextSession);
       }
       currentScope.current = { ...currentScope.current, userId: nextSession?.user.id };
       if (!nextSession) setLoading(false);
@@ -117,17 +115,17 @@ function Workspace() {
     setBusy(true);
     setNotice(null);
     try { return await action(); }
-    catch (caught) { setNotice({ text: errorText(caught), kind: 'error' }); throw caught; }
+    catch (caught) { if (stillCurrent()) setNotice({ text: errorText(caught), kind: 'error' }); throw caught; }
     finally { operationLock.current = false; setBusy(false); }
   };
   // These callbacks are invoked by buttons that do not await failures.
   const safely = async (action: () => Promise<unknown>) => { try { await perform(action); } catch { /* The notice contains the actual error. */ } };
   const message = (text: string, kind: Notice['kind'] = 'success') => setNotice({ text, kind });
 
-  const enterDemo = () => { setDemo(true); setData(initialDemoState()); setTab('assistant'); setPhotoUrl(undefined); localDocuments.current.clear(); setNotice(null); setLoading(false); };
+  const enterDemo = () => { setDemo(true); setData(initialDemoState()); setTab('assistant'); setPhotoUrl(undefined); localDocuments.current.clear(); setNotice(null); setPermissionsId(null); setExecutionHistory(null); setJobResults(null); setWebHistory(null); setLoading(false); };
   const logout = async () => {
     if (!demo || session) await signOut();
-    setDemo(false); setSession(null); setData(emptyState()); setPhotoUrl(undefined); localDocuments.current.clear(); setTab('assistant');
+    setDemo(false); setSession(null); setData(emptyState()); setPhotoUrl(undefined); localDocuments.current.clear(); setTab('assistant'); setPermissionsId(null); setExecutionHistory(null); setJobResults(null); setWebHistory(null);
     message('Sesión cerrada.', 'info');
   };
 
@@ -240,14 +238,21 @@ function Workspace() {
     message(result.message);
   });
 
+  const resolveLocation: typeof resolveLocations = async location => {
+    if (demo) throw new Error('La demostración no consulta ubicaciones reales.');
+    const result = await resolveLocations(location);
+    if (!stillCurrent()) throw new Error('La cuenta cambió durante la consulta. Volvé a comprobar la ubicación.');
+    return result;
+  };
+
   const refreshButton = () => safely(async () => { if (demo) { message('Estás viendo datos de demostración. No hay operaciones del servidor para actualizar.', 'info'); return; } await refresh(); message('Información actualizada desde tu cuenta.'); });
 
   let screen: React.ReactNode;
   if (loading || !themeReady) screen = <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.muted, fontSize: 12 }}>Cargando tu espacio de trabajo…</Text></View>;
   else if (!demo && !session) screen = <AuthScreen configured={SUPABASE_CONFIGURED} onDemo={config.demo ? enterDemo : undefined} onRequestCode={async (email, name) => { setNotice(null); await requestEmailCode(email, name); }} onVerifyCode={async (email, token) => { setNotice(null); const result = await verifyEmailCode(email, token); setData(emptyState()); setSession(result); }} />;
-  else if (tab === 'assistant') screen = <AssistantScreen profile={data.profile} messages={data.messages} busy={busy} demo={demo} onSend={sendChat} onSaveProposal={(id, proposal) => safely(async () => { await saveSearch(proposal); commitData(current => ({ ...current, messages: current.messages.map(item => item.id === id ? { ...item, saved: true } : item) })); })} />;
+  else if (tab === 'assistant') screen = <AssistantScreen key={`assistant-${demo ? 'demo' : session?.user.id}`} onResolveLocation={resolveLocation} profile={data.profile} messages={data.messages} busy={busy} demo={demo} onSend={sendChat} onSaveProposal={(id, proposal) => safely(async () => { await saveSearch(proposal); commitData(current => ({ ...current, messages: current.messages.map(item => item.id === id ? { ...item, proposal, saved: true } : item) })); })} />;
   else if (tab === 'applications') screen = <ApplicationsScreen onStopFollowups={stopFollowups} applications={data.applications} resumes={data.resumes} busy={busy} demo={demo} onSend={id => safely(async () => { if (demo) throw new Error('El envío de correos está deshabilitado en la demostración.'); const result = await sendApplication(id); commitData(current => ({ ...current, applications: current.applications.map(item => item.id === id ? result : item) })); if (result.status === 'sent' && result.provider_message_id && result.provider_confirmed_at) message('El proveedor confirmó el envío de esta postulación.'); else message('La operación no tiene confirmación de envío. Revisá su estado y el detalle.', 'info'); })} />;
-  else if (tab === 'searches') screen = <SearchesScreen searches={data.searches} resumes={data.resumes} busy={busy} demo={demo} onPermissions={search => setPermissionsId(search.id)} onResults={search => void safely(async () => { if (demo) { message("Las ofertas reales se consultan con una búsqueda del servidor.", "info"); return; } const jobs = await getSearchResults(search.id); if (stillCurrent()) setJobResults({ name: search.name, jobs }); })} onHistory={search => void safely(async () => { if (demo) { message('Esta búsqueda es de demostración. No tiene ejecuciones reales.', 'info'); return; } const runs = await getRuns(search.id); if (stillCurrent()) setExecutionHistory({ name: search.name, runs }); })} onCreate={proposal => perform(async () => { await saveSearch(proposal); })} onToggle={search => safely(async () => { const status = search.status === 'enabled' ? 'paused' : 'enabled'; const updated = demo ? { ...search, status } as JobSearch : { ...search, ...await updateSearch(search.id, { status }) }; commitData(current => ({ ...current, searches: current.searches.map(item => item.id === search.id ? updated : item) })); message(demo ? 'Configuración de demostración actualizada. No se ejecutó ninguna tarea.' : `Búsqueda ${status === 'enabled' ? 'habilitada en la configuración; el historial confirma sus ejecuciones' : 'pausada'}.`, demo ? 'info' : 'success'); })} onRun={id => safely(async () => { if (demo) throw new Error('Las búsquedas no se ejecutan en la demostración.'); const result = await runSearch(id); message(result.message, result.status === 'completed' ? 'success' : 'info'); await refresh(); })} />;
+  else if (tab === 'searches') screen = <SearchesScreen key={`searches-${demo ? 'demo' : session?.user.id}`} onResolveLocation={resolveLocation} onWebHistory={search => void safely(async () => { if (demo) return; const events = await getWebHistory(search.id); if (stillCurrent()) setWebHistory({ name: search.name, events }); })} searches={data.searches} resumes={data.resumes} busy={busy} demo={demo} onPermissions={search => setPermissionsId(search.id)} onResults={search => void safely(async () => { if (demo) { message("Las ofertas reales se consultan con una búsqueda del servidor.", "info"); return; } const jobs = await getSearchResults(search.id); if (stillCurrent()) setJobResults({ name: search.name, jobs }); })} onHistory={search => void safely(async () => { if (demo) { message('Esta búsqueda es de demostración. No tiene ejecuciones reales.', 'info'); return; } const runs = await getRuns(search.id); if (stillCurrent()) setExecutionHistory({ name: search.name, runs }); })} onCreate={proposal => perform(async () => { await saveSearch(proposal); })} onToggle={search => safely(async () => { const status = search.status === 'enabled' ? 'paused' : 'enabled'; const updated = demo ? { ...search, status } as JobSearch : { ...search, ...await updateSearch(search.id, { status }) }; commitData(current => ({ ...current, searches: current.searches.map(item => item.id === search.id ? updated : item) })); message(demo ? 'Configuración de demostración actualizada. No se ejecutó ninguna tarea.' : `Búsqueda ${status === 'enabled' ? 'habilitada en la configuración; el historial confirma sus ejecuciones' : 'pausada'}.`, demo ? 'info' : 'success'); })} onRun={id => safely(async () => { if (demo) throw new Error('Las búsquedas no se ejecutan en la demostración.'); const result = await runSearch(id); message(result.message, result.status === 'completed' ? 'success' : 'info'); await refresh(); })} />;
   else screen = <ProfileScreen profile={data.profile} resumes={data.resumes} busy={busy} demo={demo} mailConnections={data.email_connections || []} email={demo ? 'Demostración · sin cuenta conectada' : session?.user.email} photoUrl={photoUrl} dark={dark} onThemeToggle={toggle} onSave={saveProfileAction} onUpload={upload} onPhoto={changePhoto} onOpenResume={openResume} onDeleteResume={removeResume} onExtract={extract} onConnectMail={connectMail} onDeleteAccount={deleteUser} onSignOut={() => void safely(logout)} onMakeDefault={id => perform(async () => { if (!demo) await makeDefaultResume(id); commitData(current => ({ ...current, resumes: current.resumes.map(item => ({ ...item, is_default: item.id === id })) })); message(demo ? 'Versión elegida para esta sesión de demostración.' : 'Currículum principal guardado en tu cuenta.', demo ? 'info' : 'success'); })} />;
 
   const authenticated = demo || !!session;
@@ -271,8 +276,9 @@ function Workspace() {
         {authenticated && !desktop ? <View style={[styles.bottomNav, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>{navigation.map(item => <Pressable key={item.key} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: tab === item.key }} onPress={() => setTab(item.key)} style={styles.bottomItem}><View style={{ paddingVertical: 5, paddingHorizontal: 16, borderRadius: 12, backgroundColor: tab === item.key ? colors.primarySoft : 'transparent' }}><Ionicons name={item.icon} size={21} color={tab === item.key ? colors.primary : colors.muted} /></View><Text style={{ color: tab === item.key ? colors.primary : colors.muted, fontSize: width < 370 ? 8 : 9, marginTop: 5, fontWeight: tab === item.key ? '600' : '400' }}>{item.short}</Text></Pressable>)}</View> : null}
       </View>
     </View>
-    <ConsentModal search={data.searches.find(search => search.id === permissionsId) || null} resumes={data.resumes} demo={demo} onClose={() => setPermissionsId(null)} onChanged={search => commitData(current => ({ ...current, searches: current.searches.map(item => item.id === search.id ? search : item) }))} />
+    <ConsentModal key={`consent-${demo ? 'demo' : session?.user.id}`} search={data.searches.find(search => search.id === permissionsId) || null} resumes={data.resumes} demo={demo} onClose={() => setPermissionsId(null)} onChanged={search => commitData(current => ({ ...current, searches: current.searches.map(item => item.id === search.id ? search : item) }))} />
     <JobResultsModal results={jobResults} onClose={() => setJobResults(null)} />
+    <WebHistoryModal history={webHistory} onClose={() => setWebHistory(null)} />
     <Modal visible={!!executionHistory} transparent animationType="fade" onRequestClose={() => setExecutionHistory(null)}><View style={styles.overlay}><View style={[styles.extractionCard, { backgroundColor: colors.surface }]}><View style={{ flexDirection: 'row', alignItems: 'center' }}><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: 22, fontWeight: '600' }}>Historial de búsquedas</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 8 }}>{executionHistory?.name}</Text></View><IconButton icon="close-outline" accessibilityLabel="Cerrar historial de búsquedas" onPress={() => setExecutionHistory(null)} /></View><ScrollView contentContainerStyle={{ gap: 14, paddingVertical: 20 }}>{executionHistory?.runs.length ? executionHistory.runs.map(run => <View key={run.id} style={{ padding: 16, borderWidth: 1, borderColor: colors.border, borderRadius: 12, gap: 8 }}><Text style={{ color: run.status === 'completed' ? colors.primary : run.status === 'error' ? colors.danger : colors.warning, fontSize: 13, fontWeight: '600' }}>{{ running: 'En curso', completed: 'Completada', error: 'Con error', blocked: 'Bloqueada' }[run.status]}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{new Date(run.started_at).toLocaleString('es-AR')}</Text><Text selectable style={{ color: colors.text, fontSize: 12, lineHeight: 20 }}>{run.message || 'La tarea todavía no tiene un resultado final.'}</Text><Text style={{ color: colors.muted, fontSize: 10 }}>Registro: {run.id}</Text></View>) : <Text style={{ color: colors.muted, lineHeight: 22 }}>No hay intentos de búsqueda registrados.</Text>}</ScrollView><Button label="Cerrar historial" variant="secondary" onPress={() => setExecutionHistory(null)} /></View></View></Modal>
     <Modal visible={!!extraction} transparent animationType="fade" onRequestClose={() => setExtraction(null)}><View style={styles.overlay}><View style={[styles.extractionCard, { backgroundColor: colors.surface }]}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: 22, fontWeight: '600' }}>Texto de tu currículum</Text><Text style={{ color: colors.muted, fontSize: 11, lineHeight: 19, marginTop: 7 }}>{extraction?.message}</Text></View><IconButton icon="close-outline" accessibilityLabel="Cerrar texto extraído" onPress={() => setExtraction(null)} /></View><ScrollView style={{ marginVertical: 19, minHeight: 100 }}><Text selectable style={{ color: colors.text, fontSize: 13, lineHeight: 23 }}>{extraction?.text || 'No se detectó texto en el documento.'}</Text></ScrollView><Text style={{ color: colors.muted, fontSize: 11, lineHeight: 19, marginBottom: 15 }}>Revisá el texto y completá los campos del perfil con los datos que quieras guardar. El perfil no se modificó automáticamente.</Text><Button label="Volver a mi perfil" icon="checkmark-outline" onPress={() => { setExtraction(null); setTab('profile'); }} /></View></View></Modal>
   </SafeAreaView>;

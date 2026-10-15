@@ -1,162 +1,64 @@
-# Trabajo YA: lo que falta activar
+# Trabajo YA: actualizar y comprobar la versión 0.5.0
 
-**El proyecto Supabase ya existe y Render muestra el backend Live en
-https://trabajo-ya-api.onrender.com.** La configuración pública de Android está
-cargada y la **APK real 0.4.1 / 8 ya está publicada**:
-[descargar Trabajo YA](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.1-real/Trabajo-YA-0.4.1-real.apk).
-La [compilación 38609341591](https://github.com/ramalhectornano-sys/miapp/actions/runs/38609341591)
-terminó correctamente. Los pasos de instalación y las comprobaciones pendientes
-están en [APK conectada](docs/APK_REAL.md).
+El Supabase y backend existentes se conservan. Android utiliza https://trabajo-ya-api.onrender.com; el usuario ya mostró CV seleccionado y confirmó Gmail vinculado. No hace falta recrear servicios ni claves.
 
-Las capturas del usuario muestran acceso a la app, CV seleccionado y Gmail
-conectado. Conservar los servicios y conexiones existentes. Para otra instalación,
-el acceso por enlace usa PKCE y la redirección `autoempleoia://auth/callback`;
-ver [acceso sin contraseña](docs/AUTH_SETUP.md).
+El código **0.5.0 / Android 9** añade búsqueda general, geografía de Argentina, radio e historial de consultas. La compilación y descarga deben comprobarse en [APK_REAL](docs/APK_REAL.md); este documento no acredita por sí solo una nueva publicación. La APK anterior 0.4.1 no contiene estas pantallas geográficas.
 
-Para esta actualización, desplegar el backend nuevo en Render, elegir la fuente
-**Ofertas verificadas de Greenhouse** y guardar el consentimiento. Los fragmentos
-de otros portales siguen para revisión. Habilitar envíos y tareas del servidor
-requiere una comprobación real, según [activar correos](docs/ACTIVAR_CORREOS.md).
-Render Free no aporta el worker/programador de esta app; se entrega separado.
+**Todavía no se acreditó una búsqueda real Tavily/Groq, una oferta de chofer a 100 km ni una entrega Gmail.** Las pruebas del código usan respuestas simuladas. Las claves están solo en Render; Actions no puede leerlas desde allí.
 
-Como referencia histórica para recorrer las pantallas, está disponible la
-[APK de demostración Trabajo YA 0.3.0](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.3.0-demo/Trabajo-YA-0.3.0-demo.apk).
-No requiere Expo Go. Usa ejemplos identificados y no conecta IA ni envía correos;
-seguí la [guía de instalación](docs/APK_GITHUB.md).
+## 1. Actualizar Supabase sin borrar datos
 
-El proyecto trae el código de Android, servidor, tareas, base de datos y pruebas.
-Los pasos siguientes se conservan para verificar el proyecto existente, preparar
-otra instalación o activar las tareas del servidor. Las claves privadas se
-cargan en tus cuentas, sin escribirlas en el código ni enviarlas por chat.
+En [Supabase](https://supabase.com/dashboard) → SQL Editor, si ya están las migraciones 001–006, aplicar solamente [202610140007_web_research_and_locations.sql](supabase/migrations/202610140007_web_research_and_locations.sql). Añade ubicación/radio e historial privado. No repetir 007 si ya está aplicada ni ejecutar otra vez install-new-project.sql. Con CLI, supabase db push aplica pendientes en orden. Ver [Supabase](supabase/README.md).
 
-## 1. Verificar Supabase o preparar una base nueva
+Si ya podés entrar, no cambies plantillas ni autenticación. Para otra instalación, el callback exacto es **autoempleoia://auth/callback** y el acceso usa PKCE. Ver [AUTH_SETUP](docs/AUTH_SETUP.md).
 
-En el proyecto actual, confirmar las seis migraciones, los buckets privados y
-las plantillas del código OTP. El instalador de proyecto nuevo no debe ejecutarse
-otra vez sobre una instalación existente. Consultar
-[Supabase](supabase/README.md) para aplicar solamente migraciones pendientes.
+## 2. Actualizar Render
 
-Solo para otra instalación, entrar a [Supabase](https://supabase.com/dashboard)
-y crear un proyecto Free propio.
-En un **proyecto nuevo sin usuarios de la app ni instalación anterior**, abrir
-SQL Editor, copiar `supabase/install-new-project.sql` y ejecutar el archivo completo.
-Incluye las seis migraciones en una transacción y se detiene si detecta una
-instalación previa. No lo combines con la ejecución individual de esas migraciones.
-No elimina datos para intentar instalar. La guía de actualizaciones está en
-[Supabase](supabase/README.md).
+En **Render → trabajo-ya-api → Environment**, conservar los secretos actuales. Revisar esta configuración pública:
 
-En Authentication configurar el correo por código siguiendo
-[AUTH_SETUP](docs/AUTH_SETUP.md). Para editar las plantillas Free y mostrar
-un código numérico se necesita SMTP propio; el enlace predeterminado no requiere editarlo. Revisar también los límites del
-proveedor de correo elegido.
-Guardar la URL del proyecto, la clave pública y la privada en un gestor de claves.
-La clave pública se usa en Android; la privada se usa solo en el servidor.
+~~~text
+WEB_SEARCH_PROVIDER=tavily
+WEB_SEARCH_MAX_QUERIES=6
+AI_PROVIDER=openai_compatible
+AI_BASE_URL=https://api.groq.com/openai/v1
+AI_MODEL=openai/gpt-oss-20b
+GEOCODER_PROVIDER=georef_ar
+PUBLIC_PAGE_READS_ENABLED=true
+PUBLIC_PAGE_MAX_READS=6
+~~~
 
-## 2. Preparar Google Cloud para tareas automáticas
+El Blueprint anterior podía dejar WEB_SEARCH_MAX_QUERIES=2. **Cambiarlo a 6 explícitamente: Manual Deploy no actualiza esa variable existente.** WEB_SEARCH_API_KEY y AI_API_KEY siguen como secretos privados de Render; no ponerlos en el código ni chat.
 
-La API de pruebas actual ya está publicada en Render. Para chat, perfil, fotos
-y CV, conservar ese servicio y seguir [Render](deploy/render/README.md).
-Google Cloud es la ruta alternativa preparada para API, worker y programador;
-el servicio gratuito de Render no ejecuta por sí solo las búsquedas con el
-celular apagado. No se activaron tareas ni envíos en la instalación actual.
+Mantener **MAIL_SEND_ENABLED=false** hasta una prueba controlada. Desplegar la rama **trabajo-ya-real** con **Manual Deploy → Deploy latest commit**, esperar Live y comprobar versión **0.5.0** en /health. Un estado configured_unverified no demuestra consultas ni correo. Ver [BUSQUEDA_WEB](docs/BUSQUEDA_WEB.md).
 
-Usar el proyecto donde ya creaste el cliente OAuth **Aplicación web**. Habilitar
-facturación con un medio de pago y configurar presupuesto de pruebas. La solución
-aprovecha cuotas gratuitas; superar cuotas o usar otros servicios puede generar cargos.
+## 3. Preparar la prueba real desde el celular
 
-Descargar el ZIP actualizado, abrir Cloud Shell `>_` en Google Cloud, subir el ZIP
-desde el menú del terminal y ejecutar:
+1. Abrir [miapp → Settings → Secrets and variables → Actions](https://github.com/ramalhectornano-sys/miapp/settings/secrets/actions).
+2. En **New repository secret**, guardar la clave Tavily como **WEB_SEARCH_API_KEY**.
+3. Guardar la clave Groq como **AI_API_KEY**. Copiar entre paneles privados; no publicarlas ni enviarlas por chat. No hace falta Supabase ni Gmail para esta prueba.
+4. Abrir [Actions → Prueba REAL de búsqueda web — Tavily y Groq](https://github.com/ramalhectornano-sys/miapp/actions/workflows/trabajo-ya-web-real-test.yml) → **Run workflow**. Mantener 8 consultas para **Chofer, Rincón de los Sauces, Neuquén, Argentina, 100 km**.
+5. Descargar el artefacto prueba-web-real-rincon-100km-<número>. El JSON y Markdown contienen consultas, horas, HTTP, enlaces y recibos cuando el proveedor los informa.
 
-```bash
-unzip trabajo-ya.zip
-cd trabajo-ya
-python3 deploy/google-cloud/cloud.py setup
-```
+Si faltan claves: preflight_failed y cero llamadas. Un error no se transforma en «cero vacantes» exitoso. Si no se demuestra una oportunidad con enlace y ubicación dentro del radio, la prueba no se marca terminada. Ver [PRUEBA_WEB_REAL](docs/PRUEBA_WEB_REAL.md).
 
-El asistente pide ID de proyecto Google, URL y clave pública de Supabase e ID
-público del cliente Google. Luego solicita con entrada oculta la clave privada
-de Supabase y el secreto del cliente Google. Genera y conserva la clave de cifrado,
-prepara las identidades y secretos y despliega API y worker. Para fuentes todavía
-no disponibles, ingresar `[]`: eso no inventa vacantes ni activa búsquedas reales.
+## 4. Instalar Android y buscar
 
-Al terminar, imprime la URL HTTPS y el callback exacto. Copiar el callback en
-las **URIs de redireccionamiento autorizados** del cliente OAuth web de Google.
-Registrar tu correo como usuario de prueba si el consentimiento está en Testing.
-Después de terminar el despliegue se puede cerrar Cloud Shell.
+Descargar la APK nueva solo cuando el enlace y la compilación estén confirmados en [APK_REAL](docs/APK_REAL.md). Instalar como actualización con la misma firma. No desinstalar ni borrar datos como paso rutinario.
 
-El asistente deja correo deshabilitado y no inicia el programador. La guía
-[Google Cloud desde el celular](deploy/google-cloud/README.md) incluye pruebas,
-fuentes, activación explícita, pausa, costes y diagnóstico. Esas verificaciones
-evitan tratar un servidor que responde como prueba de búsqueda o envío.
+En Búsquedas o la propuesta del chat, indicar Argentina, Neuquén, Rincón de los Sauces; tocar **Comprobar ubicación**, elegir la coincidencia y seleccionar **100 km**. Guardar, usar **Ejecutar ahora** y revisar **Ver ofertas encontradas**, **Consultas web** e historial de ejecuciones.
 
-## 3. Conectar la IA y las vacantes
+La búsqueda es general: LinkedIn y Computrabajo son adicionales para descubrimiento y revisión; su lectura automática está restringida. También se investigan páginas públicas permitidas de empresas, consultoras y bolsas. No se promete cobertura completa. El radio es aéreo aproximado entre localidades, no kilómetros por ruta. Países distintos de Argentina requieren otro geocodificador.
 
-El backend Render está preparado para Groq. Una vez instalada la APK conectada,
-ingresar por código y probar el chat para confirmar una respuesta real; todavía
-no se hizo esa comprobación. Render Free no ofrece terminal y el estado de
-configuración de `/health` no acredita una inferencia.
+## 5. Ejecutar con el teléfono apagado
 
-Para una instalación alternativa en Google Cloud, la configuración inicial
-identifica el asistente como **demo**. Para IA real, crear una clave en Groq y
-ejecutar en Cloud Shell:
+Guardar un horario y desplegar la API no activa un programador. Render Free puede dormir y no aporta el worker continuo de esta app. Seguir [WORKER_GITHUB](docs/WORKER_GITHUB.md): workflow en la rama principal, secretos/variables propios y WORKER_ENABLED apagado por defecto. Intenta ejecutar cada 15 minutos, con posibles demoras; comprobar una ejecución registrada.
 
-```bash
-python3 deploy/google-cloud/cloud.py activate-ai
-```
+Para operación supervisada están [Cloud Run Jobs/Scheduler](deploy/google-cloud/README.md) o [servidor propio](deploy/README.md), con posibles cargos. No hace falta abrir Google Cloud para probar el camino GitHub. Tavily/Groq consumen cupos reales. No se activa un servicio pago desde esta actualización.
 
-La [guía de IA real](docs/IA_REAL.md) explica la carga oculta de la clave y la
-comprobación de una respuesta del modelo `openai/gpt-oss-20b`. Sin esa clave y
-una comprobación satisfactoria, la integración no se considera conectada.
-La máquina mínima de pruebas no ejecuta un modelo Ollama grande localmente.
+## 6. Autorizar correo después de comprobarlo
 
-También hace falta una fuente real con permiso de consulta y destinatarios
-verificados que cumpla el [contrato del feed](backend/README.md). No hay un portal
-laboral integrado por defecto. Configurar la fuente en Secret Manager y probar
-una búsqueda antes de habilitar envíos. Vincular Gmail no concede por sí solo
-permiso para enviar: se autoriza dentro de la app.
+Gmail conectado y horario guardado no autorizan envíos. Elegir CV, cuenta, fuente verificadora y vencimiento, y aceptar consentimiento. Los hallazgos web generales no verifican destinatarios. Greenhouse solo admite correo cuando una oferta vigente publica ese canal para recibir CV y se vuelve a comprobar antes de enviar. Formularios, páginas restringidas y correos sin verificar quedan para intervención humana.
 
-## 4. Compilar Android en la nube
+Se mantienen **10 intentos diarios por usuario**, sumados entre búsquedas, y **72 horas** entre recordatorios autorizados. Habilitar MAIL_SEND_ENABLED y el worker solo después de la comprobación controlada de [ACTIVAR_CORREOS](docs/ACTIVAR_CORREOS.md). Una postulación aparece enviada únicamente con confirmación del proveedor.
 
-La ruta actual usa GitHub Actions con los datos públicos ya cargados. La
-compilación 0.4.1 / 8 terminó y publicó la APK conectada; no hace falta una cuenta
-Expo para esa ruta. Descargarla desde el enlace de arriba e instalarla siguiendo
-[APK conectada](docs/APK_REAL.md). La APK 0.3.0 de demostración no se conecta a
-los nuevos servicios por instalarla de nuevo. Si Android rechaza la actualización
-por una firma diferente, desinstalar la demo e instalar la APK nueva.
-
-Como alternativa, para compilar con EAS después de `setup`, la configuración
-pública de Google Cloud está en
-`deploy/google-cloud/generated/mobile.env`. Desde la raíz, si todavía no tenés
-una configuración local propia, copiarla:
-
-```bash
-cp deploy/google-cloud/generated/mobile.env mobile/.env.local
-```
-
-El archivo contiene solo URLs, modo y clave pública; no incluye secretos del servidor.
-Crear/iniciar sesión en [Expo](https://expo.dev/signup), vincular el proyecto y
-cargar las mismas variables públicas en el entorno EAS **preview**.
-Seguir [ANDROID_BUILD](docs/ANDROID_BUILD.md), también desde Cloud Shell.
-
-La compilación EAS `preview-real` produce una APK para instalar y probar. Requiere
-tu cuenta, las variables reales y el certificado de EAS. El proyecto no incluye
-todavía esa APK. Si el login o la firma piden verificación de tu cuenta, la completás vos.
-
-## Qué ya está preparado
-
-- Instalador SQL para proyecto nuevo y migraciones para desarrollo posterior.
-- Asistente de despliegue, generación de variables públicas y carga privada de secretos.
-- API, job de búsquedas y programador cada 15 minutos, independientes del celular.
-- Gmail OAuth por usuario, autorizaciones y comprobantes, máximo de 10 intentos
-  diarios y recordatorios después de 72 horas, sujetos a vacante vigente y permiso activo.
-- Perfiles de compilación Android y controles locales/CI.
-- Supabase creado y API de pruebas publicada en Render.
-- Configuración pública y APK conectada 0.4.1 / 8 compilada, verificada y publicada.
-- APK autónoma anterior de demostración compilada y publicada en GitHub.
-
-Lo que requiere tu acceso ahora: instalar la APK nueva, desplegar el backend
-actualizado en Render, comprobar una búsqueda real y una entrega controlada,
-y completar el worker/programador y el consentimiento de cada búsqueda antes
-de activar los envíos diarios. No se confirmó una consulta ni una entrega real
-mediante las pruebas del código. La actualización no añade migraciones ni exige
-recrear Supabase, Gmail o sus claves.
+La consulta, ejecución periódica y entrega reales siguen pendientes de comprobación. No recrear Supabase, Gmail ni sus claves válidas.

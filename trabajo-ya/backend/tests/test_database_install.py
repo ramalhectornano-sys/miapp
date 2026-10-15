@@ -32,6 +32,7 @@ class DatabaseInstallTests(unittest.TestCase):
             "202610120003_claim_fencing.sql", "202610120004_automatic_sending_policy.sql",
             "202610120005_daily_budget_and_followups.sql",
             "202610130006_persistent_primary_resume.sql",
+            "202610140007_web_research_and_locations.sql",
         ])
         bundle = installer.render_bundle(self.migrations)
         positions = []

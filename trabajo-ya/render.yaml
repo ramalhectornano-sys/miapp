@@ -42,4 +42,4 @@ services:
       - key: WEB_SEARCH_PROVIDER
         value: tavily
       - key: WEB_SEARCH_MAX_QUERIES
-        value: '2'
+        value: '6'

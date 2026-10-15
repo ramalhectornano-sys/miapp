@@ -7,11 +7,12 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import Field
 
 from .auth import require_user
 from .config import Settings
 from .db import Database, User
-from .models import ApplicationPatch, ChatRequest, ChatResponse, ConsentRequest, SearchPatch, SearchProposal, SendRequest, StopFollowupsRequest
+from .models import ApplicationPatch, ChatRequest, ChatResponse, ConsentRequest, SearchPatch, SearchProposal, SendRequest, StopFollowupsRequest, StrictModel
 from .services import ai, mail
 from .services.account import delete_account
 from .services.feeds import execute_claim
@@ -19,7 +20,13 @@ from .services.resumes import extract_resume
 from .services.schedule import next_occurrence, proposal_row
 from .services.source_registry import public_source
 
-BACKEND_VERSION = "0.4.0"
+BACKEND_VERSION = "0.5.0"
+
+
+class LocationRequest(StrictModel):
+    city: str = Field(min_length=1, max_length=120)
+    province: str | None = Field(default=None, max_length=120)
+    country: str = Field(default="Argentina", min_length=1, max_length=120)
 
 
 def create_app(settings: Settings | None = None, client: httpx.AsyncClient | None = None):
@@ -100,12 +107,23 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
             row["consent_revoked_at"] = consent.get("revoked_at")
         return rows
 
+    @app.post("/api/locations/resolve")
+    async def locations(request: Request, body: LocationRequest, user: User = Depends(require_user)):
+        from .services.geography import resolve_locations
+        candidates = await resolve_locations(settings, request.app.state.http, body.city, body.province, body.country)
+        return {"locations": candidates}
+
     @app.post("/api/searches", status_code=201)
     async def create_search(request: Request, body: SearchProposal, user: User = Depends(require_user)):
         db = request.app.state.db
         if body.resume_id:
             await db.owned("resume_versions", body.resume_id, user)
-        rows = await db.insert("job_searches", proposal_row(body, user.id))
+        row = proposal_row(body, user.id)
+        if body.location_id or body.radius_km or body.province or "country" in body.model_fields_set:
+            from .services.geography import resolve_search_location
+            row["location"] = await resolve_search_location(settings, request.app.state.http, body)
+            row["province"], row["country"] = row["location"]["province"], row["location"]["country"]
+        rows = await db.insert("job_searches", row)
         return {"search": rows[0], "automatic_authorization_required": body.mode == "automatic",
             "message": "Búsqueda guardada. Los envíos automáticos se habilitan únicamente con una autorización específica. Todavía no se ejecutó una búsqueda."}
 
@@ -144,6 +162,13 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
         await db.owned("job_searches", search_id, user)
         return await db.select("job_search_runs", user, params={"search_id": f"eq.{search_id}", "order": "started_at.desc", "limit": "50"})
 
+    @app.get("/api/searches/{search_id}/web-history")
+    async def web_history(search_id: UUID, request: Request, user: User = Depends(require_user)):
+        db = request.app.state.db
+        await db.owned("job_searches", search_id, user)
+        return await db.select("web_research_events", user, params={"search_id": f"eq.{search_id}",
+            "user_id": f"eq.{user.id}", "order": "started_at.desc,id.desc", "limit": "300"})
+
     @app.get("/api/searches/{search_id}/results")
     async def search_results(search_id: UUID, request: Request, user: User = Depends(require_user)):
         db = request.app.state.db
@@ -170,6 +195,18 @@ def create_app(settings: Settings | None = None, client: httpx.AsyncClient | Non
                     "company", "title", "city", "vacancy", "description", "email") and isinstance(value, str)},
                 "recipient_email": job.get("recipient_email"),
                 "recipient_verified": bool(job.get("recipient_verified_at")) and not requires_review})
+            geography = payload.get("geography") if isinstance(payload.get("geography"), dict) else {}
+            place = geography.get("location") if isinstance(geography.get("location"), dict) else {}
+            quoted_location = payload.get("location_evidence") if isinstance(payload.get("location_evidence"), dict) else {}
+            page = payload.get("page_verification") if isinstance(payload.get("page_verification"), dict) else {}
+            validity = payload.get("validity") if isinstance(payload.get("validity"), dict) else {}
+            application = payload.get("application") if isinstance(payload.get("application"), dict) else {}
+            results[-1].update({"province": place.get("province") or quoted_location.get("province"),
+                "country": place.get("country") or quoted_location.get("country"),
+                "distance_km": geography.get("distance_km"), "location_status": geography.get("location_status", "pending_review"),
+                "verification_status": page.get("status", "pending_review"),
+                "published_at": validity.get("published_at"), "requirements": payload.get("requirements", []),
+                "application_method": application.get("method", "unknown"), "application_url": application.get("url")})
         return results
 
     @app.post("/api/resumes/{resume_id}/extract")

@@ -11,7 +11,7 @@
     "android": "expo start --android",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/state/demo.test.ts src/state/emailChallenge.test.ts src/services/authLinks.test.ts src/theme/preference.test.ts src/state/automation.test.ts && node tests/data.test.cjs",
+    "test": "tsx --test src/state/demo.test.ts src/state/emailChallenge.test.ts src/services/authLinks.test.ts src/theme/preference.test.ts src/state/automation.test.ts src/state/geography.test.ts src/services/publicUrl.test.ts && node tests/data.test.cjs",
     "export:android": "expo export --platform android",
     "doctor": "npx expo-doctor"
   },

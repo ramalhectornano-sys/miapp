@@ -19,6 +19,9 @@ class Settings:
     web_search_provider: str = ""
     web_search_api_key: str = ""
     web_search_max_queries: int = 2
+    geocoder_provider: str = "georef_ar"
+    public_page_reads_enabled: bool = True
+    public_page_max_reads: int = 6
     google_client_id: str = ""
     google_client_secret: str = ""
     google_redirect_uri: str = "http://localhost:8000/api/mail/google/callback"
@@ -49,7 +52,10 @@ class Settings:
             authorized_feeds=json_env("AUTHORIZED_JOB_FEEDS", []),
             web_search_provider=os.getenv("WEB_SEARCH_PROVIDER", "").strip().lower(),
             web_search_api_key=os.getenv("WEB_SEARCH_API_KEY", "").strip(),
-            web_search_max_queries=min(max(int(os.getenv("WEB_SEARCH_MAX_QUERIES", "2")), 1), 6),
+            web_search_max_queries=min(max(int(os.getenv("WEB_SEARCH_MAX_QUERIES", "6")), 1), 12),
+            geocoder_provider=os.getenv("GEOCODER_PROVIDER", "georef_ar").strip().lower(),
+            public_page_reads_enabled=os.getenv("PUBLIC_PAGE_READS_ENABLED", "true").lower() == "true",
+            public_page_max_reads=min(max(int(os.getenv("PUBLIC_PAGE_MAX_READS", "6")), 1), 6),
             google_client_id=os.getenv("GOOGLE_CLIENT_ID", ""),
             google_client_secret=os.getenv("GOOGLE_CLIENT_SECRET", ""),
             google_redirect_uri=os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/mail/google/callback"),

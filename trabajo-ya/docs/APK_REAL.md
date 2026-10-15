@@ -1,5 +1,17 @@
 # APK conectada a servicios reales
 
+La actualización **0.5.0 / versionCode 9** incorpora provincia, país, radio y
+selección de localidad, investigación general y consulta del historial web.
+Su compilación y prueba real están en curso; la APK anterior 0.4.1 que se
+documenta debajo todavía no contiene estas funciones nuevas.
+
+Para activarlas en el servicio existente hay que aplicar **solo la migración
+007** en Supabase, desplegar la rama `trabajo-ya-real` en Render y comprobar que
+`/health` muestra backend **0.5.0**. Configurar el worker es un paso separado.
+No se reemplazan las conexiones Gmail ni la clave de cifrado existentes.
+Ver [búsqueda general](BUSQUEDA_WEB.md) y [prueba real](PRUEBA_WEB_REAL.md).
+
+
 La APK de demostración publicada no autentica usuarios ni guarda sus datos en un servidor. La nueva ruta de compilación usa **`EXPO_PUBLIC_DEMO_MODE=false` y `TRABAJO_YA_BUILD_MODE=real`**, requiere servicios desplegados y falla si falta la configuración. No cambia automáticamente a una demo para completar una compilación.
 
 **Estado actual: APK real 0.4.1 publicada para pruebas.** [Descargar Trabajo-YA-0.4.1-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.4.1-real/Trabajo-YA-0.4.1-real.apk) o abrir la [versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.4.1-real). La [ejecución de GitHub Actions 38609341591](https://github.com/ramalhectornano-sys/miapp/actions/runs/38609341591) terminó correctamente y verificó la firma con `apksigner` y los datos del paquete con `aapt`: **Trabajo YA**, **`com.trabajoya.autoempleoia`**, versión **0.4.1**, `versionCode` **8**. La APK ocupa **51.848.277 bytes** y su SHA-256 es:
@@ -14,7 +26,7 @@ Las capturas del usuario muestran acceso a la app, CV elegido y Gmail conectado.
 
 La entrega 0.3.3 incorpora los cambios de persistencia del chat de la [PR2](https://github.com/ramalhectornano-sys/miapp/pull/2), integrada en `trabajo-ya-real`. Conserva paquete, esquema de autenticación y certificado de prueba. Instalá la APK como actualización sin desinstalar. Para aplicar la corrección del chat, desplegá el último commit del backend en **Render → trabajo-ya-api → Manual Deploy → Deploy latest commit** y esperá **Live**. La compilación de Android no despliega Render ni habilita Gmail o tareas automáticas.
 
-La actualización 0.4.0 agrega Tavily, extracción de vacantes con evidencia y **Ver ofertas encontradas**. El código 0.4.1 agrega un verificador independiente de anuncios de Greenhouse con canal explícito de CV por correo, reconsulta antes de enviar y muestra qué requisito falta junto al botón de autorización. Su compilación nueva está publicada y verificada; ver [activación de correo](ACTIVAR_CORREOS.md). Seguir [BUSQUEDA_WEB](BUSQUEDA_WEB.md) para activarla en Render y [WORKER_GITHUB](WORKER_GITHUB.md) para las tareas de pruebas. País, provincia y radio en kilómetros todavía están pendientes: ver [estado geográfico](ESTADO_UBICACIONES_Y_KM.md).
+La actualización 0.4.0 agrega Tavily, extracción de vacantes con evidencia y **Ver ofertas encontradas**. El código 0.4.1 agrega un verificador independiente de anuncios de Greenhouse con canal explícito de CV por correo, reconsulta antes de enviar y muestra qué requisito falta junto al botón de autorización. Su compilación nueva está publicada y verificada; ver [activación de correo](ACTIVAR_CORREOS.md). Seguir [BUSQUEDA_WEB](BUSQUEDA_WEB.md) para activarla en Render y [WORKER_GITHUB](WORKER_GITHUB.md) para las tareas de pruebas. El estado actualizado de país, provincia y radio está en: ver [estado geográfico](ESTADO_UBICACIONES_Y_KM.md).
 
 Los pasos siguientes se conservan para preparar otra instalación o repetir la compilación. Para la configuración actual no hace falta volver a crear los servicios ni reemplazar los datos públicos ya cargados.
 

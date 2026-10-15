@@ -1,0 +1,97 @@
+# Prueba real de Internet: chofer, Rincón de los Sauces, 100 km
+
+La prueba consulta Tavily y analiza con Groq sin acceder a usuarios, currículums,
+base de datos ni Gmail. El escenario es **Chofer — Rincón de los Sauces, Neuquén,
+Argentina — 100 kilómetros**. Las coordenadas se obtienen de GeoRef y las
+distancias son aéreas entre centroides de localidades; no son distancias por ruta.
+
+## Las claves que están en Render no están en GitHub
+
+El usuario confirmó que las claves están solamente en Render. GitHub Actions no
+puede leerlas desde allí. Sin estas dos claves en Actions, la prueba termina en
+`preflight_failed`, con `actual_tavily_calls: 0` y `provider_consulted: false`.
+Eso demuestra que falta configuración; no es una búsqueda exitosa sin resultados.
+
+Desde el celular, en GitHub:
+
+1. Abrí [miapp → Settings → Secrets and variables → Actions](https://github.com/ramalhectornano-sys/miapp/settings/secrets/actions).
+2. Tocá **New repository secret**. Guardá tu clave de Tavily con el nombre exacto
+   `WEB_SEARCH_API_KEY`. Copiala de tu panel de Tavily o del entorno privado de
+   Render; no la pegues en el chat, un archivo, una issue ni el código.
+3. Creá otro secreto, `AI_API_KEY`, con tu clave de Groq. No hacen falta claves
+   de Supabase, Google, Gmail ni la clave de cifrado para esta prueba.
+4. Abrí [Actions → Prueba REAL de búsqueda web — Tavily y Groq](https://github.com/ramalhectornano-sys/miapp/actions/workflows/trabajo-ya-web-real-test.yml).
+   Tocá **Run workflow**, elegí la rama `main` o `trabajo-ya-real`, mantené `8`
+   consultas y ejecutá. El workflow usa explícitamente el código de `trabajo-ya-real`.
+5. Abrí la ejecución. En **Artifacts**, descargá
+   `prueba-web-real-rincon-100km-<número de ejecución>`. Contiene un JSON y un
+   resumen Markdown con enlaces, horas, consultas, errores y comprobantes.
+
+La primera publicación del workflow también intenta la prueba. Si los secretos
+todavía no existen, fallará de forma explícita y se podrá repetir después de
+guardarlos. No los envíes a Codex para subsanar el error.
+
+## Qué demuestra el informe
+
+- `actual_tavily_calls`: intentos HTTP. Un intento con error DNS no demuestra que
+  Tavily haya recibido nada.
+- `provider_consulted` y `tavily_response_count`: hubo una respuesta HTTP del
+  endpoint real de Tavily. Una respuesta 401 confirma contacto pero no una
+  búsqueda exitosa.
+- `audit_events`: cada consulta, tipo, hora de inicio y fin, HTTP, estado,
+  enlaces y dominios devueltos. Guarda `request_id` y créditos solo cuando Tavily
+  los informa; nunca los inventa.
+- `http_events`: fechas y estados HTTP de Tavily, Groq y GeoRef. Las lecturas
+  de páginas públicas se comprueban mediante los eventos `public_page` de `audit_events`.
+  No contiene headers, claves, cuerpos de solicitudes, prompts ni CV.
+- `results`: ofertas sustentadas por evidencia; conserva por separado el estado
+  del enlace, ubicación, distancia, vigencia y forma de postulación disponible.
+- `discoveries`: enlaces descubiertos que siguen pendientes de revisión; no son
+  vacantes verificadas por el mero hecho de aparecer en Tavily.
+- `test_passed` solo se activa si hay comprobantes de los tres proveedores,
+  termina el flujo sin fallas y existe por lo menos una oferta con enlace original
+  y ubicación verificados dentro del radio. Si no hay una oferta demostrable,
+  informa `no_verified_opportunities`; no inventa una para que pase la prueba.
+
+Una prueba automática con HTTP simulado en `backend/tests/test_check_web_research.py`
+comprueba este contrato, pero **no es prueba de una consulta real a Tavily**.
+La evidencia real es el artefacto de una ejecución con respuestas de los servicios.
+
+## Presupuesto y costos
+
+El valor predeterminado permite hasta **8 consultas Tavily basic**, con un máximo
+absoluto de 12 por ejecución, y hasta 6 páginas públicas. No reintenta consultas
+automáticamente. Tavily basic consume créditos reales de la cuenta; consultá el
+cupo y los precios vigentes en [Tavily](https://docs.tavily.com/documentation/api-credits).
+Groq consume el cupo del modelo configurado. El workflow no activa facturación ni
+crea recursos de pago. GitHub Actions también está sujeto a los límites del plan
+y la visibilidad del repositorio. Ejecutar el test repetidamente consume cupos.
+
+Esta prueba puntual no activa el programador periódico. La operación diaria
+requiere un worker configurado en el servidor o en el programador documentado
+en [WORKER_GITHUB.md](WORKER_GITHUB.md), con secretos propios y controles de cuota.
+Un servicio web gratuito de Render que se duerme no sustituye un worker periódico.
+
+## Ejecución local o dentro del backend
+
+Cargá las claves como variables privadas del entorno, sin pasarlas por argumentos
+ni escribirlas en archivos públicos. Configuración no secreta necesaria:
+
+```text
+WEB_SEARCH_PROVIDER=tavily
+AI_PROVIDER=openai_compatible
+AI_BASE_URL=https://api.groq.com/openai/v1
+AI_MODEL=openai/gpt-oss-20b
+```
+
+Desde `backend/`:
+
+```sh
+python -m app.check_web_research --output /tmp/trabajo-ya-web-real.json
+```
+
+Se escriben `/tmp/trabajo-ya-web-real.json` y `/tmp/trabajo-ya-web-real.md`. No se
+imprime la configuración privada. El comando sale con código 1 cuando falta
+configuración, falla un proveedor o no puede demostrar la oportunidad solicitada.
+Eso no permite concluir que no existan vacantes: hay que leer el estado y los
+errores del informe. Ninguna ejecución de este comando envía correos.

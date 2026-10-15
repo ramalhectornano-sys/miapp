@@ -214,6 +214,11 @@ async def send_application(db: Database, user: User, application_id: str, *, man
     try:
         job = await db.owned("jobs", claimed["job_id"], user, service=True)
         verified_recipient(claimed, job)
+        if not manual:
+            from .research import automatic_geography_allowed
+            search = await db.owned("job_searches", claimed["search_id"], user, service=True)
+            if not automatic_geography_allowed(job, search):
+                raise HTTPException(409, "La ubicación no está verificada para el radio de esta búsqueda. Revisá la oferta.")
         if job.get("source") == "verified:greenhouse":
             from .ai import normalize
             if any(not isinstance(claimed.get(saved), str) or not isinstance(job.get(current), str)

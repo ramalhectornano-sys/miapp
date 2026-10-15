@@ -7,6 +7,7 @@ import re
 import socket
 from datetime import datetime, timezone
 from urllib.parse import urlparse
+from uuid import uuid4
 import httpx
 from fastapi import HTTPException
 
@@ -138,6 +139,15 @@ def normalize_job(raw: dict, source: dict, user_id: str) -> dict:
             row["payload"]["greenhouse"] = publisher_evidence
         if verified:
             row["payload"]["verification_method"] = "publisher_api_explicit_email"
+    payload = raw.get("payload") if isinstance(raw.get("payload"), dict) else {}
+    if payload.get("research_mode") == "general":
+        row["payload"].update({key: payload[key] for key in (
+            "research_mode", "page_verification", "geography", "location_evidence", "requirements", "application",
+            "publisher_host", "validity") if key in payload})
+        geography = payload.get("geography") if isinstance(payload.get("geography"), dict) else {}
+        if geography.get("within_radius") is not True:
+            row["recipient_verified_at"] = None
+            row["payload"]["requires_manual_review"] = True
     row["fingerprint"] = fingerprint(row)
     return row
 
@@ -146,6 +156,8 @@ async def find_jobs(db: Database, search: dict) -> tuple[list[dict], list[str]]:
     sources = db.settings.job_sources
     if not sources:
         raise HTTPException(503, "No hay fuentes reales autorizadas configuradas. No se ejecutó ninguna búsqueda.")
+    if search.get("research_mode") == "general":
+        return await find_general_jobs(db, search, sources)
     matches, failures, completed_sources = [], [], 0
     shared_discovery = any(source.get("kind") == "greenhouse_verified" for source in sources[:20])
     discoveries, discovery_error = None, None
@@ -206,21 +218,107 @@ async def find_jobs(db: Database, search: dict) -> tuple[list[dict], list[str]]:
     return list(unique.values()), failures
 
 
-async def read_json_feed(db: Database, source: dict):
-    await safe_feed_url(source["url"])
-    async with db.client.stream("GET", source["url"], follow_redirects=False, timeout=30) as response:
-        response.raise_for_status()
-        chunks, length = [], 0
-        async for chunk in response.aiter_bytes():
-            length += len(chunk)
-            if length > 5 * 1024 * 1024:
-                raise ValueError("Fuente demasiado grande")
-            chunks.append(chunk)
-    payload = json.loads(b"".join(chunks))
-    rows = payload.get("jobs") if isinstance(payload, dict) else payload
-    if not isinstance(rows, list) or len(rows) > 2000:
-        raise ValueError("La fuente requiere un array de hasta 2000 vacantes")
-    return rows
+async def find_general_jobs(db, search, sources):
+    from .query_planner import role_terms
+    from .research import run_research, qualify_geography
+    from .research_audit import database_audit, ResearchAuditError
+    audit = database_audit(db, search)
+    matches, failures, completed = [], [], 0
+    working, discoveries = search, []
+    source_by_id = {source["id"]: source for source in sources}
+    if db.settings.web_search_ready:
+        research = await run_research(db.settings, db.client, search, audit=audit)
+        working, discoveries = research["search"], research["discoveries"]
+        # Geography budgets and callbacks are kept inside this run only.
+        working["_research_audit"] = audit
+        failures.extend(research["failures"])
+        for raw in research["results"]:
+            matches.append(normalize_job(raw, source_by_id["web:tavily"], search["user_id"]))
+        completed += 1
+    else:
+        from .geography import prepare_search_geography
+        working = await prepare_search_geography(db.settings, db.client, {**search, "_research_audit": audit})
+    for source in sources:
+        if source.get("kind") == "web_search":
+            continue
+        try:
+            if source.get("kind") == "greenhouse_verified":
+                from .greenhouse import verify_discoveries
+                rows, errors = await verify_discoveries(db.client, discoveries, working, audit=audit)
+                failures.extend(errors)
+            else:
+                rows = await read_json_feed(db, source, audit=audit)
+            completed += 1
+            for raw in rows:
+                if not isinstance(raw, dict) or not any(normalize(role) in normalize(str(raw.get("title", ""))) for role in role_terms(working)):
+                    continue
+                qualified = await qualify_geography(db.settings, db.client, raw, working)
+                if qualified is not None:
+                    matches.append(normalize_job(qualified, source, search["user_id"]))
+        except ResearchAuditError:
+            raise
+        except (HTTPException, httpx.HTTPError, TypeError, KeyError, ValueError):
+            failures.append(source["id"])
+    if not completed:
+        raise HTTPException(502, "No se pudo completar ninguna fuente real. Revisá el historial de consultas.")
+    unique = {}
+    for job in matches:
+        previous = unique.get(job["fingerprint"])
+        if previous and previous.get("recipient_verified_at") and not job.get("recipient_verified_at"):
+            continue
+        unique[job["fingerprint"]] = job
+    return list(unique.values()), failures
+
+
+async def read_json_feed(db: Database, source: dict, *, audit=None):
+    """Read an administrator-authorized feed, optionally persisting its HTTP facts.
+
+    Audit is required by the general-research caller and absent for legacy
+    callers. A failed audit must escape the source-error handler and stop the
+    run. Neither the response body nor a private exception enters the history.
+    """
+    async def record(event):
+        if audit is not None:
+            from .research_audit import ResearchAuditError
+            try:
+                await audit(event)
+            except Exception:
+                raise ResearchAuditError() from None
+
+    context = {"event_id": str(uuid4()), "kind": "public_page", "provider": "authorized_feed",
+        "url": source["url"], "started_at": datetime.now(timezone.utc).isoformat(),
+        "source_id": source.get("id"), "provider_method": "GET"}
+    try:
+        await safe_feed_url(source["url"])
+    except (HTTPException, OSError):
+        await record({**context, "status": "blocked", "finished_at": datetime.now(timezone.utc).isoformat(),
+            "error": "La fuente autorizada no permite una conexión HTTPS pública comprobable."})
+        raise
+    await record({**context, "status": "started"})
+    status, succeeded, content_hash, row_count = None, False, None, 0
+    try:
+        async with db.client.stream("GET", source["url"], follow_redirects=False, timeout=30) as response:
+            status = response.status_code
+            response.raise_for_status()
+            chunks, length = [], 0
+            async for chunk in response.aiter_bytes():
+                length += len(chunk)
+                if length > 5 * 1024 * 1024:
+                    raise ValueError("Fuente demasiado grande")
+                chunks.append(chunk)
+        content = b"".join(chunks)
+        content_hash = hashlib.sha256(content).hexdigest()
+        payload = json.loads(content)
+        rows = payload.get("jobs") if isinstance(payload, dict) else payload
+        if not isinstance(rows, list) or len(rows) > 2000:
+            raise ValueError("La fuente requiere un array de hasta 2000 vacantes")
+        row_count, succeeded = len(rows), True
+        return rows
+    finally:
+        await record({**context, "status": "succeeded" if succeeded else "failed", "http_status": status,
+            "finished_at": datetime.now(timezone.utc).isoformat(), "result_count": row_count,
+            **({"content_sha256": content_hash} if content_hash else {}),
+            **({"error": "No se pudo leer una respuesta JSON válida de la fuente autorizada."} if not succeeded else {})})
 
 
 RUN_MAX_SECONDS = 900
@@ -282,6 +380,9 @@ async def process_automatic_drafts(db: Database, search: dict, user: User):
             job = await db.owned("jobs", draft["job_id"], user, service=True)
             # Administrator removal of an integration takes effect for old drafts too.
             if job.get("source") not in allowed_sources:
+                continue
+            from .research import automatic_geography_allowed
+            if not automatic_geography_allowed(job, current):
                 continue
             prepared = await db.rpc("prepare_automatic_application", {
                 "p_application_id": draft["id"], "p_user_id": user.id})

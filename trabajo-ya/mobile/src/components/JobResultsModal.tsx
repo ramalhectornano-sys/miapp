@@ -4,36 +4,26 @@ import 'react-native-url-polyfill/auto';
 import type { FoundJob } from '../types';
 import { useTheme } from '../theme/theme';
 import { Badge, Button, Card, EmptyState, IconButton } from './ui';
+import { publicOfferUrl } from '../services/publicUrl';
 
 interface Props {
   results: { name: string; jobs: FoundJob[] } | null;
   onClose: () => void;
 }
 
-// Offers open only after an explicit tap. Literal IPs and local hostnames are
-// unnecessary for a public vacancy and are rejected even if the API supplied them.
-function publicOfferUrl(value: string | null): string | null {
-  if (!value || value.length > 4096 || !/^https:\/\//i.test(value) || /[\s\u0000-\u001f\u007f\\]/.test(value)) return null;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443')) return null;
-    const host = url.hostname.toLowerCase().replace(/\.$/, '');
-    if (!host || host.length > 253 || host.includes(':') || /^[\d.]+$/.test(host)) return null;
-    const labels = host.split('.');
-    if (labels.length < 2 || labels.some(label => !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))) return null;
-    if (labels.some(label => label === 'localhost') || /\.(?:local|internal|localhost|localdomain|lan|home|intranet|invalid|test|example|onion|arpa|alt)$/.test(host)) return null;
-    return url.href;
-  } catch { return null; }
-}
-
 function observationDate(value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value.split('-').reverse().join('/');
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'Fecha no informada' : date.toLocaleString('es-AR');
 }
 
 function isWebFinding(job: FoundJob): boolean {
-  return job.requires_manual_review || /(?:^web(?:[:_-]|$)|tavily)/i.test(job.source);
+  return job.requires_manual_review || !job.recipient_verified;
 }
+
+const verificationLabels: Record<string, string> = { verified_link: 'Enlace original comprobado', pending_review: 'Publicación pendiente de revisión', unavailable: 'Publicación no disponible al consultar', closed: 'Publicación cerrada' };
+const locationLabels: Record<string, string> = { verified: 'Localidad comprobada', pending_review: 'Ubicación pendiente de revisión', outside_radius: 'Fuera del radio elegido' };
+const applicationLabels: Record<string, string> = { email: 'Correo publicado para postularse', form: 'Formulario de postulación', portal: 'Postulación desde el portal', external: 'Enlace externo de postulación', manual: 'Intervención manual', unknown: 'Forma de postulación no confirmada' };
 
 export default function JobResultsModal({ results, onClose }: Props) {
   const { colors } = useTheme();
@@ -50,9 +40,9 @@ export default function JobResultsModal({ results, onClose }: Props) {
     return () => { operationVersion.current++; };
   }, [results]);
 
-  const openOffer = async (job: FoundJob) => {
+  const openOffer = async (job: FoundJob, target = job.url) => {
     if (openingLock.current) return;
-    const url = publicOfferUrl(job.url);
+    const url = publicOfferUrl(target);
     if (!url) {
       setFeedback({ id: job.id, text: 'Esta oferta no tiene un enlace HTTPS público válido para abrir.' });
       return;
@@ -93,10 +83,16 @@ export default function JobResultsModal({ results, onClose }: Props) {
               return <Card key={job.id} style={styles.job}>
                 <Text style={[styles.company, { color: colors.primary }]}>{job.company || 'Empresa no informada'}</Text>
                 <Text style={[styles.jobTitle, { color: colors.text }]}>{job.title || 'Puesto no informado'}</Text>
-                <Text style={[styles.description, { color: colors.text }]}>Ciudad: {job.city || 'No informada'}</Text>
+                <Text style={[styles.description, { color: colors.text }]}>Ubicación: {[job.city, job.province, job.country].filter(Boolean).join(', ') || 'No informada'}</Text>
+                <Badge label={locationLabels[job.location_status || 'pending_review'] || 'Ubicación pendiente de revisión'} tone={job.location_status === 'verified' ? 'success' : 'warning'} />
+                {typeof job.distance_km === 'number' && Number.isFinite(job.distance_km) && job.location_status === 'verified' ? <Text style={[styles.detail, { color: colors.muted }]}>Aproximadamente {job.distance_km.toLocaleString('es-AR', { maximumFractionDigits: 1 })} km en línea recta entre las localidades. No indica distancia por ruta.</Text> : null}
                 <Text style={[styles.detail, { color: colors.muted }]}>Origen: {job.source === 'verified:greenhouse' ? 'API pública de Greenhouse' : job.source === 'web:tavily' ? 'Búsqueda en Internet' : job.source || 'No informado'}</Text>
                 <Text style={[styles.detail, { color: colors.muted }]}>Fecha de consulta: {observationDate(job.observed_at)}</Text>
-                <Text style={[styles.description, { color: colors.muted }]}>Coincidencia por puesto y ciudad. Revisá requisitos y vigencia de la oferta antes de postularte.</Text>
+                <Text style={[styles.detail, { color: colors.muted }]}>Publicada: {job.published_at ? observationDate(job.published_at) : 'La fuente no informó una fecha verificable'}</Text>
+                <Badge label={verificationLabels[job.verification_status || 'pending_review'] || 'Publicación pendiente de revisión'} tone={job.verification_status === 'verified_link' ? 'success' : 'warning'} />
+                <Text style={[styles.description, { color: colors.muted }]}>Comprobar el enlace no confirma que siga aceptando postulaciones ni verifica un correo. Revisá requisitos y vigencia antes de postularte.</Text>
+                {job.requirements?.length ? <View style={{ gap: 6 }}><Text style={[styles.company, { color: colors.text }]}>Requisitos publicados</Text>{job.requirements.slice(0, 30).map((requirement, index) => <Text selectable key={index} style={[styles.description, { color: colors.muted }]}>{'\u2022'} {requirement}</Text>)}</View> : <Text style={[styles.detail, { color: colors.muted }]}>Requisitos: pendientes de confirmar en la publicación.</Text>}
+                <Text style={[styles.detail, { color: colors.text }]}>{applicationLabels[job.application_method || 'unknown'] || 'Forma de postulación pendiente de revisión'}</Text>
                 {manual ? <View style={[styles.notice, { backgroundColor: colors.surfaceAlt }]}>
                   <Badge label="Revisión manual" tone="info" icon="eye-outline" />
                   <Text style={[styles.description, { color: colors.muted }]}>Hallazgo para revisión manual. Este enlace no confirma el envío de CV ni verifica correo.</Text>
@@ -109,6 +105,7 @@ export default function JobResultsModal({ results, onClose }: Props) {
                 </View> : null}
                 {feedback?.id === job.id ? <Text accessibilityRole="alert" style={[styles.description, { color: colors.danger }]}>{feedback.text}</Text> : null}
                 {safeUrl ? <Button label="Ver oferta" icon="open-outline" variant="secondary" onPress={() => void openOffer(job)} loading={openingId === job.id} disabled={!!openingId} /> : <Text style={[styles.detail, { color: colors.muted }]}>Enlace público no disponible.</Text>}
+                {job.application_url && job.application_url !== job.url && publicOfferUrl(job.application_url) ? <Button label="Abrir forma de postulación" icon="open-outline" variant="ghost" onPress={() => void openOffer(job, job.application_url)} disabled={!!openingId} /> : null}
               </Card>;
             })}
           </>}

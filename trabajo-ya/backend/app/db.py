@@ -14,11 +14,11 @@ SAFE_ERROR_CODES = frozenset({"PGRST102", "PGRST202", "PGRST204", "PGRST205", "P
 SAFE_REST_PATHS = frozenset(f"/rest/v1/{name}" for name in (
     "profiles", "work_experiences", "professional_references", "credentials", "resume_versions",
     "email_connections", "job_searches", "sending_consents", "job_search_runs", "jobs", "applications",
-    "chat_messages", "job_search_matches", "recipient_suppressions")) | frozenset(f"/rest/v1/rpc/{name}" for name in (
+    "chat_messages", "job_search_matches", "recipient_suppressions", "web_research_events")) | frozenset(f"/rest/v1/rpc/{name}" for name in (
     "claim_due_searches", "claim_search_now", "grant_sending_consent", "revoke_sending_consent",
     "stop_recipient_followups", "assert_search_claim", "complete_search_run", "create_initial_application",
     "prepare_automatic_application", "prepare_followup_application", "claim_application_send",
-    "consume_oauth_state", "get_email_secret", "store_email_secret", "store_oauth_state"))
+    "consume_oauth_state", "get_email_secret", "store_email_secret", "store_oauth_state", "record_web_research_event"))
 
 
 def diagnostic_path(path: str) -> str:

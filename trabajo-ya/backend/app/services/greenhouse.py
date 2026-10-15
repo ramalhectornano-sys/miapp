@@ -10,6 +10,7 @@ import re
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urlsplit
+from uuid import uuid4
 
 import httpx
 from fastapi import HTTPException
@@ -152,10 +153,16 @@ def _email_evidence(description: str):
     return next(iter(candidates.items()))
 
 
-async def _get_json(client: httpx.AsyncClient, endpoint: str):
+async def _get_json(client: httpx.AsyncClient, endpoint: str, *, audit=None):
+    context = {"event_id": str(uuid4()), "kind": "public_page", "provider": "greenhouse",
+        "url": endpoint, "started_at": datetime.now(timezone.utc).isoformat()}
+    status, succeeded = None, False
+    if audit:
+        await audit({**context, "status": "started"})
     try:
         async with client.stream("GET", endpoint, headers={"Accept": "application/json"}, timeout=30,
                 follow_redirects=False) as response:
+            status = response.status_code
             if response.status_code in {404, 410}:
                 raise HTTPException(409, INELIGIBLE)
             if response.status_code != 200:
@@ -169,9 +176,15 @@ async def _get_json(client: httpx.AsyncClient, endpoint: str):
         payload = json.loads(b"".join(chunks))
         if not isinstance(payload, dict):
             raise HTTPException(502, UNAVAILABLE)
+        succeeded = True
         return payload
     except (httpx.HTTPError, ValueError, TypeError, UnicodeError):
         raise HTTPException(502, UNAVAILABLE) from None
+    finally:
+        if audit:
+            await audit({**context, "status": "succeeded" if succeeded else "failed", "http_status": status,
+                "finished_at": datetime.now(timezone.utc).isoformat(),
+                **({"error": UNAVAILABLE} if not succeeded else {})})
 
 
 def _deadline(value):
@@ -188,9 +201,9 @@ def _deadline(value):
         raise HTTPException(409, INELIGIBLE) from None
 
 
-async def _published_job(client: httpx.AsyncClient, board: str, job_id: int, url: str) -> dict:
+async def _published_job(client: httpx.AsyncClient, board: str, job_id: int, url: str, *, audit=None) -> dict:
     endpoint = f"{API_BASE}/{board}/jobs/{job_id}"
-    raw = await _get_json(client, endpoint)
+    raw = await _get_json(client, endpoint, audit=audit)
     if type(raw.get("id")) is not int or raw["id"] != job_id or type(raw.get("internal_job_id")) is not int or raw["internal_job_id"] <= 0:
         raise HTTPException(409, INELIGIBLE)
     title = _text(raw.get("title"), 200)
@@ -207,7 +220,7 @@ async def _published_job(client: httpx.AsyncClient, board: str, job_id: int, url
     if raw.get("company_name"):
         company = _text(raw["company_name"], 200)
     else:
-        company = _text((await _get_json(client, f"{API_BASE}/{board}")).get("name"), 200)
+        company = _text((await _get_json(client, f"{API_BASE}/{board}", audit=audit)).get("name"), 200)
     evidence = {"board": board, "job_id": job_id, "endpoint": endpoint,
         "email_quote": quote, "fetched_at": datetime.now(timezone.utc).isoformat()}
     if expiry:
@@ -221,7 +234,7 @@ async def _published_job(client: httpx.AsyncClient, board: str, job_id: int, url
     return job
 
 
-async def verify_discoveries(client: httpx.AsyncClient, results: list[dict], search: dict) -> tuple[list[dict], list[str]]:
+async def verify_discoveries(client: httpx.AsyncClient, results: list[dict], search: dict, *, audit=None) -> tuple[list[dict], list[str]]:
     """Return only independently attested jobs; all other discoveries stay manual."""
     identities = {}
     for result in results[:MAX_DISCOVERIES]:
@@ -231,12 +244,16 @@ async def verify_discoveries(client: httpx.AsyncClient, results: list[dict], sea
     jobs, failures, completed = [], [], 0
     for board, job_id, url in identities.values():
         try:
-            job = await _published_job(client, board, job_id, url)
+            job = await _published_job(client, board, job_id, url, audit=audit)
             completed += 1
-            if (any(_normalized(role) in _normalized(job["title"]) for role in search.get("roles", []) if isinstance(role, str) and role.strip())
-                    and any(_normalized(city) == _normalized(job["city"]) for city in search.get("cities", []) if isinstance(city, str) and city.strip())):
+            from .query_planner import role_terms
+            general = search.get("research_mode") == "general"
+            if (any(_normalized(role) in _normalized(job["title"]) for role in (role_terms(search) if general else search.get("roles", [])) if isinstance(role, str) and role.strip())
+                    and (general or any(_normalized(city) == _normalized(job["city"]) for city in search.get("cities", []) if isinstance(city, str) and city.strip()))):
                 jobs.append(job)
         except HTTPException as error:
+            if getattr(error, "audit_failed", False):
+                raise
             if error.status_code == 409:
                 completed += 1
             else:

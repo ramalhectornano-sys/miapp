@@ -17,9 +17,11 @@ class PublisherDatabase(SnapshotDatabase):
         self.settings = Settings(mail_send_enabled=True,
             web_search_provider="tavily" if source_enabled else "",
             web_search_api_key="test-private-key" if source_enabled else "")
-        self.application.update({"company": "Empresa", "job_title": "Chofer"})
+        self.application.update({"company": "Empresa", "job_title": "Chofer", "search_id": "search"})
 
     async def owned(self, table, item_id, user, service=False):
+        if table == "job_searches":
+            return {"id": item_id, "user_id": user.id, "research_mode": "legacy"}
         row = await super().owned(table, item_id, user, service=service)
         if table == "jobs":
             row.update({"source": "verified:greenhouse", "title": "Chofer", "company": "Empresa",
