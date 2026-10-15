@@ -22,7 +22,7 @@ conjunto de campos, conservando el historial real. Para aplicarla en Render,
 elegí **Manual Deploy → Deploy latest commit** y esperá **Live**; no hace falta
 una APK nueva para esta corrección del backend.
 
-El código actualizado identifica el backend como **0.5.0** en
+El código actualizado identifica el backend como **0.5.3** en
 https://trabajo-ya-api.onrender.com/health después de desplegarlo. La aplicación
 0.5.0 necesita también la migración 007 para geografía e historial web.
 Las versiones de servidor y aplicación son independientes. Esa respuesta

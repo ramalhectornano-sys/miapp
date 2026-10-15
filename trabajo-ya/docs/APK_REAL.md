@@ -1,5 +1,11 @@
 # APK conectada a servicios reales
 
+Estado actual del backend **0.5.3**: Tavily y Groq fueron consultados realmente;
+las claves están aceptadas. La [última prueba](PRUEBA_WEB_REAL.md) completó las
+consultas y el análisis con resultado parcial: cero vacantes verificadas,
+enlaces para revisión y ningún correo enviado. La APK vigente es 0.5.0/code9.
+
+
 **APK 0.5.0 / versionCode 9 publicada para pruebas.**
 [Descargar Trabajo-YA-0.5.0-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.5.0-real/Trabajo-YA-0.5.0-real.apk).
 La [compilación 38744160527](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160527)
@@ -31,14 +37,15 @@ Eso no acredita búsquedas ni correos reales.
 si 001–006 ya están instaladas. En Render Environment cambiar explícitamente
 `WEB_SEARCH_MAX_QUERIES=6` si seguía en 2; después desplegar la rama
 `trabajo-ya-real` mediante Manual Deploy y esperar Live. `/health` debe mostrar
-backend **0.5.0**. No repetir el instalador inicial, recrear Gmail ni regenerar
+backend **0.5.3**. No repetir el instalador inicial, recrear Gmail ni regenerar
 TOKEN_ENCRYPTION_KEY. El programador necesita su configuración separada.
 
-La [prueba real solicitada](PRUEBA_WEB_REAL.md) fue intentada pero quedó bloqueada
-por `WEB_SEARCH_API_KEY` y `AI_API_KEY` ausentes en Actions: **cero llamadas** a
-Tavily y sin ofertas reales acreditadas. Las claves existentes de Render no se
-comparten con GitHub. La función no se considera terminada hasta obtener esa
-prueba. No se desplegó Render ni se activaron envíos desde estas herramientas.
+La [prueba real solicitada](PRUEBA_WEB_REAL.md) ya consultó Tavily y Groq: las claves
+fueron aceptadas. El resultado aún es parcial: páginas restringidas y un posterior
+HTTP 429 de Groq impidieron acreditar una vacante vigente dentro del radio.
+El parche del backend 0.5.3 respeta Retry-After y conserva el informe parcial;
+no exige recompilar esta APK. No se desplegó Render ni se activaron envíos desde
+estas herramientas.
 Ver [EMPEZAR](../EMPEZAR.md), [búsqueda general](BUSQUEDA_WEB.md),
 [worker](WORKER_GITHUB.md) y [correo](ACTIVAR_CORREOS.md).
 

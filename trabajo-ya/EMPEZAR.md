@@ -4,7 +4,7 @@ El Supabase y backend existentes se conservan. Android utiliza https://trabajo-y
 
 La [APK **0.5.0 / versionCode 9**](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.5.0-real/Trabajo-YA-0.5.0-real.apk) está publicada y verificada. Añade búsqueda general, geografía de Argentina, radio e historial web. Instalar como actualización sin desinstalar; antes completar la migración 007 y desplegar el backend. Ver [APK_REAL](docs/APK_REAL.md).
 
-**Todavía no se acreditó una búsqueda real Tavily/Groq, una oferta de chofer a 100 km ni una entrega Gmail.** Las pruebas del código usan respuestas simuladas. Las claves están solo en Render; Actions no puede leerlas desde allí.
+**Tavily y Groq ya respondieron en una prueba real; todavía no se acreditó una vacante vigente dentro de 100 km ni una entrega Gmail.** Las dos claves de proveedores ya están en Actions. El backend 0.5.3 corrige selección de lecturas y reintento ante HTTP 429; la APK 0.5.0 sigue siendo compatible. Ver [prueba real](docs/PRUEBA_WEB_REAL.md).
 
 ## 1. Actualizar Supabase sin borrar datos
 
@@ -29,7 +29,7 @@ PUBLIC_PAGE_MAX_READS=6
 
 El Blueprint anterior podía dejar WEB_SEARCH_MAX_QUERIES=2. **Cambiarlo a 6 explícitamente: Manual Deploy no actualiza esa variable existente.** WEB_SEARCH_API_KEY y AI_API_KEY siguen como secretos privados de Render; no ponerlos en el código ni chat.
 
-Mantener **MAIL_SEND_ENABLED=false** hasta una prueba controlada. Desplegar la rama **trabajo-ya-real** con **Manual Deploy → Deploy latest commit**, esperar Live y comprobar versión **0.5.0** en /health. Un estado configured_unverified no demuestra consultas ni correo. Ver [BUSQUEDA_WEB](docs/BUSQUEDA_WEB.md).
+Mantener **MAIL_SEND_ENABLED=false** hasta una prueba controlada. Desplegar la rama **trabajo-ya-real** con **Manual Deploy → Deploy latest commit**, esperar Live y comprobar versión **0.5.3** en /health. Un estado configured_unverified no demuestra consultas ni correo. Ver [BUSQUEDA_WEB](docs/BUSQUEDA_WEB.md).
 
 ## 3. Preparar la prueba real desde el celular
 
@@ -72,3 +72,13 @@ reales mediante esa prueba. Después de cargar los dos secretos privados, usar
 **Actions → Prueba REAL de búsqueda web — Tavily y Groq → Run workflow**.
 La [verificación del código](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160825)
 aprobó 403 pruebas backend, 52 móviles, TypeScript, siete migraciones y 29 cloud.
+
+## Último resultado comprobado
+
+La [prueba 38786570530](https://github.com/ramalhectornano-sys/miapp/actions/runs/38786570530)
+confirmó 8 consultas Tavily y completó los 3 lotes Groq, recuperándose de un 429
+con espera de 29 segundos. GeoRef confirmó la localidad. Resultado parcial:
+cero vacantes vigentes verificadas; enlaces pendientes en [PRUEBA_WEB_REAL](docs/PRUEBA_WEB_REAL.md).
+Las dos claves de IA/búsqueda ya están cargadas: no volver a crearlas. Desplegar
+backend **0.5.3** y aplicar solo 007 si falta. La APK 0.5.0 sigue vigente. El
+worker y la prueba de Gmail son pasos separados; no hay entregas acreditadas.

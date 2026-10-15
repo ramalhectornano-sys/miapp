@@ -1,5 +1,11 @@
 # Investigación laboral general en Internet — 0.5.0
 
+Estado actual del backend **0.5.3**: Tavily y Groq fueron consultados realmente;
+las claves están aceptadas. La [última prueba](PRUEBA_WEB_REAL.md) completó las
+consultas y el análisis con resultado parcial: cero vacantes verificadas,
+enlaces para revisión y ningún correo enviado. La APK vigente es 0.5.0/code9.
+
+
 El código consulta Tavily y usa Groq para analizar anuncios con evidencia. Las consultas generales combinan puesto, sinónimos acotados, localidad, provincia, país, empresas, consultoras, bolsas laborales y páginas de contratación. LinkedIn y ar.computrabajo.com son fuentes adicionales; no restringen la búsqueda a esos portales ni a Greenhouse.
 
 **Estado real:** la implementación y las pruebas con proveedores simulados están preparadas. Todavía no se ejecutó ni acreditó la búsqueda solicitada de chofer en Rincón de los Sauces a 100 km. No hay enlaces de ofertas reales acreditadas para mostrar. Las claves están solamente en Render y el workflow de prueba no puede leerlas desde allí.

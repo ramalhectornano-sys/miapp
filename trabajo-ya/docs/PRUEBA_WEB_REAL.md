@@ -1,5 +1,46 @@
 # Prueba real de Internet: chofer, Rincón de los Sauces, 100 km
 
+## Última comprobación: backend 0.5.3, resultado parcial
+
+[Prueba 38786570530](https://github.com/ramalhectornano-sys/miapp/actions/runs/38786570530),
+commit `141eb63ab1bf895759110a39561b059ee30a543c`, 15/10/2026,
+18:33:31–18:34:09 UTC: **8 consultas Tavily HTTP 200, 8 créditos informados,
+3 lotes Groq completados y 2 respuestas GeoRef**. Groq hizo 4 peticiones porque
+un HTTP 429 se recuperó respetando Retry-After de 29 segundos. No se repitieron
+consultas Tavily durante ese reintento. Los tres proveedores tienen comprobantes
+reales; ya no faltan las claves de Tavily/Groq en Actions.
+
+**Estado partial, test_passed=false y cero vacantes verificadas dentro de 100 km.**
+El centro GeoRef es Rincón de los Sauces, Neuquén, ID 58091040. Se leyeron dos
+anuncios de BeBee con HTTP 200; eso confirma los enlaces, no su vigencia,
+ubicación precisa, empresa ni destinatario. Viento Sur pidió una demora superior
+al límite de 15 segundos; otras páginas restringieron lectura o requirieron
+intervención humana. Groq propuso tres candidatos que el validador descartó;
+el informe cuenta esos descartes pero no conserva el motivo individual.
+No corresponde inventar ese motivo ni afirmar que no existen empleos.
+
+Enlaces efectivamente descubiertos, **pendientes de revisión**:
+
+- [Chofer de reparto — Grupo Gestión / BeBee](https://bebee.com/ar/jobs/chofer-de-reparto-rincon-de-los-sauces-grupo-gestion-rincon-de-los-sauce--ss-ar-aj7a6p).
+- [Chofer de autoelevador — Grupo Gestión / BeBee](https://bebee.com/ar/jobs/chofer-de-autoelevador-con-carnet-importante-empresa-de-transporte-en-rincon-de-los-sauces-neuquen-g--ss-ar-p9kh2q).
+- [Nota de búsqueda de chofer de reparto — Viento Sur](https://vientosurnoticias.com.ar/empresa-busca-chofer-de-reparto-para-cubrir-vacante-en-rincon-de-los-sauces).
+
+[JSON completo con recibos](evidence/web-real-38786570530.json) y
+[resumen legible](evidence/web-real-38786570530.md). Ejemplo Tavily:
+`5bc2f0e8-2ab7-46b2-8b93-d80abb2a0620`, HTTP 200, un crédito, consulta por
+Chofer/Rincón de los Sauces/Neuquén/Argentina. El artefacto de Actions conserva
+el informe durante 30 días; estas copias públicas permiten revisarlo después.
+
+[CI 38786570347](https://github.com/ramalhectornano-sys/miapp/actions/runs/38786570347)
+aprobó **424 pruebas backend, 52 móviles, TypeScript, siete migraciones y 29 cloud**,
+además del contenedor. La APK 0.5.0/code9 sigue siendo compatible: estas
+correcciones son del servidor. **El flujo completo de ofertas verificadas y
+postulación automática no se considera terminado.** Falta revisar los hallazgos
+y completar una ejecución alojada con migración 007, backend 0.5.3 y worker.
+No se desplegó Render, aplicó SQL al proyecto alojado ni envió correo desde
+esta prueba; no se accedió a Supabase, CV ni tokens Gmail.
+
+
 ## Estado actual: claves aceptadas, resultado parcial
 
 El segundo intento de [la ejecución 38744160735](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160735/attempts/2)
@@ -99,7 +140,8 @@ La evidencia real es el artefacto de una ejecución con respuestas de los servic
 
 El valor predeterminado permite hasta **8 consultas Tavily basic**, con un máximo
 absoluto de 12 por ejecución, y hasta 6 páginas públicas. No reintenta consultas
-automáticamente. Tavily basic consume créditos reales de la cuenta; consultá el
+Tavily automáticamente. Groq admite un reintento por lote, hasta seis peticiones
+y 60 segundos totales de espera; respeta únicamente Retry-After numérico válido. Tavily basic consume créditos reales de la cuenta; consultá el
 cupo y los precios vigentes en [Tavily](https://docs.tavily.com/documentation/api-credits).
 Groq consume el cupo del modelo configurado. El workflow no activa facturación ni
 crea recursos de pago. GitHub Actions también está sujeto a los límites del plan
@@ -133,3 +175,7 @@ imprime la configuración privada. El comando sale con código 1 cuando falta
 configuración, falla un proveedor o no puede demostrar la oportunidad solicitada.
 Eso no permite concluir que no existan vacantes: hay que leer el estado y los
 errores del informe. Ninguna ejecución de este comando envía correos.
+
+Las cuatro comprobaciones con proveedores reales registraron **32 créditos
+Tavily en total** (8 por ejecución). La primera comprobación sin claves consumió
+cero. No se activó facturación ni se enviaron correos en esas pruebas.

@@ -30,7 +30,7 @@ confirma la aceptación del envío; eso tampoco confirma una contratación.
    para geografía e historial. No repetir el instalador inicial. Luego, en
    **Render → trabajo-ya-api → Manual Deploy → Deploy latest commit**, usar
    la rama **trabajo-ya-real** y esperar **Live**; `/health` debe identificar
-   backend **0.5.0**. Se conservan documentos, sesiones y conexiones Gmail.
+   backend **0.5.3**. Se conservan documentos, sesiones y conexiones Gmail.
 2. Conservar en **Environment** `WEB_SEARCH_PROVIDER=tavily` y la clave privada
    existente en `WEB_SEARCH_API_KEY`. Cambiar explícitamente
    `WEB_SEARCH_MAX_QUERIES=6` si seguía en 2. Greenhouse no necesita una clave adicional.

@@ -1,5 +1,18 @@
 # Validación de Trabajo YA
 
+## Backend 0.5.3: proveedores probados, operación completa pendiente
+
+[Prueba real 38786570530](https://github.com/ramalhectornano-sys/miapp/actions/runs/38786570530):
+8 consultas Tavily exitosas/8 créditos, 3 lotes Groq completados y GeoRef real.
+Un 429 se recuperó tras 29 segundos; no se repitió Tavily. Resultado partial:
+cero vacantes verificadas y ningún correo enviado. Ver [comprobantes](PRUEBA_WEB_REAL.md).
+La APK publicada sigue siendo 0.5.0/code9; el backend corregido es 0.5.3.
+[CI 38786570347](https://github.com/ramalhectornano-sys/miapp/actions/runs/38786570347)
+aprobó **424 pruebas backend, 52 móviles, TypeScript, siete migraciones, 29 cloud
+y arranque del contenedor**. Los apartados siguientes conservan resultados
+históricos; los secretos de proveedores ya están en Actions.
+
+
 ## Investigación general 0.5.0: código validado, prueba real bloqueada
 
 La [verificación 38744160825](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160825)

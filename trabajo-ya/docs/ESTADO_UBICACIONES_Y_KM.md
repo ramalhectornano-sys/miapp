@@ -1,6 +1,12 @@
 # Estado de búsqueda, ubicaciones y kilómetros — 0.5.0
 
-La actualización implementa investigación web general Tavily/Groq y geografía de Argentina. **Código probado con proveedores simulados no significa comprobado en la cuenta real.** La búsqueda de chofer en Rincón de los Sauces a 100 km sigue pendiente de ejecución y comprobantes reales. No se acreditaron ofertas para enlazar aquí.
+Estado actual del backend **0.5.3**: Tavily y Groq fueron consultados realmente;
+las claves están aceptadas. La [última prueba](PRUEBA_WEB_REAL.md) completó las
+consultas y el análisis con resultado parcial: cero vacantes verificadas,
+enlaces para revisión y ningún correo enviado. La APK vigente es 0.5.0/code9.
+
+
+La actualización implementa investigación web general Tavily/Groq y geografía de Argentina. **Código probado con proveedores simulados no significa comprobado en la cuenta real.** La búsqueda de chofer en Rincón de los Sauces a 100 km ya tiene consultas reales y comprobantes. Sigue pendiente acreditar vacantes vigentes; los enlaces descubiertos se muestran para revisión.
 
 | Requisito | Estado del código 0.5.0 y límite |
 | --- | --- |
@@ -15,7 +21,7 @@ La actualización implementa investigación web general Tavily/Groq y geografía
 | Enlaces originales | Lector público acotado con DNS, redirecciones y robots. Páginas restringidas/no accesibles quedan pendientes. |
 | Fechas y requisitos | Se conservan y muestran cuando hay evidencia; no se inventan los ausentes. |
 | Historial web | Migración 007, API y pantalla con consultas, horas, fuentes, recibos y errores privados por usuario. |
-| Prueba real Tavily/Groq | Intentada en Actions; preflight bloqueado por claves ausentes allí. Cero llamadas a proveedores; no aprobada. |
+| Prueba real Tavily/Groq | Consultas reales acreditadas y tres lotes Groq completos tras recuperar un 429. Cero vacantes verificadas; resultado parcial. |
 | Gmail | Vinculación confirmada por el usuario; entrega real todavía no acreditada. |
 | Teléfono apagado | Worker/programador preparados; requieren configuración, habilitación y ejecución registrada. |
 | Enviar a hallazgos web | La investigación general no verifica destinatarios. Solo fuentes específicas verificadas y consentimiento pueden habilitar correo. |
@@ -23,7 +29,7 @@ La actualización implementa investigación web general Tavily/Groq y geografía
 ## Instalar y comprobar
 
 1. Aplicar solamente [migración 007](../supabase/migrations/202610140007_web_research_and_locations.sql) si 001–006 ya están instaladas. No repetir el instalador inicial ni una migración ya aplicada.
-2. Desplegar backend 0.5.0 de trabajo-ya-real. En Render Environment, cambiar explícitamente WEB_SEARCH_MAX_QUERIES a **6** si el Blueprint anterior dejó 2; Manual Deploy no modifica ese valor existente. Ver [BUSQUEDA_WEB](BUSQUEDA_WEB.md).
+2. Desplegar backend 0.5.3 de trabajo-ya-real. En Render Environment, cambiar explícitamente WEB_SEARCH_MAX_QUERIES a **6** si el Blueprint anterior dejó 2; Manual Deploy no modifica ese valor existente. Ver [BUSQUEDA_WEB](BUSQUEDA_WEB.md).
 3. Usar la APK 0.5.0 cuando su publicación esté confirmada en [APK_REAL](APK_REAL.md).
 4. Para la prueba real, guardar WEB_SEARCH_API_KEY y AI_API_KEY en [Actions Secrets](https://github.com/ramalhectornano-sys/miapp/settings/secrets/actions) y ejecutar [el workflow real](https://github.com/ramalhectornano-sys/miapp/actions/workflows/trabajo-ya-web-real-test.yml). Ver [PRUEBA_WEB_REAL](PRUEBA_WEB_REAL.md).
 5. Configurar y comprobar el worker para ejecuciones periódicas. Mantener MAIL_SEND_ENABLED=false hasta una prueba de envío controlada y autorización específica.
