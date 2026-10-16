@@ -1,12 +1,33 @@
 # Validación de Trabajo YA
 
+## Android 0.5.1: motivo del bloqueo y error dentro del detalle
+
+La [APK 0.5.1/code10](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.5.1-real/Trabajo-YA-0.5.1-real.apk) corresponde al commit `21633d3ca10e473349b4334519bba7ab239b04d5`.
+La [compilación](https://github.com/ramalhectornano-sys/miapp/actions/runs/38905283660) y [CI](https://github.com/ramalhectornano-sys/miapp/actions/runs/38905283984) terminaron correctamente:
+424 pruebas backend, 52 móviles, TypeScript, siete migraciones y pruebas SQL,
+29 cloud y arranque del contenedor. apksigner/aapt verificaron identidad y
+firma; el comprobante de certificado coincide con 0.5.0. [Checksum](APK_REAL.md).
+
+El botón indica qué requisito local falta y repite el destinatario. Los errores
+del servidor se muestran dentro del modal y se asocian a su postulación. Después
+de un error se refresca el estado, sin volver a enviar. Se mantienen las barreras
+de consentimiento, demostración, resultado incierto e intento ya reservado.
+No se modifica backend, SQL, fuentes, permisos o límites de envío.
+
+No se ejercitó el toque físico en un celular ni se entregó correo real. La
+comprobación manual debe verificar que un borrador sin destinatario muestre
+«Falta el correo de la empresa» y permanezca bloqueado; con datos completos, la
+casilla habilita la solicitud y el servidor aún puede rechazarla con su motivo.
+Esto corrige la explicación del bloqueo y no acredita la automatización completa.
+
+
 ## Backend 0.5.3: proveedores probados, operación completa pendiente
 
 [Prueba real 38786570530](https://github.com/ramalhectornano-sys/miapp/actions/runs/38786570530):
 8 consultas Tavily exitosas/8 créditos, 3 lotes Groq completados y GeoRef real.
 Un 429 se recuperó tras 29 segundos; no se repitió Tavily. Resultado partial:
 cero vacantes verificadas y ningún correo enviado. Ver [comprobantes](PRUEBA_WEB_REAL.md).
-La APK publicada sigue siendo 0.5.0/code9; el backend corregido es 0.5.3.
+La APK vigente es 0.5.1/code10; el backend sigue siendo 0.5.3.
 [CI 38786570347](https://github.com/ramalhectornano-sys/miapp/actions/runs/38786570347)
 aprobó **424 pruebas backend, 52 móviles, TypeScript, siete migraciones, 29 cloud
 y arranque del contenedor**. Los apartados siguientes conservan resultados

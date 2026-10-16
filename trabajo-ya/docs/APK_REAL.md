@@ -1,56 +1,51 @@
 # APK conectada a servicios reales
 
-Estado actual del backend **0.5.3**: Tavily y Groq fueron consultados realmente;
-las claves están aceptadas. La [última prueba](PRUEBA_WEB_REAL.md) completó las
-consultas y el análisis con resultado parcial: cero vacantes verificadas,
-enlaces para revisión y ningún correo enviado. La APK vigente es 0.5.0/code9.
+**APK 0.5.1 / versionCode 10 publicada para pruebas.**
+[Descargar Trabajo-YA-0.5.1-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.5.1-real/Trabajo-YA-0.5.1-real.apk). Instalar como actualización, sin desinstalar.
 
+Esta revisión explica el motivo junto al botón de postulación: falta de correo
+de la empresa, CV, consentimiento, demostración u operación en curso. Repite el
+destinatario junto a la acción y muestra los rechazos del servidor dentro del
+detalle. Tras un error consulta el estado guardado sin repetir el envío. Los
+errores quedan asociados a la postulación que los produjo.
 
-**APK 0.5.0 / versionCode 9 publicada para pruebas.**
-[Descargar Trabajo-YA-0.5.0-real.apk](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.5.0-real/Trabajo-YA-0.5.0-real.apk).
-La [compilación 38744160527](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160527)
-terminó correctamente: Expo/Gradle incluyeron JavaScript y recursos; `apksigner`
-y `aapt` verificaron firma, nombre, paquete y versión.
+El cambio es de Android: no requiere una nueva migración ni recrear Supabase,
+Gmail o claves. No habilita un envío sin destinatario ni sustituye la validación
+del servidor. Un correo presente no significa que esté verificado. Las fuentes
+web pueden producir borradores sin correo; encontrar una oferta no acredita un
+canal legítimo para enviar el CV.
 
-La APK usa `demo=false`, paquete **com.trabajoya.autoempleoia** y callback
-**autoempleoia://auth/callback**. El comprobante de certificado coincide con la
-entrega anterior: instalar **como actualización, sin desinstalar**.
-Es una firma de prueba, no una publicación en Google Play.
+La [compilación 38905283660](https://github.com/ramalhectornano-sys/miapp/actions/runs/38905283660) verificó con apksigner y aapt la firma,
+nombre, paquete y versión. La app usa demo=false, paquete
+**com.trabajoya.autoempleoia** y callback **autoempleoia://auth/callback**.
+El comprobante de certificado coincide con 0.5.0; conserva la instalación y
+los datos. Es una firma de prueba, no una publicación en Google Play.
 
-Tamaño: **51870841 bytes**. SHA-256:
+Tamaño: **51873325 bytes**. SHA-256:
 
 ```text
-f0229c1edb388b5d07f0ae09ddb63c9c16f63218ea6c705274d3e1602c422d2c
+12d18534a4c545c516ae247ad52ce2e9c3ef0aff2bd6cb8b83500b7dabae8ce4
 ```
 
-Commit compilado: `d008ba39b4a119c833230aaeaffb894591204810`. Los comprobantes y checksum están en
-[la versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.5.0-real).
-La APK no incluye claves privadas de Tavily, Groq, Gmail ni Supabase.
+Commit compilado: `21633d3ca10e473349b4334519bba7ab239b04d5`. Los comprobantes, certificado y checksum están
+en [la versión publicada](https://github.com/ramalhectornano-sys/miapp/releases/tag/trabajo-ya-v0.5.1-real). No incluye secretos de IA,
+Supabase ni Gmail. [CI 38905283984](https://github.com/ramalhectornano-sys/miapp/actions/runs/38905283984) aprobó **424 pruebas backend,
+52 móviles, TypeScript, siete migraciones, pruebas SQL, 29 cloud y arranque
+del contenedor**. La revisión del flujo fue por código; queda la comprobación
+manual del botón en el dispositivo y no se envió correo durante estas pruebas.
 
-Esta actualización agrega provincia, país, radio, selección de localidad,
-resultados con evidencia e historial web. El código pasó **403 pruebas backend,
-52 móviles, TypeScript, siete migraciones y 29 cloud** en
-[CI 38744160825](https://github.com/ramalhectornano-sys/miapp/actions/runs/38744160825).
-Eso no acredita búsquedas ni correos reales.
+El backend sigue en **0.5.3**. La [última prueba web real](PRUEBA_WEB_REAL.md)
+consultó Tavily y Groq con resultado parcial: cero vacantes verificadas dentro
+del radio. Esta actualización no repitió consultas de pago ni acredita una
+entrega de Gmail o la automatización completa. El worker y los envíos necesitan
+su configuración y una ejecución comprobada. Ver [EMPEZAR](../EMPEZAR.md),
+[búsqueda general](BUSQUEDA_WEB.md), [worker](WORKER_GITHUB.md) y
+[correo](ACTIVAR_CORREOS.md).
 
-**Antes de usar las pantallas nuevas**, aplicar solo [migración 007](../supabase/migrations/202610140007_web_research_and_locations.sql)
-si 001–006 ya están instaladas. En Render Environment cambiar explícitamente
-`WEB_SEARCH_MAX_QUERIES=6` si seguía en 2; después desplegar la rama
-`trabajo-ya-real` mediante Manual Deploy y esperar Live. `/health` debe mostrar
-backend **0.5.3**. No repetir el instalador inicial, recrear Gmail ni regenerar
-TOKEN_ENCRYPTION_KEY. El programador necesita su configuración separada.
-
-La [prueba real solicitada](PRUEBA_WEB_REAL.md) ya consultó Tavily y Groq: las claves
-fueron aceptadas. El resultado aún es parcial: páginas restringidas y un posterior
-HTTP 429 de Groq impidieron acreditar una vacante vigente dentro del radio.
-El parche del backend 0.5.3 respeta Retry-After y conserva el informe parcial;
-no exige recompilar esta APK. No se desplegó Render ni se activaron envíos desde
-estas herramientas.
-Ver [EMPEZAR](../EMPEZAR.md), [búsqueda general](BUSQUEDA_WEB.md),
-[worker](WORKER_GITHUB.md) y [correo](ACTIVAR_CORREOS.md).
-
-Los pasos siguientes sirven para preparar otra instalación o repetir una
-compilación. El servicio Supabase y el Gmail existentes se conservan.
+Para instalaciones que aún no actualizaron la geografía/historial, aplicar
+solamente [migración 007](../supabase/migrations/202610140007_web_research_and_locations.sql)
+si 001–006 están instaladas y 007 falta. No repetir el instalador inicial ni
+regenerar TOKEN_ENCRYPTION_KEY. El parche del botón no necesita SQL adicional.
 
 ## Qué necesita Android
 
@@ -86,7 +81,7 @@ La clave pública de Supabase forma parte de cualquier app que use Supabase; el 
 7. Esperá a que la ejecución complete la compilación, verifique la firma y publique la prerelease. Recién entonces habrá una APK nueva. Abrí **Releases** y descargá el archivo `Trabajo-YA-<versión>-real.apk`. Como alternativa, descargá el artefacto `Trabajo-YA-<versión>-real` desde esa ejecución de Actions y extraé el ZIP.
 8. Abrí la APK desde Archivos y completá la instalación en Android. No requiere Expo Go ni un servidor Metro.
 
-La versión y `versionCode` se obtienen de `mobile/app.json`; la revisión publicada es **0.5.0 / 9**. El archivo APK, nombre de artefacto y tag se generan a partir de esa versión; no hay un nombre fijo en el workflow. Una versión publicada no se reemplaza automáticamente: para una siguiente entrega hay que incrementar `version` y `android.versionCode`.
+La versión y `versionCode` se obtienen de `mobile/app.json`; la revisión publicada es **0.5.1 / 10**. El archivo APK, nombre de artefacto y tag se generan a partir de esa versión; no hay un nombre fijo en el workflow. Una versión publicada no se reemplaza automáticamente: para una siguiente entrega hay que incrementar `version` y `android.versionCode`.
 
 ## Qué comprueba la compilación
 

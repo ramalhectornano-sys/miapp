@@ -1,10 +1,10 @@
-# Trabajo YA: actualizar y comprobar la versión 0.5.0
+# Trabajo YA: actualizar y comprobar la versión 0.5.1
 
 El Supabase y backend existentes se conservan. Android utiliza https://trabajo-ya-api.onrender.com; el usuario ya mostró CV seleccionado y confirmó Gmail vinculado. No hace falta recrear servicios ni claves.
 
-La [APK **0.5.0 / versionCode 9**](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.5.0-real/Trabajo-YA-0.5.0-real.apk) está publicada y verificada. Añade búsqueda general, geografía de Argentina, radio e historial web. Instalar como actualización sin desinstalar; antes completar la migración 007 y desplegar el backend. Ver [APK_REAL](docs/APK_REAL.md).
+La [APK **0.5.1 / versionCode 10**](https://github.com/ramalhectornano-sys/miapp/releases/download/trabajo-ya-v0.5.1-real/Trabajo-YA-0.5.1-real.apk) está publicada y verificada. Explica por qué se bloquea una postulación y muestra los rechazos dentro del detalle. Conserva búsqueda general, geografía de Argentina, radio e historial web. Este parche del botón no necesita una nueva migración. Instalar como actualización sin desinstalar; antes completar la migración 007 y desplegar el backend. Ver [APK_REAL](docs/APK_REAL.md).
 
-**Tavily y Groq ya respondieron en una prueba real; todavía no se acreditó una vacante vigente dentro de 100 km ni una entrega Gmail.** Las dos claves de proveedores ya están en Actions. El backend 0.5.3 corrige selección de lecturas y reintento ante HTTP 429; la APK 0.5.0 sigue siendo compatible. Ver [prueba real](docs/PRUEBA_WEB_REAL.md).
+**Tavily y Groq ya respondieron en una prueba real; todavía no se acreditó una vacante vigente dentro de 100 km ni una entrega Gmail.** Las dos claves de proveedores ya están en Actions. El backend 0.5.3 corrige selección de lecturas y reintento ante HTTP 429; la APK 0.5.1 sigue siendo compatible. Ver [prueba real](docs/PRUEBA_WEB_REAL.md).
 
 ## 1. Actualizar Supabase sin borrar datos
 
@@ -80,5 +80,5 @@ confirmó 8 consultas Tavily y completó los 3 lotes Groq, recuperándose de un 
 con espera de 29 segundos. GeoRef confirmó la localidad. Resultado parcial:
 cero vacantes vigentes verificadas; enlaces pendientes en [PRUEBA_WEB_REAL](docs/PRUEBA_WEB_REAL.md).
 Las dos claves de IA/búsqueda ya están cargadas: no volver a crearlas. Desplegar
-backend **0.5.3** y aplicar solo 007 si falta. La APK 0.5.0 sigue vigente. El
+backend **0.5.3** y aplicar solo 007 si falta. La APK 0.5.1 sigue vigente. El
 worker y la prueba de Gmail son pasos separados; no hay entregas acreditadas.
